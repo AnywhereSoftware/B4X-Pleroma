@@ -49,6 +49,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=ListOfStatuses,RemoveClickRecognizer,170,0,B4XMainPage,ShowDialogWithoutButtons,478,6,B4XMainPage,ClosePrevDialog,455,0,ListOfStatuses,Refresh2,44,0,ListOfStatuses,RefreshImpl,65,0,B4XMainPage,Statuses_TitleChanged,532,6,B4XMainPage,DialogBtnExit_Click,537,0,B4XMainPage,PerformHapticFeedback,510,0,B4XMainPage,LinkClickedShared,431,0,B4XMainPage,Statuses_LinkClicked,426,0
+NavigationStack=ListOfStatuses,RemoveClickRecognizer,170,0,B4XMainPage,ShowDialogWithoutButtons,478,6,B4XMainPage,ClosePrevDialog,455,0,ListOfStatuses,Refresh2,44,0,ListOfStatuses,RefreshImpl,65,0,B4XMainPage,Statuses_TitleChanged,532,6,B4XMainPage,DialogBtnExit_Click,537,0,B4XMainPage,PerformHapticFeedback,510,0,B4XMainPage,LinkClickedShared,431,0,B4XMainPage,Statuses_LinkClicked,424,0
 SelectedBuild=0
 VisibleModules=2,3,12,13,6,7

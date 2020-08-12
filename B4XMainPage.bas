@@ -10,7 +10,7 @@ Version=8.31
 #End Region
 
 'Ctrl + click to export as zip: ide://run?VMArgs=-DZeroSharedFiles%3DTrue&File=%B4X%\Zipper.jar&Args=Pleroma.zip
-
+'github desktop ide://run?file=%USERPROFILE%\Local\GithubDesktop\GithubDesktop.exe
 Sub Class_Globals
 	Type PLMServer (URL As String, Name As String, AppClientId As String, AppClientSecret As String, _
 		AccessToken As String)
