@@ -1,0 +1,140 @@
+﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
+File1=AccountView.bal
+File10=play.png
+File11=StatusList.bal
+File12=StatusViewImpl.bal
+File13=VideoPlayer.bal
+File14=WebViewDialog.bal
+File2=DialogContainer.bal
+File3=GifView.bal
+File4=hamburger.png
+File5=LeftDrawer.bal
+File6=lstDrawerUser.bal
+File7=MainPage.bal
+File8=Missing-image-232x150.png
+File9=nsfw.74818f9.png
+FileGroup1=Default Group
+FileGroup10=Default Group
+FileGroup11=Default Group
+FileGroup12=Default Group
+FileGroup13=Default Group
+FileGroup14=Default Group
+FileGroup2=Default Group
+FileGroup3=Default Group
+FileGroup4=Default Group
+FileGroup5=Default Group
+FileGroup6=Default Group
+FileGroup7=Default Group
+FileGroup8=Default Group
+FileGroup9=Default Group
+Group=Default Group
+Library1=core
+Library10=zoomimageview
+Library11=webp
+Library12=okhttputils2
+Library13=b4xdrawer
+Library14=keyvaluestore
+Library15=phone
+Library16=b4xpreferencesdialog
+Library17=reflection
+Library2=b4xpages
+Library3=bctextengine
+Library4=json
+Library5=xui views
+Library6=exoplayer
+Library7=b4xgifview
+Library8=minihtmlparser
+Library9=bitmapsasync
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.LightTheme)~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)
+Module1=|relative|..\AccountView
+Module10=|relative|..\RequestsManager
+Module11=|relative|..\StackManager
+Module12=Starter
+Module13=|relative|..\StatusView
+Module14=|relative|..\StubView
+Module15=|relative|..\TextUtils
+Module16=|relative|..\ViewsCache
+Module17=|relative|..\WebViewDialog
+Module2=|relative|..\B4XMainPage
+Module3=|relative|..\BBListItem
+Module4=|relative|..\CLVSelections
+Module5=|relative|..\HtmlToRuns
+Module6=|relative|..\ImagesCache
+Module7=|relative|..\ListOfStatuses
+Module8=|relative|..\OAuth
+Module9=|relative|..\PleromaFeed
+NumberOfFiles=14
+NumberOfLibraries=17
+NumberOfModules=17
+Version=10
+@EndOfDesignText@
+#Region  Project Attributes 
+	#ApplicationLabel: B4X Pleroma
+	#VersionCode: 1
+	#VersionName: 
+	'SupportedOrientations possible values: unspecified, landscape or portrait.
+	#SupportedOrientations: portrait
+	#CanInstallToExternalStorage: False
+#End Region
+
+#Region  Activity Attributes 
+	#FullScreen: False
+	#IncludeTitle: True
+#End Region
+#BridgeLogger: true
+
+Sub Process_Globals
+	Public ActionBarHomeClicked As Boolean
+End Sub
+
+Sub Globals
+
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+	Dim pm As B4XPagesManager
+	pm.Initialize(Activity)
+End Sub
+
+'Template version: B4A-1.0
+#Region Delegates
+
+'modify the existing subs
+
+
+Sub Activity_ActionBarHomeClick
+    ActionBarHomeClicked = True
+    B4XPages.Delegate.Activity_ActionBarHomeClick
+    ActionBarHomeClicked = False
+End Sub
+
+Sub Activity_KeyPress (KeyCode As Int) As Boolean
+	Return B4XPages.Delegate.Activity_KeyPress(KeyCode)
+End Sub
+
+Sub Activity_Resume
+	B4XPages.Delegate.Activity_Resume
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+	B4XPages.Delegate.Activity_Pause
+End Sub
+
+Sub Activity_PermissionResult (Permission As String, Result As Boolean)
+	B4XPages.Delegate.Activity_PermissionResult(Permission, Result)
+End Sub
+
+Sub Create_Menu (Menu As Object)
+	B4XPages.Delegate.Create_Menu(Menu)
+End Sub
+
+#if Java
+public boolean _onCreateOptionsMenu(android.view.Menu menu) {
+	 processBA.raiseEvent(null, "create_menu", menu);
+	 return true;
+	
+}
+#End If
+#End Region
+
+'Program code should go into B4XMainPage and other pages.
