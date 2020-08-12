@@ -9,7 +9,6 @@ Version=8.31
 'Ctrl + click to sync files: ide://run?file=%WINDIR%\System32\Robocopy.exe&args=..\..\Shared+Files&args=..\Files&FilesSync=True
 #End Region
 
-'Ctrl + click to export as zip: ide://run?VMArgs=-DZeroSharedFiles%3DTrue&File=%B4X%\Zipper.jar&Args=Pleroma.zip
 'github desktop ide://run?file=%WINDIR%\System32\cmd.exe&Args=/c&Args=github&Args=..\..\
 
 
