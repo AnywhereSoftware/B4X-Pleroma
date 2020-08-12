@@ -29,14 +29,12 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 			Return link
 		Else If URL.StartsWith("@@") Then
 			Dim id As String = URL.SubString(2)
-			Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", id)
-			Return CreatePLMLink2(u & "/statuses", B4XPages.MainPage.LINKTYPE_USER, "@" & Text, u)
+			Return CreateUserLink(id, Text)
 		Else If Text.Length > 1 And Text.StartsWith("@") Then
 			Dim name As String = Text.SubString(1)
 			For Each m As Map In Status.Mentions
 				If name = m.Get("username") Then
-					Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", m.Get("id"))
-					Return CreatePLMLink2(u & "/statuses", B4XPages.MainPage.LINKTYPE_USER, "@" & name, u)
+					Return CreateUserLink(m.Get("id"), name)
 				End If
 				If name = Status.Account.UserName Then
 					Return ManageLink(Status, Account, "@", Text)
@@ -51,6 +49,12 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 		Return CreatePLMLink(B4XPages.MainPage.URL_TAG & Text.SubString(1), B4XPages.MainPage.LINKTYPE_TAG, Text)
 	End If
 	Return CreatePLMLink(URL, B4XPages.MainPage.LINKTYPE_OTHER, URL)
+End Sub
+
+
+Public Sub CreateUserLink (id As String, name As String) As PLMLink
+	Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", id)
+	Return CreatePLMLink2(u & "/statuses", B4XPages.MainPage.LINKTYPE_USER, "@" & name, u)
 End Sub
 
 
@@ -86,6 +90,7 @@ Public Sub TextWithEmojisToRuns(Input As String, RunsList As List, Emojis As Lis
 				Dim id As String = views.Size
 				Dim iv As B4XView = B4XPages.MainPage.ViewsCache1.GetImageView
 				Dim consumer As ImageConsumer = iv.Tag
+				consumer.NoAnimation = True
 				B4XPages.MainPage.ImagesCache1.SetImage(Emoji.URL, consumer, B4XPages.MainPage.ImagesCache1.RESIZE_NONE)
 				views.Put(id, iv)
 				Data.ViewsPanel.AddView(iv, 0, 0, Emoji.Size, Emoji.Size)

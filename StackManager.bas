@@ -5,35 +5,24 @@ Type=Class
 Version=8.5
 @EndOfDesignText@
 Sub Class_Globals
-	Private Stack As List
+	Public Stack As B4XOrderedMap
 	Type StackItem (User As PLMUser, Server As PLMServer, Link As PLMLink, Statuses As B4XOrderedMap, CLVItems As List, _
-		CurrentScrollOffset As Int, Extra As Map)
+		CurrentScrollOffset As Int)
 End Sub
 
 Public Sub Initialize
 	Stack.Initialize
 End Sub
 
-Public Sub Push (Feed As PleromaFeed, CLV As CustomListView, Extra As Map)
+Public Sub Push (Feed As PleromaFeed, CLV As CustomListView)
 	Dim clvitems As List
 	clvitems.Initialize
 	For i = 0 To CLV.Size - 1
 		clvitems.Add(CLV.GetValue(i))
 	Next
 	Dim item As StackItem = CreateStackItem(Feed.user, Feed.server, Feed.mLink, Feed.Statuses, clvitems, CLV.sv.ScrollViewOffsetY)
-	item.Extra = Extra
-	Stack.Add(item)
-End Sub
-
-Public Sub Pop (Feed As PleromaFeed, list As ListOfStatuses) As StackItem
-	Dim item As StackItem = Stack.Get(Stack.Size - 1)
-	Stack.RemoveAt(Stack.Size - 1)
-	Feed.user = item.User
-	Feed.server = item.Server
-	Feed.mLink = item.Link
-	Feed.Statuses = item.Statuses
-	list.CreateItemsFromStack(item.CLVItems, item.CurrentScrollOffset)
-	Return item
+	Stack.Remove(item.Link.Title)
+	Stack.Put(item.Link.Title, item)
 End Sub
 
 Public Sub getIsEmpty As Boolean

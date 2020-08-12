@@ -18,15 +18,15 @@ Sub Class_Globals
 		AccessToken As String)
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
-		SignedIn As Boolean)
+		SignedIn As Boolean, Id As String)
 	Public LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5 As Int
 	Private Root As B4XView 'ignore
 	Private xui As XUI 'ignore
 	Public TextUtils1 As TextUtils
-	Private Statuses As ListOfStatuses
+	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.08
+	Public VERSION As Float = 1.09
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
@@ -34,7 +34,7 @@ Sub Class_Globals
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
 	Private HamburgerIcon As B4XBitmap
-	Private lstDrawer As CustomListView
+	
 	Public Servers As B4XOrderedMap
 	Private DefaultServer As String = "mas.to"
 	Private Dialog As B4XDialog
@@ -44,7 +44,7 @@ Sub Class_Globals
 	Public URL_TAG As String = "/api/v1/timelines/tag/"
 	Public URL_USER As String = "/api/v1/accounts/:id"
 	Public URL_THREAD As String = "/api/v1/statuses/:id/context"
-	Private lstDrawerSelections As CLVSelections
+	
 	Private AccountView1 As AccountView
 	Private wvdialog As WebViewDialog
 	#if B4i
@@ -54,6 +54,7 @@ Sub Class_Globals
 	Private DialogListOfStatuses As ListOfStatuses
 	Private DialogBtnExit As B4XView
 	Private DialogIndex As Int
+	Private DrawerManager1 As DrawerManager
 End Sub
 
 Public Sub Initialize
@@ -109,7 +110,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Root = Root1
 	Drawer.Initialize(Me, "Drawer", Root, 200dip)
 	Drawer.CenterPanel.LoadLayout("MainPage")
-	Drawer.LeftPanel.LoadLayout("LeftDrawer")
+	DrawerManager1.Initialize(Drawer)
 	#if B4A
 	Drawer.ExtraWidth = 30dip
 	#end if
@@ -139,10 +140,8 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	lstTemplate.Initialize
 	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
 	PrefDialog.Dialog.OverlayColor = 0x64000000
-	Statuses.Refresh2(User, LINK_PUBLIC, False)
-	lstDrawerSelections.Initialize(lstDrawer)
-	lstDrawerSelections.Mode = lstDrawerSelections.MODE_SINGLE_ITEM_PERMANENT
-	UpdateLeftDrawerList
+	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
+	DrawerManager1.UpdateLeftDrawerList
 	DialogSetLightTheme
 	If Root.Width = 0 Then
 		Wait For B4XPage_Resize (Width As Int, Height As Int)
@@ -256,28 +255,9 @@ Private Sub B4XPage_Resize (Width As Int, Height As Int)
 	Drawer.Resize(Width, Height)
 End Sub
 
-Sub lstDrawer_ItemClick (Index As Int, Value As Object)
-	lstDrawerSelections.ItemClicked(Index)
-	Drawer.LeftOpen = False
-	Select Value
-		Case "sign in"
-			SignIn
-		Case "sign out"
-			SignOut
-		Case "timeline home"
-			Statuses.Refresh2(User, LINK_HOME, True)
-		Case "timeline public"
-			Statuses.Refresh2(User, LINK_PUBLIC, True)
-	End Select
-End Sub
 
-#if B4J
-Sub lblDrawerClose_MouseClicked (EventData As MouseEvent)
-	Drawer.LeftOpen = False
-End Sub
-#end if
 
-Private Sub SignIn
+Public Sub SignIn
 	lstTemplate.Options = Servers.Keys
 	Dialog.Title = "Select Server"
 	Dialog.ButtonsHeight = 40dip
@@ -309,14 +289,14 @@ Private Sub SignIn
 	End If
 End Sub
 
-Private Sub SignOut
+Public Sub SignOut
 	User.SignedIn = False
 	User.DisplayName = ""
 	User.AccessToken = ""
 	PersistUserAndServers
 	Statuses.Stack.Clear
-	Statuses.Refresh2(User, LINK_PUBLIC, False)
-	UpdateLeftDrawerList
+	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
+	DrawerManager1.UpdateLeftDrawerList
 End Sub
 
 Private Sub ShowMessage(str As String)
@@ -335,8 +315,9 @@ Private Sub AfterSignIn
 	User.SignedIn = True
 	PersistUserAndServers
 	Statuses.Stack.Clear
-	Statuses.Refresh2(User, LINK_HOME, False)
-	UpdateLeftDrawerList
+	Statuses.Refresh2(User, LINK_HOME, False, False)
+	DrawerManager1.SignIn
+	DrawerManager1.UpdateLeftDrawerList
 End Sub
 
 Public Sub GetServer As PLMServer
@@ -356,35 +337,6 @@ Private Sub btnRefresh_Click
 	Statuses.Refresh
 End Sub
 
-Private Sub UpdateLeftDrawerList
-	lstDrawerSelections.Clear
-	lstDrawerSelections.SelectableItems.Clear
-	lstDrawer.Clear
-	If User.SignedIn = False Then
-		lstDrawer.AddTextItem($"${"" & Chr(0xF090)}   Sign in"$, "sign in")
-		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}   Public"$, "timeline public")
-		lstDrawerSelections.SelectableItems.Add(1)
-		lstDrawerSelections.SelectAndMakeVisible(1)
-	Else
-		Dim p As B4XView = xui.CreatePanel("")
-		p.SetLayoutAnimated(0, 0, 0, lstDrawer.AsView.Width, 42dip)
-		p.LoadLayout("lstDrawerUser")
-		p.GetView(1).Text = User.DisplayName
-		lstDrawer.Add(p, "")
-		lstDrawer.AddTextItem($"${"" & Chr(0xF08B)}   Sign out"$, "sign out")
-		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}   Home"$, "timeline home")
-		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}   Public"$, "timeline public")
-		lstDrawerSelections.SelectableItems.Add(2)
-		lstDrawerSelections.SelectableItems.Add(3)
-		lstDrawerSelections.SelectAndMakeVisible(2)
-		Dim iv As B4XView = CreateImageView
-		p.GetView(0).AddView(iv, 0, 0, p.GetView(0).Width, p.GetView(0).Height)
-		SetImageViewTag(iv)
-		Dim consumer As ImageConsumer = iv.Tag
-		consumer.IsVisible = True
-		ImagesCache1.SetImage(User.Avatar, iv.Tag, ImagesCache1.RESIZE_NONE)
-	End If
-End Sub
 
 Private Sub DialogSetLightTheme
 	Dim TextColor As Int = 0xFF5B5B5B
@@ -420,7 +372,7 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 		Dim DialogListOfStatuses As ListOfStatuses
 		DialogListOfStatuses.Initialize(Me, "Statuses", CreatePanelForDialog)
 	End If
-	DialogListOfStatuses.Refresh2(User, Link, False)
+	DialogListOfStatuses.Refresh2(User, Link, False, False)
 	Wait For (ShowDialogWithoutButtons(DialogListOfStatuses.Root, False)) Complete (Result As Int)
 	For Each v As B4XView In DialogListOfStatuses.Root.GetAllViewsRecursive
 		v.Enabled = True
@@ -449,7 +401,7 @@ Private Sub LinkClickedShared (Link As PLMLink)
 	Else If Link.LINKTYPE = LINKTYPE_THREAD Then
 		ShowThreadInDialog(Link)
 	Else
-		Statuses.Refresh2(User, Link, True)
+		Statuses.Refresh2(User, Link, True, False)
 	End If
 End Sub
 
@@ -486,6 +438,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 		DialogContainer.AddView(pnl, 0, 0, DialogContainer.Width, DialogContainer.Height)
 		DialogBtnExit.BringToFront
 	End If
+	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height
 	Dim rs As Object = Dialog.ShowCustom(DialogContainer, "", "", "")
 	Dialog.VisibleAnimationDuration = 0
 	#if B4i
@@ -527,19 +480,11 @@ Public Sub PerformHapticFeedback
 	#end if
 End Sub
 
-Private Sub Statuses_StackPush (Extra As Map)
-	Extra.Put("selected", lstDrawerSelections.SelectableItems.AsList.Get(0))
-End Sub
-
-Private Sub Statuses_StackPop (Extra As Map)
-	Dim selected As Int = Extra.Get("selected")
-	lstDrawerSelections.SelectAndMakeVisible(selected)
-End Sub
-
 Private Sub Statuses_TitleChanged (Title As String)
 	Dim st As ListOfStatuses = Sender
 	If st = DialogListOfStatuses Then Return
 	B4XPages.SetTitle(Me, AppName & " - " & Title)
+	DrawerManager1.StackChanged
 End Sub
 
 

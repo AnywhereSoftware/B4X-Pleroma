@@ -6,8 +6,6 @@ Version=8.3
 @EndOfDesignText@
 #Event: AvatarClicked (Account As PLMAccount)
 #Event: LinkClicked (URL As String)
-#Event: StackPush (Extra As Map)
-#Event: StackPop (Extra As Map)
 #Event: TitleChanged (Title As String)
 Sub Class_Globals
 	Private CLV As CustomListView
@@ -45,30 +43,39 @@ Public Sub Resize (Width As Int, Height As Int)
 End Sub
 
 Public Sub Refresh
-	Refresh2(feed.user, feed.mLink, False)
+	Refresh2(feed.user, feed.mLink, False, False)
 End Sub
 
-Public Sub Refresh2 (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean)
-	RefreshImpl(User, NewLink, AddCurrentToStack, False)
+Public Sub Refresh2 (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GetFromStackIfAvailable As Boolean)
+	If GetFromStackIfAvailable And Stack.Stack.ContainsKey(NewLink.Title) Then
+		Dim item As StackItem = Stack.Stack.Get(NewLink.Title)
+		Stack.Stack.Remove(NewLink.Title)
+		RefreshImpl(User, Null, AddCurrentToStack, item)
+	Else
+		RefreshImpl(User, NewLink, AddCurrentToStack, Null)
+	End If
 End Sub
 
-Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, Back As Boolean)
+Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GoToItem As StackItem)
 	btnBack.Visible = False
 	If AddCurrentToStack Then
-		Dim extra As Map = CreateMap()
-		CallSub2(mCallBack, mEventName & "_StackPush", extra)
-		Stack.Push(feed, CLV, extra)
+		If GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title Then
+			Stack.Push(feed, CLV)
+		End If
 	End If
 	Wait For (StopAndClear) Complete (unused As Boolean)
-	If Back Then
-		Dim StackItem As StackItem = Stack.Pop(feed, Me)
-		NewLink = StackItem.Link
-		CallSub2(mCallBack, mEventName & "_StackPop", StackItem.Extra)
+	If GoToItem <> Null Then
+		NewLink = GoToItem.Link
+		feed.user = GoToItem.User
+		feed.server = GoToItem.Server
+		feed.mLink = GoToItem.Link
+		feed.Statuses = GoToItem.Statuses
+		CreateItemsFromStack(GoToItem.CLVItems, GoToItem.CurrentScrollOffset)
 	Else
 		feed.user = User
 		feed.mLink = NewLink
 	End If
-	feed.Start (Back)
+	feed.Start (GoToItem <> Null)
 	CallSub2(mCallBack, mEventName & "_TitleChanged", NewLink.Title)
 	If CLV.Size = 0 Then
 		AddMoreItems
@@ -91,8 +98,12 @@ Public Sub StopAndClear As ResumableSub
 	Return True
 End Sub
 
+
 Private Sub GoBack
-	RefreshImpl(Null, Null, False, True)
+	Dim items As B4XOrderedMap = Stack.Stack
+	Dim LastItem As StackItem = items.Get(items.Keys.Get(items.Keys.Size - 1))
+	Stack.Stack.Remove(LastItem.Link.Title)
+	RefreshImpl(Null, Null, False, LastItem)
 End Sub
 
 Public Sub CreateItemsFromStack(Items As List, Offset As Int)

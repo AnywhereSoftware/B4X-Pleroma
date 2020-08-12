@@ -12,7 +12,7 @@ End Sub
 Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated(0, 0, 0, width, 30dip)
-	mBase.SetColorAndBorder(0xFF7F7F7F, 0, 0, 2dip)
+	mBase.SetColorAndBorder(0xFF7F7F7F, 0, 0, 1dip)
 	Dim lbl As Label
 	lbl.Initialize("")
 	Dim xlbl As B4XView = lbl

@@ -211,6 +211,7 @@ Public Sub VerifyUser As ResumableSub
 		Dim m As Map = p.NextObject
 		user.DisplayName = m.Get("display_name")
 		user.Avatar = m.Get("avatar")
+		user.Id = m.Get("id")
 	Else
 		Log(j.ErrorMessage)
 	End If

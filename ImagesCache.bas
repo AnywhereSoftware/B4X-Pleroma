@@ -149,6 +149,7 @@ Private Sub CallSetBitmap(Consumer As ImageConsumer)
 	If cb.IsGif Then
 		If Target.Parent.IsInitialized = False Then Return
 		Consumer.GifTarget = GetGifView
+		Consumer.GifTarget.mBase.RemoveViewFromParent
 		Target.Parent.AddView(Consumer.GifTarget.mBase, Target.Left, Target.Top, Target.Width, Target.Height)
 		Consumer.GifTarget.Base_Resize(Target.Width, Target.Height)
 		Try
@@ -162,7 +163,7 @@ Private Sub CallSetBitmap(Consumer As ImageConsumer)
 	If Target.Parent.IsInitialized And Consumer.PanelColor <> 0 Then
 		Target.Parent.Color = Consumer.PanelColor
 	End If
-	If Consumer.NoAnimation = False and Target.Parent.IsInitialized Then
+	If Consumer.NoAnimation = False And Target.Parent.IsInitialized Then
 		Target.Parent.Visible = False
 		Target.Parent.SetVisibleAnimated(100, True)
 	End If
@@ -200,7 +201,9 @@ Private Sub GetImage (Url As String, Consumer As ImageConsumer) As ResumableSub
 		CurrentlyDownloadingIds.Put(MyWaitingId, Url)
 		Wait For (j) JobDone(j As HttpJob)
 		If Consumer.WaitingId = MyWaitingId And j.Success Then
+			
 			Dim ContentType As String = j.Response.ContentType
+			Log(ContentType)
 			Dim IsGif As Boolean = ContentType = "image/gif"
 			Dim ShouldLoadRegularImage As Boolean = True
 			If IsGif Then
@@ -223,6 +226,11 @@ Private Sub GetImage (Url As String, Consumer As ImageConsumer) As ResumableSub
 				Wait For (ImagesLoader.LoadFromHttpJob(j, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE)) Complete (bmp As B4XBitmap)
 			End If
 			If bmp.IsInitialized Then
+				#if B4A
+				If ContentType = "image/jpeg" Then
+					bmp = RotateJpegIfNeeded(bmp, j)
+				End If
+				#end if
 				res = CreateImageCacheBmp(bmp, Url)
 				res.ReferenceCount = res.ReferenceCount + 1
 				res.IsGif  = IsGif
@@ -274,6 +282,21 @@ Private Sub LoadGif (job As HttpJob) As ResumableSub
 	End If
 	#End If
 End Sub
+
+#if B4A
+Private Sub RotateJpegIfNeeded (bmp As B4XBitmap, job As HttpJob) As B4XBitmap
+	Dim p As Phone
+	If p.SdkVersion >= 24 Then
+		Dim ExifInterface As JavaObject
+		Dim in As InputStream = job.GetInputStream
+		ExifInterface.InitializeNewInstance("android.media.ExifInterface", Array(in))
+		Dim orientation As Int = ExifInterface.RunMethod("getAttribute", Array("Orientation"))
+		Log(orientation)
+		in.Close
+	End If
+	Return bmp
+End Sub
+#End If
 
 Private Sub ClearCache
 	For Each ic As CachedBitmap In Cache.Values
