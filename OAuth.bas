@@ -45,13 +45,13 @@ Public Sub RegisterApp  As ResumableSub
 	Wait For (j) JobDone (j As HttpJob)
 	If j.Success Then
 		Try
-			Dim parser As JSONParser
-			parser.Initialize(j.GetString)
-			Dim m As Map = parser.NextObject
-			server.AppClientId = m.Get("client_id")
-			server.AppClientSecret = m.Get("client_secret")
-			Log("server client id and secret set.")
-			B4XPages.MainPage.PersistUserAndServers
+			Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
+			If m.IsInitialized Then
+				server.AppClientId = m.Get("client_id")
+				server.AppClientSecret = m.Get("client_secret")
+				Log("server client id and secret set.")
+				B4XPages.MainPage.PersistUserAndServers
+			End If
 		Catch
 			Log(LastException)
 		End Try
@@ -169,19 +169,19 @@ Private Sub GetTokenFromAuthorizationCode (Code As String)
 		
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
-		Dim p As JSONParser
-		p.Initialize(j.GetString)
-		Dim m As Map = p.NextObject
-		user.AccessToken = m.Get("access_token")
-		user.MeURL = m.Get("me")
-		VerifyUser
-		j.Release
-		Wait For (VerifyUser) Complete (Success As Boolean)
-		RaiseEvent(Success)
-	Else
-		j.Release
-		RaiseEvent(False)
+		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
+		If m.IsInitialized Then
+			user.AccessToken = m.Get("access_token")
+			user.MeURL = m.Get("me")
+			VerifyUser
+			Wait For (VerifyUser) Complete (Success As Boolean)
+			j.Release
+			RaiseEvent(m.IsInitialized)
+			Return
+		End If
 	End If
+	j.Release
+	RaiseEvent(False)
 End Sub
 
 Private Sub RaiseEvent(Success As Boolean)
@@ -203,18 +203,27 @@ Public Sub VerifyUser As ResumableSub
 	Dim j As HttpJob
 	j.Initialize("", Me)
 	j.Download(server.URL & "/api/v1/accounts/verify_credentials")
-	j.GetRequest.SetHeader("Authorization", "Bearer " & user.AccessToken)
+	AddAuthorization(j)
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
-		Dim p As JSONParser
-		p.Initialize(j.GetString)
-		Dim m As Map = p.NextObject
-		user.DisplayName = m.Get("display_name")
-		user.Avatar = m.Get("avatar")
-		user.Id = m.Get("id")
+		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
+		If m.IsInitialized Then
+			user.DisplayName = m.Get("display_name")
+			user.Avatar = m.Get("avatar")
+			user.Id = m.Get("id")
+		Else
+			j.Success = False
+		End If
 	Else
 		Log(j.ErrorMessage)
 	End If
 	j.Release
 	Return j.Success
+End Sub
+
+Public Sub AddAuthorization (job As HttpJob)
+	Dim user As PLMUser = B4XPages.MainPage.User
+	If user.SignedIn Then
+		job.GetRequest.SetHeader("Authorization", "Bearer " & user.AccessToken)
+	End If
 End Sub

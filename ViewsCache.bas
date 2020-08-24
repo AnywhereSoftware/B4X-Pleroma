@@ -14,11 +14,13 @@ Sub Class_Globals
 	Private VideoPlayer1 As VideoPlayer
 	#end if
 	Private ImageViews As Map
+	Private CardViews As Map
 End Sub
 
 Public Sub Initialize
 	VideoPlayers.Initialize	
 	ImageViews.Initialize
+	CardViews.Initialize
 End Sub
 
 Public Sub GetVideoPlayer As Object
@@ -36,6 +38,19 @@ Public Sub GetImageView As B4XView
 		Return B4XPages.MainPage.CreateImageView
 	End If
 	Return iv
+End Sub
+
+Public Sub GetCardView As CardView
+	Dim c As CardView = GetFromMap(CardViews)
+	If c = Null Then
+		Dim c As CardView
+		c.Initialize
+	End If
+	Return c
+End Sub
+
+Public Sub ReleaseCardView (cv As CardView)
+	CardViews.Put(cv, False)
 End Sub
 
 Public Sub ReleaseImageView(iv As B4XView)

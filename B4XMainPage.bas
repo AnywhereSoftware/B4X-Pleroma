@@ -24,7 +24,7 @@ Sub Class_Globals
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.09
+	Public VERSION As Float = 1.10
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
@@ -53,6 +53,11 @@ Sub Class_Globals
 	Private DialogBtnExit As B4XView
 	Private DialogIndex As Int
 	Private DrawerManager1 As DrawerManager
+	Public Toast As BCToast
+	Private AnotherProgressBar1 As AnotherProgressBar
+	Private ProgressCounter As Int
+	Private MadeWithLove1 As MadeWithLove
+	
 End Sub
 
 Public Sub Initialize
@@ -153,6 +158,11 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	sp.InnerNode = InnerPanel
 	InnerPanel.SetLayoutAnimated(0, 0, 0, DialogContainer.Width, DialogContainer.Height)
 	#End If
+	Toast.Initialize(Root)
+	Toast.pnl.Color = xui.Color_Black
+	Toast.DefaultTextColor = xui.Color_White
+	Sleep(4000)
+	MadeWithLove1.mBase.SetVisibleAnimated(300, False)
 End Sub
 
 Private Sub CreateServersList
@@ -297,8 +307,15 @@ Public Sub SignOut
 	DrawerManager1.UpdateLeftDrawerList
 End Sub
 
-Private Sub ShowMessage(str As String)
-	xui.MsgboxAsync(str, AppName)
+Public Sub MakeSureThatUserSignedIn As Boolean
+	If User.SignedIn = False Then
+		B4XPages.MainPage.ShowMessage("Please sign in first")
+	End If
+	Return User.SignedIn
+End Sub
+
+Public Sub ShowMessage(str As String)
+	Toast.Show(str)
 End Sub
 
 Private Sub VerifyUser
@@ -379,7 +396,7 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 End Sub
 
 Private Sub Statuses_LinkClicked (Link As PLMLink)
-	B4XPages.MainPage.PerformHapticFeedback
+	XUIViewsUtils.PerformHapticFeedback(Root)
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
 	LinkClickedShared(Link)
@@ -467,16 +484,7 @@ Public Sub ShowExternalLink (link As String)
 	#end if
 End Sub
 
-Public Sub PerformHapticFeedback
-   #if B4A
-	Dim jo As JavaObject = Root
-	jo.RunMethod("performHapticFeedback", Array(1))
-	#Else if B4i
-	If FeedbackGenerator.IsInitialized Then
-		FeedbackGenerator.RunMethod("impactOccurred", Null)
-	End If
-	#end if
-End Sub
+
 
 Private Sub Statuses_TitleChanged (Title As String)
 	Dim st As ListOfStatuses = Sender
@@ -488,4 +496,18 @@ End Sub
 
 Private Sub DialogBtnExit_Click
 	Dialog.Close(xui.DialogResponse_Cancel)
+End Sub
+
+Public Sub ShowProgress
+	ProgressCounter = ProgressCounter + 1
+	If ProgressCounter = 1 Then
+		AnotherProgressBar1.Visible = True
+	End If
+End Sub
+
+Public Sub HideProgress
+	ProgressCounter = ProgressCounter - 1
+	If ProgressCounter = 0 Then
+		AnotherProgressBar1.Visible = False
+	End If
 End Sub

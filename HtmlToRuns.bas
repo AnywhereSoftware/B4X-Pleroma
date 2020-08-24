@@ -54,16 +54,20 @@ Private Sub HandleLeaf (Leaf As HtmlNode)
 		Return
 	End If
 
-	
-	Dim Run As BCTextRun = mTextEngine.CreateRun(Text)
-	Run.TextColor = mData.DefaultColor
-	Run.TextFont = mData.DefaultFont
-	Runs.Add(Run)
-	If Leaf.Name = "a" Then
-		mData.URLs.Put(Run, mHtmlParser.GetAttributeValue(Leaf, "href", ""))
-		Run.Underline = True
-		Run.TextColor = mData.UrlColor
-	End If
+	Try
+		Dim Run As BCTextRun = mTextEngine.CreateRun(Text)
+		Run.TextColor = mData.DefaultColor
+		Run.TextFont = mData.DefaultFont
+		Runs.Add(Run)
+		If Leaf.Name = "a" Then
+			mData.URLs.Put(Run, mHtmlParser.GetAttributeValue(Leaf, "href", ""))
+			Run.Underline = True
+			Run.TextColor = mData.UrlColor
+		End If
+	Catch
+		Log("*****    Handle Leaf Error ****: " & Text)
+		Log(LastException)
+	End Try
 '	Dim Nodes(Depth) As Object
 '	Dim n As HtmlNode = Leaf
 '	For i = 0 To Depth - 1

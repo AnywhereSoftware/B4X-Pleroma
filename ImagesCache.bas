@@ -203,7 +203,6 @@ Private Sub GetImage (Url As String, Consumer As ImageConsumer) As ResumableSub
 		If Consumer.WaitingId = MyWaitingId And j.Success Then
 			
 			Dim ContentType As String = j.Response.ContentType
-			Log(ContentType)
 			Dim IsGif As Boolean = ContentType = "image/gif"
 			Dim ShouldLoadRegularImage As Boolean = True
 			If IsGif Then
@@ -291,7 +290,6 @@ Private Sub RotateJpegIfNeeded (bmp As B4XBitmap, job As HttpJob) As B4XBitmap
 		Dim in As InputStream = job.GetInputStream
 		ExifInterface.InitializeNewInstance("android.media.ExifInterface", Array(in))
 		Dim orientation As Int = ExifInterface.RunMethod("getAttribute", Array("Orientation"))
-		Log(orientation)
 		in.Close
 	End If
 	Return bmp
@@ -377,10 +375,8 @@ Private Sub GetGifView As B4XGifView
 	If GifViews.Size > 0 Then
 		Dim gif As B4XGifView = GifViews.Get(0)
 		GifViews.RemoveAt(0)
-		Log("resuse gif view")
 		Return gif
 	End If
-	Log("create new gif view")
 	Dim pnl As B4XView = xui.CreatePanel("")
 	pnl.SetLayoutAnimated(0, 0, 0, 102dip, 102dip)
 	pnl.LoadLayout("GifView")

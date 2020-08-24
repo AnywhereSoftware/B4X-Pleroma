@@ -18,6 +18,8 @@ Sub Class_Globals
 	Private BBListItem1 As BBListItem
 	Private pnlLine As B4XView
 	Private mAccount As PLMAccount
+	Private btnFollow As B4XView
+	Private tu As TextUtils
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -35,6 +37,7 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	jo.RunMethod("setAlpha", Array(alpha))
 	#End If
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
+	tu = B4XPages.MainPage.TextUtils1
 End Sub
 
 Public Sub SetContent(Account As PLMAccount)
@@ -79,6 +82,42 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
+	UpdateButtons
+End Sub
+
+Private Sub UpdateButtons
+	btnFollow.Visible = False
+	If mAccount.RelationshipAdded = False Then
+		Log("fetching relationship")
+		Dim a As PLMAccount = mAccount
+		B4XPages.MainPage.ShowProgress
+		Wait For (B4XPages.MainPage.TextUtils1.AddRelationship(mAccount)) Complete (Unused As Boolean)
+		B4XPages.MainPage.HideProgress
+		If a <> mAccount Then Return
+	End If
+	If mAccount.Following Then
+		btnFollow.Text = "Unfollow"
+	Else If mAccount.FollowRequested Then
+		btnFollow.Text = "Requested"
+	Else
+		btnFollow.Text = "Follow"
+	End If
+	Log(btnFollow.Text)
+	btnFollow.Visible = True
+End Sub
+
+
+Private Sub btnFollow_Click
+	Dim a As PLMAccount = mAccount
+	Wait For (tu.FollowOrUnfollow(mAccount)) Complete (unused As Boolean)
+	If a <> mAccount Then Return
+	UpdateButtons
+	If mAccount.Following = False And mAccount.FollowRequested Then
+		Sleep(1000)
+		Wait For (tu.AddRelationship(mAccount)) Complete (unused As Boolean)
+		If a <> mAccount Then Return
+		UpdateButtons
+	End If
 End Sub
 
 Private Sub TableRow(Field1 As String, Field2 As String, Field3 As String) As String

@@ -5,11 +5,10 @@ Type=Class
 Version=8.3
 @EndOfDesignText@
 #Event: AvatarClicked (Account As PLMAccount)
-#Event: LinkClicked (URL As String)
+#Event: LinkClicked (URL As PLMLink)
 #Event: TitleChanged (Title As String)
 Sub Class_Globals
 	Private CLV As CustomListView
-	Private AnotherProgressBar1 As AnotherProgressBar
 	Private UsedStatusViews, UnusedStatusViews As B4XSet
 	Private WaitingForItems As Boolean
 	Public Root As B4XView 'ignore
@@ -24,6 +23,7 @@ Sub Class_Globals
 	Public Stack As StackManager
 	Private btnBack As B4XView
 	Private AccountView1 As AccountView
+	Private LastScrollPosition As Int
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
@@ -122,7 +122,14 @@ Public Sub GetCurrentIndex As Int
 	Return CLV.LastVisibleIndex
 End Sub
 
-Public Sub IsWaitingForItems As Boolean
+Public Sub TickAndIsWaitingForItems As Boolean
+	If LastScrollPosition = Floor(CLV.sv.ScrollViewOffsetY) Then
+		If WaitingForItems = False And CLV.LastVisibleIndex + 30 > CLV.Size Then 
+'			B4XPages.SetTitle(B4XPages.MainPage, "adding: " & DateTime.Now)
+			AddMoreItems
+		End If
+	End If
+	LastScrollPosition = CLV.sv.ScrollViewOffsetY
 	Return WaitingForItems Or feed.Statuses.Size < CLV.Size + 30
 End Sub
 
@@ -137,13 +144,16 @@ Private Sub AddMoreItems
 	If AreThereMoreItems = False Then Return
 	WaitingForItems = True
 	Dim MyRefreshIndex As Int = RefreshIndex
+	Dim ProgressBar As Boolean
 	If CLV.LastVisibleIndex = CLV.Size - 1 Then
-		AnotherProgressBar1.Visible = True
+		ProgressBar = True
+		B4XPages.MainPage.ShowProgress
 	End If
 	Do Until feed.Statuses.Size > CLV.Size
 		Sleep(100)
 		If MyRefreshIndex <> RefreshIndex Then
 			WaitingForItems = False
+			If ProgressBar Then B4XPages.MainPage.HideProgress
 			Return
 		End If
 	Loop
@@ -165,13 +175,13 @@ Private Sub AddMoreItems
 		CallSub2(ContentView, "SetVisibility", IsVisible(i, CLV.FirstVisibleIndex, CLV.LastVisibleIndex))
 		
 		If i = 5 And NewList Then Exit
-		If CLV.LastVisibleIndex < CLV.Size - 1 Then
-			Sleep(100)
-		End If
+'		If CLV.LastVisibleIndex < CLV.Size - 1 Then
+'			Sleep(100)
+'		End If
 	Next
 	StopScroll
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
-	AnotherProgressBar1.Visible = False
+	If ProgressBar Then B4XPages.MainPage.HideProgress
 	WaitingForItems = False
 End Sub
 
@@ -374,5 +384,5 @@ End Sub
 
 Private Sub btnBack_Click
 	GoBack
-	B4XPages.MainPage.PerformHapticFeedback
+	XUIViewsUtils.PerformHapticFeedback(Root)
 End Sub

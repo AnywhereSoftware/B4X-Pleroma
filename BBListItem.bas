@@ -27,8 +27,10 @@ Sub Class_Globals
 	Public TextIndex As Int
 	Private WaitingForDrawing As Boolean
 	Private URLToLines As Map
-	Type BCURLExtraData (Lines As List)
-	Public WordWrap as Boolean = True
+	Type BCURLExtraData (LineS As List)
+	Public WordWrap As Boolean = True
+	Public LineSpacingFactor As Float = 1
+	Private UpdateOffsetY, UpdateHeight as Int
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -109,10 +111,6 @@ Public Sub getTextEngine As BCTextEngine
 	Return mTextEngine
 End Sub
 
-Public Sub SetHtml(Html As HtmlNode, Emojis As List)
-	PrepareBeforeRuns
-	SetRuns(B4XPages.MainPage.TextUtils1.HtmlConverter.ConvertHtmlToRuns(Html, ParseData, Emojis))
-End Sub
 
 Public Sub PrepareBeforeRuns
 	TextIndex = TextIndex + 1
@@ -121,7 +119,7 @@ Public Sub PrepareBeforeRuns
 	ParseData.Text = mText
 	ParseData.URLs.Clear
 	ParseData.Width = (mBase.Width - Padding.Left - Padding.Right)
-	ParseData.DefaultColor = 0xFF393939
+	ParseData.DefaultColor = Constants.ColorDefaultText
 	ParseData.UrlColor = B4XPages.MainPage.TextUtils1.UrlColor
 	URLToLines.Clear
 	mBase.RemoveAllViews
@@ -139,7 +137,13 @@ Public Sub getText As String
 	Return mText
 End Sub
 
+Public Sub UpdateLastVisibleRegion
+	UpdateVisibleRegion(UpdateOffsetY, UpdateHeight)
+End Sub
+
 Public Sub UpdateVisibleRegion (OffsetY As Int, Height As Int)
+	UpdateOffsetY = OffsetY
+	UpdateHeight = Height
 	RenderIndex = RenderIndex + 1
 	Dim MyRenderIndex As Int = RenderIndex
 	Dim MyTextIndex As Int = TextIndex
@@ -222,6 +226,7 @@ Private Sub Redraw
 	Style.MaxWidth = mBase.Width
 	Style.ResizeHeightAutomatically = True
 	Style.WordWrap = WordWrap
+	Style.LineSpacingFactor = LineSpacingFactor
 	CleanExistingImageViews(False, UsedImageViews.Keys, 0, 0)
 	UsedImageViews.Clear
 	Paragraph = mTextEngine.PrepareForLazyDrawing(mRuns, Style, StubScrollView)

@@ -23,13 +23,11 @@ Sub Class_Globals
 	Private MediaSize As Int = 300dip
 	Private BBListItem1 As BBListItem
 	Private bbTop As BBListItem
-	Private BBLightGray As String = 0xFF585858
-	Private lblReblog As B4XView
-	Private lblReplies As B4XView
-	Private lblFavourites As B4XView
 	Public ListIndex As Int
 	Private ImagesCache1 As ImagesCache
 	Private TopFont As B4XFont
+	Private BBBottom As BBListItem
+	Private tu As TextUtils
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -37,13 +35,14 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	mCallBack = Callback
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
 	TopFont = xui.CreateDefaultFont(12)
+	tu = B4XPages.MainPage.TextUtils1
 End Sub
 
 Public Sub Create (Base As B4XView)
 	mBase = Base
     Tag = mBase.Tag
     mBase.Tag = Me 
-	mTextEngine = B4XPages.MainPage.TextUtils1.TextEngine
+	mTextEngine = tu.TextEngine
 	mBase.LoadLayout("StatusViewImpl")
 	mBase.Tag = Me 'need to be set again as the previous layout will overwrite it.
 	BBListItem1.TextEngine = mTextEngine
@@ -54,6 +53,7 @@ Public Sub Create (Base As B4XView)
 	jo.RunMethod("setFocusTraversable", Array(False)) 'prevent the "time" button from stealing the keyboard focus which causes the list to scroll unintentionally.
 	#End If
 	bbTop.TextEngine = mTextEngine
+	BBBottom.TextEngine = mTextEngine
 	B4XPages.MainPage.SetImageViewTag(imgAvatar)
 	imgAvatar.SetColorAndBorder(xui.Color_Transparent, 0, 0, 5dip)
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
@@ -66,15 +66,102 @@ Public Sub SetContent (Status As PLMStatus)
 	SetTopText
 	SetBottomPanel
 	BBListItem1.Tag = ListIndex
-	BBListItem1.SetHtml(Status.Content.RootHtmlNode, Status.Emojis)
+	SetBBListContent
 	SetTime
 	ImagesCache1.SetImage(mStatus.Account.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
-	Dim h As Int = BBListItem1.mBase.Height + 5dip * 2
+	Dim h As Int = BBListItem1.mBase.Height + 8dip * 2
 	h = h + HandleAttachments
 	pnlMedia.Top = BBListItem1.mBase.Top + BBListItem1.mBase.Height + 5dip
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
 	pnlBottom.Top = mBase.Height - pnlBottom.Height
 End Sub
+
+Private Sub SetBBListContent
+	BBListItem1.ReleaseInlineImageViews
+	BBListItem1.PrepareBeforeRuns
+	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(mStatus.Content.RootHtmlNode, BBListItem1.ParseData, mStatus.Emojis)
+	If mStatus.EmojiReactions.IsInitialized And mStatus.EmojiReactions.Size > 0 Then
+		EmojiReactions(runs)
+	End If
+	BBListItem1.SetRuns(runs)
+End Sub
+
+Private Sub EmojiReactions (Runs As List)
+	Runs.Add(tu.TextEngine.CreateRun(CRLF & CRLF))
+	For Each m As Map In mStatus.EmojiReactions
+		Dim IsMe As Boolean = m.Get("me") = True
+		Dim action As String
+		If IsMe Then
+			action = "~emoji_delete:"
+		Else
+			action ="~emoji_put:"
+		End If
+		Dim r As BCTextRun = tu.CreateUrlRun(action & m.Get("name") , m.Get("name") & tu.NBSP & m.Get("count"), BBListItem1.ParseData)
+		r.TextColor = GetIsUserColor(IsMe)
+		Runs.Add(r)
+		Runs.Add(tu.TextEngine.CreateRun("  "))
+	Next
+End Sub
+
+
+Private Sub FavouriteClick
+	XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
+	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
+	B4XPages.MainPage.ShowProgress
+	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}/"$
+	If mStatus.Favourited Then
+		link = link & "unfavourite"
+	Else
+		link = link & "favourite"
+	End If
+	Dim s As PLMStatus = mStatus
+	Dim j As HttpJob
+	j.Initialize("", Me)
+	j.PostString(link, "")
+	B4XPages.MainPage.auth.AddAuthorization(j)
+	Wait For (j) JobDone (j As HttpJob)
+	If j.Success Then
+		Wait For (tu.DownloadStatus(mStatus.id)) Complete (status As PLMStatus)
+		If s = mStatus And status <> Null Then
+			mStatus.Favourited = status.Favourited
+			mStatus.FavouritesCount = status.FavouritesCount
+			SetBottomPanel
+		End If
+	End If
+	j.Release
+	B4XPages.MainPage.HideProgress
+End Sub
+
+Private Sub EmojiClick (url As String)
+	XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
+	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
+	B4XPages.MainPage.ShowProgress
+	Dim emoji As String = url.SubString(url.IndexOf(":") + 1)
+	Dim su As StringUtils
+	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/pleroma/statuses/${mStatus.id}/reactions/${su.EncodeUrl(emoji, "utf8")}"$
+	Dim j As HttpJob
+	j.Initialize("", Me)
+	Dim s As PLMStatus = mStatus
+	If url.StartsWith("~emoji_delete:") Then
+		j.Delete(link)
+	Else
+		j.PutString(link, "")
+	End If
+	B4XPages.MainPage.auth.AddAuthorization(j)
+	Wait For (j) JobDone (j As HttpJob)
+	j.Release
+	If s = mStatus Then
+		Wait For (tu.DownloadStatus(mStatus.id)) Complete (status As PLMStatus)
+		If status <> Null And s = mStatus Then
+			mStatus.EmojiReactions = status.EmojiReactions
+			SetBBListContent
+			BBListItem1.UpdateLastVisibleRegion
+		End If
+	End If
+	B4XPages.MainPage.HideProgress
+End Sub
+
+
 
 Public Sub SetVisibility (visible As Boolean)
 	Dim cache As ImagesCache = B4XPages.MainPage.ImagesCache1
@@ -82,6 +169,9 @@ Public Sub SetVisibility (visible As Boolean)
 	For Each x As B4XView In pnlMedia.GetAllViewsRecursive
 		If x.Tag Is ImageConsumer Then
 			cache.SetConsumerVisibility(x.Tag, visible)
+		Else If x.Tag Is CardView Then
+			Dim cv As CardView = x.Tag
+			cv.SetVisibility(visible)
 		End If
 	Next
 	BBListItem1.ChangeVisibility(visible)
@@ -92,7 +182,17 @@ Private Sub SetTopText
 	bbTop.PrepareBeforeRuns
 	Dim runs As List
 	runs.Initialize
-	Dim tu As TextUtils = B4XPages.MainPage.TextUtils1
+	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey("reblog") Then
+		Dim reblog As PLMAccount = mStatus.ExtraContent.Get("reblog")
+		runs.Add(tu.CreateRun(Chr(0xF079) & " ", xui.CreateFontAwesome(12)))
+		runs.Add(tu.CreateUrlRun("@@" &reblog.Id, "by " & reblog.Acct, bbTop.ParseData))
+		runs.Add(mTextEngine.CreateRun(CRLF))
+		For i = 0 To runs.Size - 1
+			Dim r As BCTextRun = runs.Get(i)
+			r.TextColor = Constants.ColorDefaultText
+			If i > 0 Then r.TextFont = TopFont
+		Next
+	End If
 	tu.TextWithEmojisToRuns(mStatus.Account.DisplayName & " ", runs, mStatus.Account.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
 	Dim r As BCTextRun = tu.CreateUrlRun("@", mStatus.Account.Acct, bbTop.ParseData)
 	r.TextFont = TopFont
@@ -101,12 +201,12 @@ Private Sub SetTopText
 		runs.Add(mTextEngine.CreateRun(CRLF))
 		Dim r As BCTextRun = tu.CreateUrlRun("~time", "" & Chr(0xF064) & " Reply to", bbTop.ParseData)
 		r.TextFont = xui.CreateFontAwesome(12)
-		r.TextColor = BBLightGray
+		r.TextColor = Constants.ColorDefaultText
 		runs.Add(r)
 		runs.Add(mTextEngine.CreateRun(" "))
 		r = tu.CreateUrlRun("@@" & mStatus.InReplyToAccountId, mStatus.InReplyToAccountAcct, bbTop.ParseData)
 		r.TextFont = TopFont
-		r.TextColor = BBLightGray
+		r.TextColor = Constants.ColorDefaultText
 		runs.Add(r)
 	End If
 	bbTop.SetRuns(runs)
@@ -114,13 +214,35 @@ Private Sub SetTopText
 End Sub
 
 Private Sub SetBottomPanel
-	lblReplies.Text = Chr(0xF112) & " " & CountToString(mStatus.RepliesCount)
-	lblFavourites.Text = Chr(0xF006) & " " & CountToString(mStatus.FavouritedCount)
-	lblReblog.Text = Chr(0xF079) & " " & CountToString(mStatus.ReblogsCount)
+	BBBottom.PrepareBeforeRuns
+	Dim fnt As B4XFont = xui.CreateFontAwesome(15)
+	Dim runs As List
+	runs.Initialize
+	Dim r As BCTextRun
+	r = tu.CreateUrlRun("~replies",  " " & Chr(0xF112) & CountToString(mStatus.RepliesCount) & " ", BBBottom.ParseData)
+	r.TextColor = GetIsUserColor(False)
+	runs.Add(r)
+	runs.Add(mTextEngine.CreateRun(TAB))
+	r = tu.CreateUrlRun("~favourites",  " " & Chr(0xF006) & CountToString(mStatus.FavouritesCount) & " ", BBBottom.ParseData)
+	r.TextColor = GetIsUserColor(mStatus.Favourited)
+	runs.Add(r)
+	runs.Add(mTextEngine.CreateRun(TAB))
+	r = tu.CreateUrlRun("~reblog", " " &  Chr(0xF079) & CountToString(mStatus.ReblogsCount) & " ", BBBottom.ParseData)
+	r.TextColor = GetIsUserColor(mStatus.Reblogged)
+	runs.Add(r)
+	For Each r As BCTextRun In runs
+		r.TextFont = fnt
+	Next
+	BBBottom.SetRuns(runs)
+	BBBottom.UpdateVisibleRegion(0, 300dip)
+End Sub
+
+Private Sub GetIsUserColor(b As Boolean) As Int
+	If b Then Return Constants.ColorAlreadyTookAction Else Return Constants.ColorDefaultText
 End Sub
 
 Private Sub CountToString (c As Int) As String
-	If c > 0 Then Return c
+	If c > 0 Then Return " " & c
 	Return ""
 End Sub
 
@@ -136,9 +258,23 @@ Private Sub HandleAttachments As Int
 			
 		End If
 	Next
+	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey("card") Then
+		CardAttachment(mStatus.ExtraContent.Get("card"), h)
+	End If
 	pnlMedia.Height = h(0)
 	pnlMedia.Visible = h(0) > 0
 	Return h(0)
+End Sub
+
+Private Sub CardAttachment (card As Map, h() As Int)
+	Dim stub As PLMMedia
+	stub.TType = "card"
+	Dim cv As CardView = B4XPages.MainPage.ViewsCache1.GetCardView
+	Dim parent As B4XView = CreateAttachmentPanel(stub, h, 100dip, 15dip, cv.ImageView1.Tag)
+	parent.AddView(cv.base, 0, 0, parent.Width, parent.Height)
+	cv.SetCard(card, mCallBack, mEventName)
+	parent.Height = cv.base.Height
+	h(0) = h(0) - 100dip + cv.base.Height
 End Sub
 
 Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
@@ -154,7 +290,9 @@ End Sub
 Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
 	Dim Parent As B4XView = xui.CreatePanel("AttachmentParent")
 	Parent.Color = 0xFFF5F5F5
-	Consumer.PanelColor = xui.Color_White
+	If Consumer <> Null Then
+		Consumer.PanelColor = xui.Color_White
+	End If
 	Parent.Tag = att
 	pnlMedia.AddView(Parent, SideGap, h(0) + 10dip, pnlMedia.Width - 2 * SideGap, Height)
 	h(0) = h(0) + Height + 10dip
@@ -224,7 +362,18 @@ Private Sub BBTOP_LinkClicked (URL As String, Text As String)
 End Sub
 
 Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
-	CallSub2(mCallBack, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.ManageLink(mStatus, mStatus.Account, URL, Text))
+	If URL.StartsWith("~emoji") Then
+		EmojiClick(URL)
+	Else
+		CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(mStatus, mStatus.Account, URL, Text))
+	End If
+End Sub
+
+Private Sub BBBottom_LinkClicked (URL As String, Text As String)
+	
+	If URL.StartsWith("~favourites") Then
+		FavouriteClick
+	End If
 End Sub
 
 Private Sub lblTime_Click
@@ -248,6 +397,9 @@ Public Sub RemoveFromParent
 				#End If
 			playerview.RemoveViewFromParent
 			B4XPages.MainPage.ViewsCache1.ReturnVideoPlayer(playerview)
+		Else If attachment.TType = "card" Then
+			Dim cv As CardView = parent.GetView(0).Tag
+			cv.Release
 		End If
 	Next
 	pnlMedia.RemoveAllViews
@@ -307,3 +459,5 @@ End Sub
 Public Sub GetBase As B4XView
 	Return mBase
 End Sub
+
+
