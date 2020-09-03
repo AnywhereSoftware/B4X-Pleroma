@@ -17,14 +17,15 @@ Sub Class_Globals
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
 		SignedIn As Boolean, Id As String)
-	Public LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5 As Int
+	Public LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
+		LINKTYPE_SEARCH = 6 As Int
 	Private Root As B4XView 'ignore
 	Private xui As XUI 'ignore
 	Public TextUtils1 As TextUtils
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.10
+	Public VERSION As Float = 1.12
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
@@ -42,6 +43,7 @@ Sub Class_Globals
 	Public URL_TAG As String = "/api/v1/timelines/tag/"
 	Public URL_USER As String = "/api/v1/accounts/:id"
 	Public URL_THREAD As String = "/api/v1/statuses/:id/context"
+	Public URL_SEARCH As String = "/api/v2/search/"
 	
 	Private AccountView1 As AccountView
 	Private wvdialog As WebViewDialog
@@ -57,7 +59,10 @@ Sub Class_Globals
 	Private AnotherProgressBar1 As AnotherProgressBar
 	Private ProgressCounter As Int
 	Private MadeWithLove1 As MadeWithLove
-	
+	Private Search As SearchManager
+	Private pnlListDefaultTop As Int
+	Private SignInIndex As Int
+	Private StoreVersion As Float
 End Sub
 
 Public Sub Initialize
@@ -65,6 +70,9 @@ Public Sub Initialize
 	xui.SetDataFolder("b4x_pleroma")
 	Servers.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
+	StoreVersion = store.GetDefault("version", 0)
+	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
+	store.Put("version", VERSION)
 	TextUtils1.Initialize
 	ImagesCache1.Initialize
 	ViewsCache1.Initialize
@@ -84,6 +92,7 @@ End Sub
 Private Sub CreateInitialLinks
 	LINK_PUBLIC = TextUtils1.CreatePLMLink("/api/v1/timelines/public", LINKTYPE_TIMELINE, NumberFormat2(B4XPages.MainPage.VERSION, 0, 2, 2, False))
 	LINK_HOME = TextUtils1.CreatePLMLink("/api/v1/timelines/home", LINKTYPE_TIMELINE, "Home")
+	
 End Sub
 
 Private Sub LoadSavedData
@@ -120,30 +129,15 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcon = xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True)
 	B4XPages.SetTitle(Me, AppName)
-	#if B4A
-	Dim cs As CSBuilder
-	Dim mi As B4AMenuItem = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Chr(0xF021)).PopAll)
-	mi.AddToBar = True
-	mi.Tag = "refresh"
-	#Else if B4i
-	Dim bb As BarButton
-	bb.InitializeBitmap(HamburgerIcon, "hamburger")
-	B4XPages.GetNativeParent(Me).TopLeftButtons = Array(bb)
-	bb.InitializeText("" & Chr(0xF021), "refresh")
-	bb.SetFont(Font.CreateFontAwesome(22))
-	B4XPages.GetNativeParent(Me).TopRightButtons = Array(bb)
-	#Else If B4J
-	Dim iv As ImageView
-	iv.Initialize("imgHamburger")
-	iv.SetImage(HamburgerIcon)
-	Drawer.CenterPanel.AddView(iv, 2dip, 2dip, 32dip, 32dip)
-	iv.PickOnBounds = True
-	#end if
+	CreateMenu
 	Dialog.Initialize(Root)
 	lstTemplate.Initialize
 	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
 	PrefDialog.Dialog.OverlayColor = 0x64000000
 	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
+	If store.ContainsKey("stack") Then
+		Statuses.Stack.SetDataFromStore(store.Get("stack"))
+	End If
 	DrawerManager1.UpdateLeftDrawerList
 	DialogSetLightTheme
 	If Root.Width = 0 Then
@@ -161,8 +155,39 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Toast.Initialize(Root)
 	Toast.pnl.Color = xui.Color_Black
 	Toast.DefaultTextColor = xui.Color_White
+	pnlListDefaultTop = pnlList.Top
+	Search.Initialize(Root.Width)
+	
+	
 	Sleep(4000)
 	MadeWithLove1.mBase.SetVisibleAnimated(300, False)
+	
+End Sub
+
+Private Sub CreateMenu
+	#if B4A
+	Dim cs As CSBuilder
+	Dim mi As B4AMenuItem = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Chr(0xF021)).PopAll)
+	mi.AddToBar = True
+	mi.Tag = "refresh"
+	mi = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Constants.SearchIconChar).PopAll)
+	mi.AddToBar = True
+	mi.Tag = "search"
+	#Else if B4i
+	Dim bb As BarButton
+	bb.InitializeBitmap(HamburgerIcon, "hamburger")
+	B4XPages.GetNativeParent(Me).TopLeftButtons = Array(bb)
+	bb.InitializeSystem(bb.ITEM_REFRESH, "refresh")
+	Dim bb2 As BarButton
+	bb2.InitializeSystem(bb.ITEM_SEARCH, "search")
+	B4XPages.GetNativeParent(Me).TopRightButtons = Array(bb2, bb)
+	#Else If B4J
+	Dim iv As ImageView
+	iv.Initialize("imgHamburger")
+	iv.SetImage(HamburgerIcon)
+	Drawer.CenterPanel.AddView(iv, 2dip, 2dip, 32dip, 32dip)
+	iv.PickOnBounds = True
+	#end if
 End Sub
 
 Private Sub CreateServersList
@@ -182,6 +207,8 @@ Private Sub B4XPage_MenuClick (Tag As String)
 		Drawer.LeftOpen = Not(Drawer.LeftOpen)
 	Else If Tag = "refresh" Then
 		btnRefresh_Click
+	Else If Tag = "search" Then
+		btnSearch_Click
 	End If
 End Sub
 #end if
@@ -236,6 +263,10 @@ Private Sub B4XPage_CloseRequest As ResumableSub
 		Dialog.Close(xui.DialogResponse_Cancel)
 		Return False
 	End If
+	If Search.mBase.Parent.IsInitialized Then
+		btnSearch_Click
+		Return False
+	End If
 	Return Statuses.BackKeyPressedShouldClose
 	#end if
 	Return True 'ignore
@@ -266,18 +297,23 @@ End Sub
 
 
 Public Sub SignIn
+	SignInIndex = SignInIndex + 1
+	Dim MyIndex As Int = SignInIndex
 	lstTemplate.Options = Servers.Keys
 	Dialog.Title = "Select Server"
 	Dialog.ButtonsHeight = 40dip
 	lstTemplate.Resize(300dip, 150dip)
 	lstTemplate.CustomListView1.AsView.Height = 150dip
 	Wait For (Dialog.ShowTemplate(lstTemplate, "", "", "Cancel")) Complete (Result As Int)
+	If SignInIndex <> MyIndex Then Return
 	If Result = xui.DialogResponse_Cancel Then
 		Return
 	End If
+	
 	User.ServerName = lstTemplate.SelectedItem
 	If GetServer.AppClientSecret = "" Then
 		Wait For (auth.RegisterApp) Complete (Success As Boolean)
+		If SignInIndex <> MyIndex Then Return
 		If Success = False Then
 			ShowMessage("Error registering app.")
 			Return
@@ -287,6 +323,7 @@ Public Sub SignIn
 	End If
 	auth.SignIn(User)
 	Wait For Auth_SignedIn (Success As Boolean)
+	If SignInIndex <> MyIndex Then Return
 	If Success Then
 		AfterSignIn
 	Else
@@ -329,7 +366,6 @@ Private Sub AfterSignIn
 	Log("after sign in!")
 	User.SignedIn = True
 	PersistUserAndServers
-	Statuses.Stack.Clear
 	Statuses.Refresh2(User, LINK_HOME, False, False)
 	DrawerManager1.SignIn
 	DrawerManager1.UpdateLeftDrawerList
@@ -388,8 +424,8 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 		DialogListOfStatuses.Initialize(Me, "Statuses", CreatePanelForDialog)
 	End If
 	DialogListOfStatuses.Refresh2(User, Link, False, False)
-	Wait For (ShowDialogWithoutButtons(DialogListOfStatuses.Root, False)) Complete (Result As Int)
-	For Each v As B4XView In DialogListOfStatuses.Root.GetAllViewsRecursive
+	Wait For (ShowDialogWithoutButtons(DialogListOfStatuses.mBase, False)) Complete (Result As Int)
+	For Each v As B4XView In DialogListOfStatuses.mBase.GetAllViewsRecursive
 		v.Enabled = True
 	Next
 	DialogListOfStatuses.StopAndClear
@@ -461,7 +497,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 	#End If
 	Wait For (rs) Complete (Result As Int)
 	pnl.RemoveViewFromParent
-	If xui.IsB4J Then Statuses.Root.RequestFocus
+	If xui.IsB4J Then Statuses.mBase.RequestFocus
 	Return Result
 End Sub
 
@@ -510,4 +546,25 @@ Public Sub HideProgress
 	If ProgressCounter = 0 Then
 		AnotherProgressBar1.Visible = False
 	End If
+End Sub
+
+Public Sub btnSearch_Click
+	Dim listTop As Int
+	If Search.mBase.Parent.IsInitialized Then
+		Search.mBase.RemoveViewFromParent
+		
+		listTop = pnlListDefaultTop
+	Else
+		Dim h As Int = Search.mBase.Height
+		Drawer.CenterPanel.AddView(Search.mBase, 0, pnlListDefaultTop - h, Root.Width, Search.mBase.Height)
+		Search.mBase.SetLayoutAnimated(100, 0, Search.mBase.Top + h, Search.mBase.Width, h)
+		Search.Focus
+		listTop = pnlListDefaultTop + Search.mBase.Height
+	End If
+	Statuses.mBase.SetLayoutAnimated(100, 0, listTop, Root.Width, Root.Height - listTop)
+	Statuses.Resize(Root.Width, Statuses.mBase.Height)
+End Sub
+
+Private Sub B4XPage_Background
+	store.Put("stack", Statuses.Stack.GetDataToStore)
 End Sub

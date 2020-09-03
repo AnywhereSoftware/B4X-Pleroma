@@ -90,7 +90,7 @@ no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorT
 #end if
 End Sub
 
-Private Sub GetFromMap (m As Map) As Object
+Public Sub GetFromMap (m As Map) As Object
 	For Each vp As Object In m.Keys
 		Dim Used As Boolean = m.Get(vp)
 		If Used = False Then
@@ -110,7 +110,13 @@ Public Sub SetCircleClip (pnl As B4XView)
 	circle.InitializeNewInstance("javafx.scene.shape.Circle", Array(cx, cy, radius))
 	Dim jo As JavaObject = pnl
 	jo.RunMethod("setClip", Array(circle))
-#else if B4A
+#else 
+	SetClipToOutline(pnl)
+#End If
+End Sub
+
+Public Sub SetClipToOutline (pnl As B4XView)
+#If B4A
 	Dim jo As JavaObject = pnl
 	jo.RunMethod("setClipToOutline", Array(True))
 #end if

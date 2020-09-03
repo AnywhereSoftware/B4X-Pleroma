@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=UI
+Group=ListItems
 ModulesStructureVersion=1
 Type=Class
 Version=8.3
@@ -185,7 +185,7 @@ Private Sub SetTopText
 	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey("reblog") Then
 		Dim reblog As PLMAccount = mStatus.ExtraContent.Get("reblog")
 		runs.Add(tu.CreateRun(Chr(0xF079) & " ", xui.CreateFontAwesome(12)))
-		runs.Add(tu.CreateUrlRun("@@" &reblog.Id, "by " & reblog.Acct, bbTop.ParseData))
+		runs.Add(tu.CreateUrlRun("~@statuses:" &reblog.Id, "by " & reblog.Acct, bbTop.ParseData))
 		runs.Add(mTextEngine.CreateRun(CRLF))
 		For i = 0 To runs.Size - 1
 			Dim r As BCTextRun = runs.Get(i)
@@ -204,7 +204,7 @@ Private Sub SetTopText
 		r.TextColor = Constants.ColorDefaultText
 		runs.Add(r)
 		runs.Add(mTextEngine.CreateRun(" "))
-		r = tu.CreateUrlRun("@@" & mStatus.InReplyToAccountId, mStatus.InReplyToAccountAcct, bbTop.ParseData)
+		r = tu.CreateUrlRun("~@statuses:" & mStatus.InReplyToAccountId, mStatus.InReplyToAccountAcct, bbTop.ParseData)
 		r.TextFont = TopFont
 		r.TextColor = Constants.ColorDefaultText
 		runs.Add(r)
@@ -272,7 +272,7 @@ Private Sub CardAttachment (card As Map, h() As Int)
 	Dim cv As CardView = B4XPages.MainPage.ViewsCache1.GetCardView
 	Dim parent As B4XView = CreateAttachmentPanel(stub, h, 100dip, 15dip, cv.ImageView1.Tag)
 	parent.AddView(cv.base, 0, 0, parent.Width, parent.Height)
-	cv.SetCard(card, mCallBack, mEventName)
+	cv.SetCard(card, mCallBack, mEventName, mStatus.Attachments)
 	parent.Height = cv.base.Height
 	h(0) = h(0) - 100dip + cv.base.Height
 End Sub
@@ -283,7 +283,7 @@ Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
 	Parent.AddView(iv, 0, 0, 0, 0)
 	Dim url As String = attachment.PreviewUrl
 	If mStatus.Sensitive Then url = B4XPages.MainPage.ImagesCache1.NSFW_URL
-	ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
+	ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
 	If mStatus.Sensitive Then B4XPages.MainPage.ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag)
 End Sub
 
@@ -293,6 +293,8 @@ Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, S
 	If Consumer <> Null Then
 		Consumer.PanelColor = xui.Color_White
 	End If
+	Parent.SetColorAndBorder(Constants.ImageParentColor, 0, 0, 5dip)
+	B4XPages.MainPage.ViewsCache1.SetClipToOutline(Parent)
 	Parent.Tag = att
 	pnlMedia.AddView(Parent, SideGap, h(0) + 10dip, pnlMedia.Width - 2 * SideGap, Height)
 	h(0) = h(0) + Height + 10dip

@@ -10,7 +10,7 @@ Sub Class_Globals
 	Private CurrentlyDownloadingURLs As Map
 	Private CurrentlyDownloadingIds As Map
 	Private CACHE_MAX_SIZE As Int = 20
-	Public const NSFW_URL = "nsfw", MISSING_URL = "missing", PLAY = "play" As String
+	Public const NSFW_URL = "nsfw", MISSING_URL = "missing", PLAY = "play", EMPTY = "empty" As String
 	Private PermCache As B4XOrderedMap
 	Type CachedBitmap (Bmp As B4XBitmap, Url As String, ReferenceCount As Int, IsPermanent As Boolean, IsGif As Boolean, GifFile As String)
 	Type ImageConsumer (CBitmaps As List, WaitingId As Int, Target As B4XView, GifTarget As B4XGifView, IsVisible As Boolean, PanelColor As Int, NoAnimation As Boolean)
@@ -37,7 +37,10 @@ Public Sub Initialize
 	PermCache.Initialize
 	PermCache.Put(NSFW_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "nsfw.74818f9.png"), NSFW_URL))
 	PermCache.Put(MISSING_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "Missing-image-232x150.png"), MISSING_URL))
-	PermCache.Put(PLAY, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "play.png"), MISSING_URL))
+	PermCache.Put(PLAY, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "play.png"), PLAY))
+	PermCache.Put("null", PermCache.Get(MISSING_URL))
+	PermCache.Put("", PermCache.Get(MISSING_URL))
+	PermCache.Put(EMPTY, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "empty.png"), EMPTY))
 	GifViews.Initialize
 	WebPLoader.Initialize
 	For Each cb As CachedBitmap In PermCache.Values
@@ -57,29 +60,42 @@ Public Sub HoldAnotherImage(URL As String, Consumer As ImageConsumer)
 	End If
 End Sub
 
+Public Sub IsImageReady(URL As String) As Boolean
+	Return PermCache.ContainsKey(URL) Or Cache.ContainsKey(URL)	
+End Sub
+
+Public Sub SetPermImageImmediately (URL As String, Consumer As ImageConsumer, ResizeMode As Int)
+	SetImageAfterReady(PermCache.Get(URL), Consumer, ResizeMode)
+End Sub
+
 Public Sub SetImage (Url As String, Consumer As ImageConsumer, ResizeMode As Int)
 	For Each cb As CachedBitmap In Consumer.CBitmaps
 		If cb.IsPermanent = False Then
 			Log("Previous image not released: " & Url & ", " & cb.Url)
 		End If
 	Next
+	Consumer.CBitmaps.Clear
 	WaitingId = WaitingId + 1
 	Dim id As Int =  WaitingId
 	Consumer.WaitingId = id
 	Wait For (GetImage(Url, Consumer)) Complete (Result As CachedBitmap)
 	Result.ReferenceCount = Result.ReferenceCount - 1
 	If Consumer.WaitingId = id Then
-		If ResizeMode = RESIZE_FILLWIDTH Then
-			FillImageViewWidth(Result, Consumer)
-		Else If ResizeMode = RESIZE_FIT Then
-			FitImageView(Result, Consumer)
-		Else If ResizeMode = RESIZE_FILL_NO_DISTORTIONS Then
-			FillNoDistortions(Result, Consumer)
-		Else
-			SetImageAndFillImageView(Result, Consumer)
-		End If
+		SetImageAfterReady(Result, Consumer, ResizeMode)
+	End If
+End Sub
+
+
+Private Sub SetImageAfterReady(Result As CachedBitmap, Consumer As ImageConsumer, ResizeMode As Int)
+
+	If ResizeMode = RESIZE_FILLWIDTH Then
+		FillImageViewWidth(Result, Consumer)
+	Else If ResizeMode = RESIZE_FIT Then
+		FitImageView(Result, Consumer)
+	Else If ResizeMode = RESIZE_FILL_NO_DISTORTIONS Then
+		FillNoDistortions(Result, Consumer)
 	Else
-		'Log("index changed")
+		SetImageAndFillImageView(Result, Consumer)
 	End If
 End Sub
 
@@ -290,6 +306,14 @@ Private Sub RotateJpegIfNeeded (bmp As B4XBitmap, job As HttpJob) As B4XBitmap
 		Dim in As InputStream = job.GetInputStream
 		ExifInterface.InitializeNewInstance("android.media.ExifInterface", Array(in))
 		Dim orientation As Int = ExifInterface.RunMethod("getAttribute", Array("Orientation"))
+		Select orientation
+			Case 3  '180
+				bmp = bmp.Rotate(180)
+			Case 6 '90
+				bmp = bmp.Rotate(90)
+			Case 8 '270
+				bmp = bmp.Rotate(270)
+		End Select
 		in.Close
 	End If
 	Return bmp

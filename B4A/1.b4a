@@ -1,19 +1,22 @@
 ﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
 File1=AccountView.bal
-File10=nsfw.74818f9.png
-File11=play.png
-File12=StatusList.bal
-File13=StatusViewImpl.bal
-File14=VideoPlayer.bal
-File15=WebViewDialog.bal
+File10=MiniAccountView.bal
+File11=Missing-image-232x150.png
+File12=nsfw.74818f9.png
+File13=play.png
+File14=Search.bal
+File15=StatusList.bal
+File16=StatusViewImpl.bal
+File17=VideoPlayer.bal
+File18=WebViewDialog.bal
 File2=CardView.bal
 File3=DialogContainer.bal
-File4=GifView.bal
-File5=hamburger.png
-File6=LeftDrawer.bal
-File7=lstDrawerUser.bal
-File8=MainPage.bal
-File9=Missing-image-232x150.png
+File4=empty.png
+File5=GifView.bal
+File6=hamburger.png
+File7=LeftDrawer.bal
+File8=lstDrawerUser.bal
+File9=MainPage.bal
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -21,6 +24,9 @@ FileGroup12=Default Group
 FileGroup13=Default Group
 FileGroup14=Default Group
 FileGroup15=Default Group
+FileGroup16=Default Group
+FileGroup17=Default Group
+FileGroup18=Default Group
 FileGroup2=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
@@ -40,6 +46,7 @@ Library15=phone
 Library16=b4xpreferencesdialog
 Library17=reflection
 Library18=bctoast
+Library19=firebaseanalytics
 Library2=b4xpages
 Library3=bctextengine
 Library4=json
@@ -48,19 +55,21 @@ Library6=exoplayer
 Library7=b4xgifview
 Library8=minihtmlparser
 Library9=bitmapsasync
-ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="28"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.LightTheme)~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.LightTheme)~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)
 Module1=|relative|..\AccountView
-Module10=|relative|..\OAuth
-Module11=|relative|..\PleromaFeed
-Module12=|relative|..\RequestsManager
-Module13=|relative|..\StackManager
-Module14=Starter
-Module15=|relative|..\StatusView
-Module16=|relative|..\StubView
-Module17=|relative|..\TextUtils
-Module18=|relative|..\ViewsCache
-Module19=|relative|..\WebViewDialog
+Module10=|relative|..\MiniAccountView
+Module11=|relative|..\OAuth
+Module12=|relative|..\PleromaFeed
+Module13=|relative|..\RequestsManager
+Module14=|relative|..\SearchManager
+Module15=|relative|..\StackManager
+Module16=Starter
+Module17=|relative|..\StatusView
+Module18=|relative|..\StubView
+Module19=|relative|..\TextUtils
 Module2=|relative|..\B4XMainPage
+Module20=|relative|..\ViewsCache
+Module21=|relative|..\WebViewDialog
 Module3=|relative|..\BBListItem
 Module4=|relative|..\CardView
 Module5=|relative|..\Constants
@@ -68,15 +77,15 @@ Module6=|relative|..\DrawerManager
 Module7=|relative|..\HtmlToRuns
 Module8=|relative|..\ImagesCache
 Module9=|relative|..\ListOfStatuses
-NumberOfFiles=15
-NumberOfLibraries=18
-NumberOfModules=19
-Version=10
+NumberOfFiles=18
+NumberOfLibraries=19
+NumberOfModules=21
+Version=10.17
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
 	#VersionCode: 1
-	#VersionName: 
+	#VersionName: Test
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False
@@ -87,9 +96,10 @@ Version=10
 	#IncludeTitle: True
 #End Region
 #BridgeLogger: true
-
+#AdditionalJar: com.google.firebase:firebase-crashlytics
 Sub Process_Globals
 	Public ActionBarHomeClicked As Boolean
+	
 End Sub
 
 Sub Globals

@@ -9,11 +9,11 @@ Version=8.3
 #Event: TitleChanged (Title As String)
 Sub Class_Globals
 	Private CLV As CustomListView
-	Private UsedStatusViews, UnusedStatusViews As B4XSet
+	Type StatusesListUsedManager (UsedStatusViews As Map, UnusedStatusViews As B4XSet)
 	Private WaitingForItems As Boolean
-	Public Root As B4XView 'ignore
+	Public mBase As B4XView 'ignore
 	Private xui As XUI 'ignore
-	Private feed As PleromaFeed
+	Public feed As PleromaFeed
 	Private pnlLargeImage As B4XView
 	Type PLMCLVItem (Content As Object, Height As Int, Empty As Boolean)
 	Private ZoomImageView1 As ZoomImageView
@@ -24,25 +24,32 @@ Sub Class_Globals
 	Private btnBack As B4XView
 	Private AccountView1 As AccountView
 	Private LastScrollPosition As Int
+	Private StatusesViewsManager As StatusesListUsedManager
+	Private MiniAccountsManager As StatusesListUsedManager	
+	Private ViewsManagers As List
+	Private TargetId As String
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
 	mEventName = EventName
 	mCallBack = Callback
-	Root = Root1
-	Root.LoadLayout("StatusList")
-	UsedStatusViews.Initialize
-	UnusedStatusViews.Initialize
-	Stack.Initialize
+	mBase = Root1
+	mBase.LoadLayout("StatusList")
+	StatusesViewsManager = CreateStatusesListUsedManager
+	MiniAccountsManager = CreateStatusesListUsedManager
+	ViewsManagers = Array(StatusesViewsManager, MiniAccountsManager)
+	Stack.Initialize (Me)
 	feed.Initialize (Me)
 	AddMoreItems
 End Sub
 
 Public Sub Resize (Width As Int, Height As Int)
-	
+	CLV.AsView.Height = Height
+	CLV.Base_Resize(CLV.AsView.Width, Height)
 End Sub
 
 Public Sub Refresh
+	feed.mLink.NextURL = ""
 	Refresh2(feed.user, feed.mLink, False, False)
 End Sub
 
@@ -64,6 +71,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 		End If
 	End If
 	Wait For (StopAndClear) Complete (unused As Boolean)
+	TargetId = ""
 	If GoToItem <> Null Then
 		NewLink = GoToItem.Link
 		feed.user = GoToItem.User
@@ -74,12 +82,20 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 	Else
 		feed.user = User
 		feed.mLink = NewLink
+		If NewLink.Extra.IsInitialized And NewLink.Extra.ContainsKey("targetId") Then
+			TargetId = NewLink.Extra.Get("targetId")
+			B4XPages.MainPage.ShowProgress
+		End If
 	End If
 	feed.Start (GoToItem <> Null)
 	CallSub2(mCallBack, mEventName & "_TitleChanged", NewLink.Title)
 	If CLV.Size = 0 Then
 		AddMoreItems
 	End If
+	UpdateBackKey
+End Sub
+
+Public Sub UpdateBackKey
 	btnBack.Visible = Stack.IsEmpty = False
 End Sub
 
@@ -123,14 +139,27 @@ Public Sub GetCurrentIndex As Int
 End Sub
 
 Public Sub TickAndIsWaitingForItems As Boolean
+	If TargetId <> "" Then
+		Return True
+	End If
+	#if RELEASE
 	If LastScrollPosition = Floor(CLV.sv.ScrollViewOffsetY) Then
-		If WaitingForItems = False And CLV.LastVisibleIndex + 30 > CLV.Size Then 
-'			B4XPages.SetTitle(B4XPages.MainPage, "adding: " & DateTime.Now)
+		If WaitingForItems = False And CLV.LastVisibleIndex + 30 > CLV.Size Then
 			AddMoreItems
 		End If
 	End If
+	#end if
 	LastScrollPosition = CLV.sv.ScrollViewOffsetY
 	Return WaitingForItems Or feed.Statuses.Size < CLV.Size + 30
+End Sub
+
+Private Sub JumpToTarget
+	Log("jump to target")
+	Sleep(0)
+	B4XPages.MainPage.HideProgress
+	Dim i As Int = feed.Statuses.Keys.IndexOf(TargetId)
+	CLV.JumpToItem(i)
+	TargetId = ""
 End Sub
 
 Private Sub AreThereMoreItems As Boolean
@@ -157,8 +186,9 @@ Private Sub AddMoreItems
 			Return
 		End If
 	Loop
-	Dim NewList As Boolean = CLV.Size = 0
+	Dim NewList As Boolean = CLV.Size = 0 And TargetId = ""
 	Dim MaxIndex As Int = Min(feed.Statuses.Size - 1, CLV.Size + 10)
+	If TargetId <> "" Then MaxIndex = feed.Statuses.Size - 1
 	For i = CLV.Size To MaxIndex
 		Dim Content As Object = feed.Statuses.Get(feed.Statuses.Keys.Get(i))
 		Dim pnl As B4XView = xui.CreatePanel("")
@@ -173,16 +203,14 @@ Private Sub AddMoreItems
 		Value.Height = pnl.Height
 		AddItemToCLVAndRemoveTouchEvent(pnl, Value)
 		CallSub2(ContentView, "SetVisibility", IsVisible(i, CLV.FirstVisibleIndex, CLV.LastVisibleIndex))
-		
 		If i = 5 And NewList Then Exit
-'		If CLV.LastVisibleIndex < CLV.Size - 1 Then
-'			Sleep(100)
-'		End If
 	Next
-	StopScroll
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
 	If ProgressBar Then B4XPages.MainPage.HideProgress
 	WaitingForItems = False
+	If TargetId <> "" And feed.Statuses.ContainsKey(TargetId) Then
+		JumpToTarget
+	End If
 End Sub
 
 Private Sub AddItemToCLVAndRemoveTouchEvent(pnl As B4XView, value As PLMCLVItem)
@@ -216,31 +244,35 @@ Private Sub AddContentView (Index As Int)
 	End If
 End Sub
 
-Private Sub RemoveStatusView (sv As StatusView)
-	Dim value As PLMCLVItem = CLV.GetValue(sv.ListIndex)
+Private Sub RemoveView (manager As StatusesListUsedManager, sv As Object)
+	Dim value As PLMCLVItem = CLV.GetValue(manager.UsedStatusViews.Get(sv))
 	value.Empty = True
-	sv.RemoveFromParent
-	UsedStatusViews.Remove(sv)
-	UnusedStatusViews.Add(sv)
+	CallSub(sv, "RemoveFromParent")
+	manager.UsedStatusViews.Remove(sv)
+	manager.UnusedStatusViews.Add(sv)
 End Sub
 
 Private Sub RemoveInvisibleItems (FirstIndex As Int, LastIndex As Int, All As Boolean)
-	Dim ItemsToRemove As List
-	For Each sv As StatusView In UsedStatusViews.AsList
-		If All Or IsVisible(sv.ListIndex, FirstIndex, LastIndex + 10) = False Then
-			If ItemsToRemove.IsInitialized = False Then ItemsToRemove.Initialize
-			ItemsToRemove.Add(sv)
-		Else
-			sv.SetVisibility(IsVisible(sv.ListIndex, FirstIndex, LastIndex))
+	For Each manager As StatusesListUsedManager In ViewsManagers
+		Dim ItemsToRemove As List
+		For Each sv As Object In manager.UsedStatusViews.Keys
+			Dim ListIndex As Int = manager.UsedStatusViews.Get(sv)
+			If All Or IsVisible(ListIndex, FirstIndex, LastIndex + 10) = False Then
+				If ItemsToRemove.IsInitialized = False Then ItemsToRemove.Initialize
+				ItemsToRemove.Add(sv)
+			Else
+				CallSub2(sv, "SetVisibility", IsVisible(ListIndex, FirstIndex, LastIndex))
+			End If
+		Next
+
+		If ItemsToRemove.IsInitialized Then
+			For Each sv As Object In ItemsToRemove
+				RemoveView(manager, sv)
+			Next
 		End If
 	Next
-	If ItemsToRemove.IsInitialized Then
-		For Each sv As StatusView In ItemsToRemove
-			RemoveStatusView(sv)
-		Next
-	End If
 	If AccountView1.IsInitialized And AccountView1.mBase.Parent.IsInitialized Then
-		If All Or IsVisible(0, FirstIndex, LastIndex) = False Then 
+		If All Or IsVisible(0, FirstIndex, LastIndex) = False Then
 			AccountView1.RemoveFromParent
 			Dim value As PLMCLVItem = CLV.GetValue(0)
 			value.Empty = True
@@ -249,6 +281,9 @@ Private Sub RemoveInvisibleItems (FirstIndex As Int, LastIndex As Int, All As Bo
 	If All And AreThereMoreItems = False Then
 		Dim value As PLMCLVItem = CLV.GetValue(CLV.Size - 1)
 		value.Empty = True
+	End If
+	If All Then
+		
 	End If
 End Sub
 
@@ -269,16 +304,9 @@ Sub CLV_VisibleRangeChanged (FirstIndex As Int, LastIndex As Int)
 End Sub
 
 Private Sub CLV_ScrollChanged (ScrollViewOffset As Int)
-	For Each sv As StatusView In UsedStatusViews.AsList
+	For Each sv As StatusView In StatusesViewsManager.UsedStatusViews.Keys
 		sv.ParentScrolled(ScrollViewOffset, CLV.sv.Height)
 	Next
-End Sub
-
-Private Sub StopScroll
-	#if B4A
-	Dim jsv As JavaObject = CLV.sv
-	jsv.RunMethod("smoothScrollBy", Array(0, 0))
-	#End If
 End Sub
 
 Private Sub GetContentView (ListIndex As Int, Content As Object) As Object
@@ -291,6 +319,17 @@ Private Sub GetContentView (ListIndex As Int, Content As Object) As Object
 			AccountView1.Initialize(p, Me, "StatusView1")
 		End If
 		Return AccountView1
+	Else If Content Is PLMMiniAccount Then
+		Dim mini As MiniAccountView = GetViewFromManager(MiniAccountsManager)
+		If mini = Null Then
+			Dim mini As MiniAccountView
+			Dim p As B4XView = xui.CreatePanel("")
+			p.SetLayoutAnimated (0, 0, 0, CLV.AsView.Width, 70dip)
+			mini.Initialize(p, Me, "StatusView1")
+		End If
+		MiniAccountsManager.UsedStatusViews.Put(mini, ListIndex)
+		mini.ListIndex = ListIndex
+		Return mini
 	Else
 		Dim stub As StubView
 		stub.Initialize(CLV.AsView.Width)
@@ -299,11 +338,9 @@ Private Sub GetContentView (ListIndex As Int, Content As Object) As Object
 End Sub
 
 Private Sub GetStatusView (ListIndex As Int) As StatusView
-	Dim sv As StatusView	
-	If UnusedStatusViews.Size > 0 Then
-		sv = UnusedStatusViews.AsList.Get(0)
-		UnusedStatusViews.Remove(sv)
-	Else
+	Dim sv As StatusView = GetViewFromManager(StatusesViewsManager)
+	If sv = Null Then
+		Dim sv As StatusView
 		Dim pnl As B4XView = xui.CreatePanel("")
 		pnl.SetLayoutAnimated(0, 0, 0, CLV.AsView.Width, 300dip)
 		sv.Initialize(Me, "StatusView1")
@@ -311,8 +348,17 @@ Private Sub GetStatusView (ListIndex As Int) As StatusView
 		sv.mBase.RemoveViewFromParent
 	End If
 	sv.ListIndex = ListIndex
-	UsedStatusViews.Add(sv)
+	StatusesViewsManager.UsedStatusViews.Put(sv, ListIndex)
 	Return sv
+End Sub
+
+Private Sub GetViewFromManager (Manager As StatusesListUsedManager) As Object
+	If Manager.UnusedStatusViews.Size > 0 Then
+		Dim o As Object = Manager.UnusedStatusViews.AsList.Get(0)
+		Manager.UnusedStatusViews.Remove(o)
+		Return o
+	End If
+	Return Null
 End Sub
 
 
@@ -340,6 +386,10 @@ Private Sub StatusView1_ShowLargeImage (URL As String)
 	Consumer.IsVisible = True
 	ZoomImageView1.Tag = Consumer
 	Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
+	If ic.IsImageReady(URL) = False Then
+		ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
+		Consumer.NoAnimation = True		
+	End If
 	ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
 End Sub
 
@@ -384,5 +434,13 @@ End Sub
 
 Private Sub btnBack_Click
 	GoBack
-	XUIViewsUtils.PerformHapticFeedback(Root)
+	XUIViewsUtils.PerformHapticFeedback(mBase)
+End Sub
+
+Private Sub CreateStatusesListUsedManager As StatusesListUsedManager
+	Dim t1 As StatusesListUsedManager
+	t1.Initialize
+	t1.UsedStatusViews.Initialize
+	t1.UnusedStatusViews.Initialize
+	Return t1
 End Sub

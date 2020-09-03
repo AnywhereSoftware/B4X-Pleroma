@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=UI
+Group=ListItems
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -50,6 +50,7 @@ Public Sub SetContent(Account As PLMAccount)
 	ImagesCache1.SetImage(Account.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
 	Dim consumer As ImageConsumer = ImageView1.Tag
 	consumer.NoAnimation = True
+	consumer.PanelColor = xui.Color_Transparent
 	ImagesCache1.SetImage(Account.HeaderURL, ImageView1.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
 	bbTop.PrepareBeforeRuns
 	Dim runs As List
@@ -64,7 +65,7 @@ Public Sub SetContent(Account As PLMAccount)
 	
 	Dim node As HtmlNode = mp.TextUtils1.HtmlParser.Parse(Account.Note)
 	Dim bbcode As String = $"[color=white]
-${TableRow("Statuses", "Following", "Followers")}
+${TableRow(WrapURL("statuses", "Statuses"), WrapURL("following", "Following"), WrapURL("followers", "Followers"))}
 ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount)}
 [/color]
 "$
@@ -77,47 +78,21 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 		run.HorizontalAlignment = "center"
 	Next
 	BBListItem1.SetRuns(runs)
+	If node.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
 	mBase.Height = ImageView1.Parent.Height + BBListItem1.mBase.Height - 50dip
 	bbTop.UpdateVisibleRegion(0, bbTop.mBase.Height)
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
-	UpdateButtons
+	tu.UpdateFollowButton(btnFollow, mAccount)
 End Sub
 
-Private Sub UpdateButtons
-	btnFollow.Visible = False
-	If mAccount.RelationshipAdded = False Then
-		Log("fetching relationship")
-		Dim a As PLMAccount = mAccount
-		B4XPages.MainPage.ShowProgress
-		Wait For (B4XPages.MainPage.TextUtils1.AddRelationship(mAccount)) Complete (Unused As Boolean)
-		B4XPages.MainPage.HideProgress
-		If a <> mAccount Then Return
-	End If
-	If mAccount.Following Then
-		btnFollow.Text = "Unfollow"
-	Else If mAccount.FollowRequested Then
-		btnFollow.Text = "Requested"
-	Else
-		btnFollow.Text = "Follow"
-	End If
-	Log(btnFollow.Text)
-	btnFollow.Visible = True
+Private Sub WrapURL(method As String, text As String) As String
+	Return $"[url=~@${method}:${mAccount.Id}][color=white]${text}[/color][/url]"$
 End Sub
-
 
 Private Sub btnFollow_Click
-	Dim a As PLMAccount = mAccount
-	Wait For (tu.FollowOrUnfollow(mAccount)) Complete (unused As Boolean)
-	If a <> mAccount Then Return
-	UpdateButtons
-	If mAccount.Following = False And mAccount.FollowRequested Then
-		Sleep(1000)
-		Wait For (tu.AddRelationship(mAccount)) Complete (unused As Boolean)
-		If a <> mAccount Then Return
-		UpdateButtons
-	End If
+	tu.FollowButtonClicked(btnFollow, mAccount)
 End Sub
 
 Private Sub TableRow(Field1 As String, Field2 As String, Field3 As String) As String
@@ -167,6 +142,7 @@ Private Sub BBTOP_LinkClicked (URL As String, Text As String)
 End Sub
 
 Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
+	If URL.StartsWith("~@") Then Text = mAccount.UserName
 	CallSub2(mCallBack, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.ManageLink(Null, mAccount, URL, Text))
 End Sub
 

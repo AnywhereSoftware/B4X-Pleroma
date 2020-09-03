@@ -24,20 +24,23 @@ Public Sub Initialize
 End Sub
 
 Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String, Text As String) As PLMLink
+	If URL.StartsWith("~@") Then
+		Dim c As Int = URL.IndexOf(":")
+		Dim method As String = URL.SubString2(2, c)
+		Dim id As String = URL.SubString(c + 1)
+		Return CreateUserLink(id, Text, method)
+	End If
 	If Status <> Null Then
 		If URL = "~time" Then
 			Dim u As String = B4XPages.MainPage.URL_THREAD.Replace(":id", Status.Id)
 			Dim link As PLMLink = CreatePLMLink2(u, B4XPages.MainPage.LINKTYPE_THREAD, "Conversation", "")
-			link.Extra = CreateMap("current": Status)
+			link.Extra = CreateMap("current": Status, "targetId": Status.id)
 			Return link
-		Else If URL.StartsWith("@@") Then
-			Dim id As String = URL.SubString(2)
-			Return CreateUserLink(id, Text)
 		Else If Text.Length > 1 And Text.StartsWith("@") Then
 			Dim name As String = Text.SubString(1)
 			For Each m As Map In Status.Mentions
 				If name = m.Get("username") Then
-					Return CreateUserLink(m.Get("id"), name)
+					Return CreateUserLink(m.Get("id"), name, "statuses")
 				End If
 				If name = Status.Account.UserName Then
 					Return ManageLink(Status, Account, "@", Text)
@@ -46,8 +49,7 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 		End If
 	End If
 	If URL = "@" Then
-		Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", Account.Id)
-		Return CreatePLMLink2(u & "/statuses", B4XPages.MainPage.LINKTYPE_USER, "@" & Account.UserName, u)
+		Return CreateUserLink(Account.Id, Account.UserName, "statuses")
 	Else If Regex.IsMatch("#\w+", Text) Then
 		Return CreatePLMLink(B4XPages.MainPage.URL_TAG & Text.SubString(1), B4XPages.MainPage.LINKTYPE_TAG, Text)
 	End If
@@ -55,9 +57,9 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 End Sub
 
 
-Public Sub CreateUserLink (id As String, name As String) As PLMLink
+Public Sub CreateUserLink (id As String, name As String, method As String) As PLMLink
 	Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", id)
-	Return CreatePLMLink2(u & "/statuses", B4XPages.MainPage.LINKTYPE_USER, "@" & name, u)
+	Return CreatePLMLink2(u & "/" & method, B4XPages.MainPage.LINKTYPE_USER, "@" & name, u)
 End Sub
 
 
@@ -96,7 +98,7 @@ Public Sub TextWithEmojisToRuns(Input As String, RunsList As List, Emojis As Lis
 				consumer.NoAnimation = True
 				B4XPages.MainPage.ImagesCache1.SetImage(Emoji.URL, consumer, B4XPages.MainPage.ImagesCache1.RESIZE_NONE)
 				views.Put(id, iv)
-				Data.ViewsPanel.AddView(iv, 0, 0, Emoji.Size, Emoji.Size)
+				Data.ViewsPanel.AddView(iv, 0, 0, DipToCurrent(Emoji.Size), DipToCurrent(Emoji.Size))
 				Dim run As BCTextRun = TextEngine.CreateRun("")
 				run.View = iv
 				RunsList.Add(run)
@@ -137,15 +139,15 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	status.Emojis = GetEmojies(StatusMap, 32)
 	status.Content = CreateContent(StatusMap.Get("content"))
 	status.Visibility = StatusMap.GetDefault("visibility", "")
-	status.URI = StatusMap.Get("uri")
-	status.Url = StatusMap.Get("url")
+	status.URI = StatusMap.GetDefault("uri", "")
+	status.Url = StatusMap.GetDefault("url", "")
 	status.id = StatusMap.Get("id")
-	status.CreatedAt = ParseDate(StatusMap.Get("created_at"))
+	status.CreatedAt = ParseDate(StatusMap.GetDefault("created_at", DateTime.Now))
 	status.Sensitive = StatusMap.GetDefault("sensitive", False)
 	status.ReblogsCount = StatusMap.GetDefault("reblogs_count", 0)
 	status.FavouritesCount = StatusMap.GetDefault("favourites_count", 0)
-	status.Favourited = StatusMap.Get("favourited")
-	status.Reblogged = StatusMap.Get("reblogged")
+	status.Favourited = StatusMap.GetDefault("favourited", False)
+	status.Reblogged = StatusMap.GetDefault("reblogged", False)
 	status.RepliesCount = StatusMap.GetDefault("replies_count", 0)
 	status.Mentions = StatusMap.Get("mentions")
 	status.Attachments.Initialize
@@ -169,7 +171,7 @@ Private Sub GetEmojies (Raw As Map, Size As Int) As List
 	If emojis.Size > 0 Then
 		res.Initialize
 		For Each e As Map In emojis
-			res.Add(CreatePLMEmoji(e.Get("shortcode"), e.Get("url"), Size))
+			res.Add(CreatePLMEmoji(e.Get("shortcode"), e.GetDefault("url", ""), Size))
 		Next
 	End If
 	Return res
@@ -179,8 +181,8 @@ Private Sub CreateAttachment (Attachment As Map) As PLMMedia
 	Dim m As PLMMedia
 	m.Initialize
 	m.TType = Attachment.Get("type")
-	m.Url = Attachment.Get("url")
-	m.PreviewUrl = Attachment.Get("preview_url")
+	m.Url = Attachment.GetDefault("url", "")
+	m.PreviewUrl = Attachment.GetDefault("preview_url", "")
 	Return m
 End Sub
 
@@ -194,15 +196,15 @@ Public Sub CreateAccount (Account As Map) As PLMAccount
 	ac.Initialize
 	ac.Avatar = Account.GetDefault("avatar", "")
 	ac.Id = Account.Get("id")
-	ac.Url = Account.Get("url")
+	ac.Url = Account.GetDefault("url", "")
 	ac.UserName = Account.Get("username")
 	ac.DisplayName = Account.Get("display_name")
 	ac.Emojis = GetEmojies(Account, 14)
 	ac.Note = Account.Get("note")
-	ac.StatusesCount = Account.Get("statuses_count")
-	ac.FollowersCount = Account.Get("followers_count")
-	ac.FollowingCount = Account.Get("following_count")
-	ac.HeaderURL = Account.Get("header")
+	ac.StatusesCount = Account.GetDefault("statuses_count", 0)
+	ac.FollowersCount = Account.GetDefault("followers_count", 0)
+	ac.FollowingCount = Account.GetDefault("following_count", 0)
+	ac.HeaderURL = Account.GetDefault("header", "")
 	ac.Acct = Account.Get("acct")
 	Return ac
 End Sub
@@ -262,18 +264,25 @@ Public Sub JsonParseMap (s As String) As Map
 	Return res
 End Sub
 
-Public Sub AddRelationship (account As PLMAccount) As ResumableSub
+Public Sub AddRelationship (accounts As Map) As ResumableSub
 	If B4XPages.MainPage.User.SignedIn = False Then Return False
 	Dim j As HttpJob
 	j.Initialize("", Me)
-	j.Download(B4XPages.MainPage.GetServer.URL & "/api/v1/accounts/relationships?id[]=" & account.Id)
+	Dim ids As StringBuilder
+	ids.Initialize
+	For Each key As String In accounts.Keys
+		If ids.Length > 0 Then ids.Append("&")
+		ids.Append("id[]=").Append(key)
+	Next
+	j.Download(B4XPages.MainPage.GetServer.URL & "/api/v1/accounts/relationships?" & ids.ToString)
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	Wait For (j) JobDone (j As HttpJob)
 	If j.Success Then
 		Dim r As List = JsonParseList(j.GetString)
-		If r.IsInitialized And r.Size > 0 Then
-			Dim m As Map = r.Get(0)
-			GetRelationshipFromRelationshipObject(account, m)
+		If r.IsInitialized Then
+			For Each m As Map In r
+				GetRelationshipFromRelationshipObject(accounts.Get(m.Get("id")), m)
+			Next
 		End If
 	End If
 	j.Release
@@ -309,5 +318,38 @@ Public Sub FollowOrUnfollow (Account As PLMAccount) As ResumableSub
 	j.Release
 	B4XPages.MainPage.HideProgress
 	Return False
+End Sub
+
+Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount)
+	btnFollow.Tag = mAccount
+	btnFollow.Visible = False
+	If mAccount.Id = B4XPages.MainPage.User.Id Then Return
+	If mAccount.RelationshipAdded = False Then
+		B4XPages.MainPage.ShowProgress
+		Wait For (B4XPages.MainPage.TextUtils1.AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (Unused As Boolean)
+		If btnFollow.Tag <> mAccount Then Return
+		B4XPages.MainPage.HideProgress
+	End If
+	If mAccount.Following Then
+		btnFollow.Text = "Unfollow"
+	Else If mAccount.FollowRequested Then
+		btnFollow.Text = "Requested"
+	Else
+		btnFollow.Text = "Follow"
+	End If
+	btnFollow.Visible = True
+End Sub
+
+Public Sub FollowButtonClicked (btnFollow As B4XView, mAccount As PLMAccount)
+	Dim a As PLMAccount = mAccount
+	Wait For (FollowOrUnfollow(mAccount)) Complete (unused As Boolean)
+	If a <> mAccount Then Return
+	UpdateFollowButton(btnFollow, mAccount)
+	If mAccount.Following = False And mAccount.FollowRequested Then
+		Sleep(1000)
+		Wait For (AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (unused As Boolean)
+		If a <> mAccount Then Return
+		UpdateFollowButton(btnFollow, mAccount)
+	End If
 End Sub
 

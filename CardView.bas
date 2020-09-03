@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=UI
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -32,18 +32,27 @@ Public Sub Initialize
 	#end if
 End Sub
 
-Public Sub SetCard (card As Map, Callback As Object, EventName As String)
+Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attachments As List)
 	mCallback = Callback
 	mEventName = EventName
 	pnlImageView.Color = 0
 	base.Parent.Color = xui.Color_White
 	url = card.Get("url")
 	base.Width = base.Parent.Width
-	pnlImageView.Visible = card.Get("image") <> Null
+	Dim imageurl As String
+	If card.GetDefault("image", Null) <> Null Then
+		imageurl = card.Get("image")
+		For Each attach As PLMMedia In Attachments
+			If attach.Url = imageurl Then
+				Log("same image in card")
+				imageurl = ""
+			End If
+		Next
+	End If
+	pnlImageView.Visible = imageurl <> ""
 	If pnlImageView.Visible Then
 		Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
-		
-		ic.SetImage(card.Get("image"), ImageView1.Tag, ic.RESIZE_FILL_NO_DISTORTIONS)
+		ic.SetImage(imageurl, ImageView1.Tag, ic.RESIZE_FILL_NO_DISTORTIONS)
 		BBListItem1.mBase.Left = pnlImageView.Left + pnlImageView.Width + 5dip
 	Else
 		BBListItem1.mBase.Left = 5dip
@@ -65,6 +74,7 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String)
 	Else
 		base.Height = Max(80dip, BBListItem1.mBase.Height + 4dip)
 	End If
+	base.Height = Min(base.Height, 120dip)
 	pnlTouch.Height = base.Height
 	pnlImageView.Height = base.Height
 	If xui.IsB4J Then pnlImageView.Height = base.Height - 6dip
