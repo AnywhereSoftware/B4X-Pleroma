@@ -14,6 +14,7 @@ Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated(0, 0, 0, width, 50dip)
 	mBase.LoadLayout("Search")
+	mBase.Color = xui.Color_White
 	B4XFloatTextField1.HintFont = xui.CreateFontAwesome(14)
 	B4XFloatTextField1.HintText = Constants.SearchIconChar
 	B4XFloatTextField1.Update

@@ -30,7 +30,7 @@ Sub Class_Globals
 	Type BCURLExtraData (LineS As List)
 	Public WordWrap As Boolean = True
 	Public LineSpacingFactor As Float = 1
-	Private UpdateOffsetY, UpdateHeight as Int
+	Private UpdateOffsetY, UpdateHeight As Int
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)

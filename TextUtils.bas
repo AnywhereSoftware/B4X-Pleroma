@@ -353,3 +353,14 @@ Public Sub FollowButtonClicked (btnFollow As B4XView, mAccount As PLMAccount)
 	End If
 End Sub
 
+Public Sub CreateHttpJob (target As Object, HapticView As B4XView) As HttpJob
+	XUIViewsUtils.PerformHapticFeedback(HapticView)
+	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return Null
+	B4XPages.MainPage.ShowProgress
+	Dim j As HttpJob
+	j.Initialize("", target)
+	Return j
+End Sub
+
+
+

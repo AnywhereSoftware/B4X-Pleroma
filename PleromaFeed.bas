@@ -18,6 +18,7 @@ Sub Class_Globals
 	Type PLMMedia (Id As String, TType As String, Url As String, PreviewUrl As String)
 	Type PLMLink (URL As String, LINKTYPE As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
+	Type PLMPost (ReplyId As String)
 	Type PLMMiniAccount (Account As PLMAccount)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
@@ -30,6 +31,7 @@ Sub Class_Globals
 	Public mTitle As String
 	Public NoMoreItems As Object
 	Private tu As TextUtils
+	Public Const NewPostId = "newpost", LastPostId = "last" As String
 End Sub
 
 Public Sub Initialize (Callback As Object)
@@ -39,6 +41,17 @@ Public Sub Initialize (Callback As Object)
 	Timer1.Initialize("Timer1", 100)
 	tu = B4XPages.MainPage.TextUtils1
 End Sub
+
+'returns the new item index
+Public Sub InsertItem(AfterId As String, Status As Object, Id As String) As Int
+	Dim i As Int = Statuses.Keys.IndexOf(AfterId)
+	Statuses.Remove(Id)
+	Statuses.Put(Id, Status)
+	Statuses.Keys.RemoveAt(Statuses.Keys.Size - 1)
+	Statuses.Keys.InsertAt(i + 1, Id)
+	Return i + 1
+End Sub
+
 
 Public Sub Start (KeepStatuses As Boolean)
 	Timer1.Enabled = True
@@ -139,7 +152,7 @@ Private Sub Download (Params As Map)
 			Next
 		End If
 		If Statuses.Size = CurrentSize Then
-			Statuses.Put("last", NoMoreItems)
+			Statuses.Put(LastPostId, NoMoreItems)
 		End If
 	End If
 	If MyIndex = DownloadIndex Then
@@ -255,7 +268,13 @@ Private Sub ParseFollowersOrFollowing (accounts As List) As ResumableSub
 	Return res
 End Sub
 
+Public Sub CreatePLMPost (ReplyId As String) As PLMPost
+	Dim t1 As PLMPost
+	t1.Initialize
+	t1.ReplyId = ReplyId
+	Return t1
+End Sub
 
-
-
-
+Public Sub getIsRunning As Boolean
+	Return Timer1.Enabled
+End Sub

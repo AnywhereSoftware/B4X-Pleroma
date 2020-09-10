@@ -32,7 +32,7 @@ Public Sub Initialize
 	CurrentlyDownloadingIds.Initialize
 	CurrentlyDownloadingURLs.Initialize
 	ImagesLoader.Initialize
-	ImagesLoader.MaxFileSize = 5 * 1024 * 1024
+	ImagesLoader.MaxFileSize = 8 * 1024 * 1024
 	NoImage.Initialize
 	PermCache.Initialize
 	PermCache.Put(NSFW_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "nsfw.74818f9.png"), NSFW_URL))

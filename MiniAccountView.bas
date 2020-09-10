@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=ListItems
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -17,7 +17,6 @@ Sub Class_Globals
 	Private mAccount As PLMAccount
 	Private btnFollow As B4XView
 	Private tu As TextUtils
-	Public ListIndex As Int
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -31,7 +30,7 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	tu = B4XPages.MainPage.TextUtils1
 End Sub
 
-Public Sub SetContent(Account As PLMMiniAccount)
+Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	mAccount = Account.Account
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)

@@ -25,7 +25,7 @@ Sub Class_Globals
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.12
+	Public VERSION As Float = 1.13
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
@@ -58,7 +58,7 @@ Sub Class_Globals
 	Public Toast As BCToast
 	Private AnotherProgressBar1 As AnotherProgressBar
 	Private ProgressCounter As Int
-	Private MadeWithLove1 As MadeWithLove
+	Public MadeWithLove1 As MadeWithLove
 	Private Search As SearchManager
 	Private pnlListDefaultTop As Int
 	Private SignInIndex As Int
@@ -86,7 +86,7 @@ Public Sub Initialize
 		FeedbackGenerator = FeedbackGenerator.RunMethod("alloc", Null).RunMethod("initWithStyle:", Array(0)) 'light
 	End If
 	#End If
-	
+	Constants.Initialize
 End Sub
 
 Private Sub CreateInitialLinks
@@ -385,7 +385,13 @@ Public Sub CreatePLMServer (URL As String, Name As String) As PLMServer
 End Sub
 
 Private Sub btnRefresh_Click
+	CloseDialogAndDrawer
 	Statuses.Refresh
+End Sub
+
+Private Sub CloseDialogAndDrawer
+	ClosePrevDialog
+	Drawer.LeftOpen = False
 End Sub
 
 
@@ -411,7 +417,7 @@ Private Sub Statuses_AvatarClicked (Account As PLMAccount)
 		AccountView1.Initialize(CreatePanelForDialog, Me, "Statuses")
 		AccountView1.mDialog = Dialog
 	End If
-	AccountView1.SetContent(Account)
+	AccountView1.SetContent(Account, Null)
 	AccountView1.SetVisibility(True)
 	Sleep(100)
 	Wait For (ShowDialogWithoutButtons(AccountView1.mBase, True)) Complete (Result As Int)
@@ -549,20 +555,16 @@ Public Sub HideProgress
 End Sub
 
 Public Sub btnSearch_Click
-	Dim listTop As Int
+	CloseDialogAndDrawer
 	If Search.mBase.Parent.IsInitialized Then
 		Search.mBase.RemoveViewFromParent
-		
-		listTop = pnlListDefaultTop
 	Else
 		Dim h As Int = Search.mBase.Height
 		Drawer.CenterPanel.AddView(Search.mBase, 0, pnlListDefaultTop - h, Root.Width, Search.mBase.Height)
 		Search.mBase.SetLayoutAnimated(100, 0, Search.mBase.Top + h, Search.mBase.Width, h)
 		Search.Focus
-		listTop = pnlListDefaultTop + Search.mBase.Height
 	End If
-	Statuses.mBase.SetLayoutAnimated(100, 0, listTop, Root.Width, Root.Height - listTop)
-	Statuses.Resize(Root.Width, Statuses.mBase.Height)
+
 End Sub
 
 Private Sub B4XPage_Background

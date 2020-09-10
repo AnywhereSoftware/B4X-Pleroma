@@ -40,7 +40,7 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	tu = B4XPages.MainPage.TextUtils1
 End Sub
 
-Public Sub SetContent(Account As PLMAccount)
+Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	mAccount = Account
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)

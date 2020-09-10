@@ -7,6 +7,8 @@ Version=8.3
 #Event: ShowLargeImage (URL As String)
 #Event: AvatarClicked (Account As PLMAccount) 
 #Event: LinkClicked (Link As PLMLink) 
+#Event: HeightChanged
+#Event: Reply
 Sub Class_Globals
 	Private mEventName As String 'ignore
 	Private mCallBack As Object 'ignore
@@ -18,16 +20,17 @@ Sub Class_Globals
 	Private pnlMedia As B4XView
 	Private pnlTop As B4XView
 	Private imgAvatar As B4XView
-	Private mStatus As PLMStatus
+	Public mStatus As PLMStatus
 	Private mTextEngine As BCTextEngine
 	Private MediaSize As Int = 300dip
 	Private BBListItem1 As BBListItem
 	Private bbTop As BBListItem
-	Public ListIndex As Int
 	Private ImagesCache1 As ImagesCache
 	Private TopFont As B4XFont
 	Private BBBottom As BBListItem
 	Private tu As TextUtils
+	Private imgReadMore As B4XImageView
+	Private FullHeight As Int
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -58,22 +61,60 @@ Public Sub Create (Base As B4XView)
 	imgAvatar.SetColorAndBorder(xui.Color_Transparent, 0, 0, 5dip)
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
 	bbTop.WordWrap = False
+	Dim lbl As Label
+	lbl.Initialize("lblReadMore")
+	Dim xlbl As B4XView = lbl
+	xlbl.Text = "Read more"
+	xlbl.TextColor = xui.Color_Black
+	xlbl.SetTextAlignment("CENTER", "CENTER")
+	xlbl.Font = xui.CreateDefaultBoldFont(16)
+	imgReadMore.mBase.AddView(xlbl, 0, 20dip, mBase.Width, 30dip)
+	imgReadMore.mBase.Color = xui.Color_Red
 End Sub
 
 
-Public Sub SetContent (Status As PLMStatus)
+Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	mStatus = Status
 	SetTopText
 	SetBottomPanel
-	BBListItem1.Tag = ListIndex
 	SetBBListContent
 	SetTime
 	ImagesCache1.SetImage(mStatus.Account.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
+	If BBListItem1.mBase.Height > Constants.MaxTextHeight And ListItem.Expanded = False Then
+		FullHeight = BBListItem1.mBase.Height
+		BBListItem1.mBase.Height = Constants.MaxTextHeight
+		imgReadMore.Bitmap = Constants.ReadMoreGradient
+		imgReadMore.mBase.Visible = True
+		imgReadMore.mBase.Top =  BBListItem1.mBase.Top + BBListItem1.mBase.Height - imgReadMore.mBase.Height + 5dip
+		imgReadMore.mbase.BringToFront
+	Else
+		imgReadMore.mBase.Visible = False
+		
+	End If
 	Dim h As Int = BBListItem1.mBase.Height + 8dip * 2
 	h = h + HandleAttachments
-	pnlMedia.Top = BBListItem1.mBase.Top + BBListItem1.mBase.Height + 5dip
+	
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
+	SetHeightBasedOnMBaseHieght
+End Sub
+
+#If B4J
+Private Sub lblReadMore_MouseClicked (EventData As MouseEvent)
+#else
+Private Sub lblReadMore_Click
+#end if	
+	Dim diff As Int = FullHeight - BBListItem1.mBase.Height
+	BBListItem1.mBase.Height = FullHeight
+	mBase.Height = mBase.Height + diff
+	SetHeightBasedOnMBaseHieght
+	imgReadMore.mBase.Visible = False
+	CallSub(mCallBack, mEventName & "_HeightChanged")
+	BBListItem1.UpdateVisibleRegion(0, 1000dip)
+End Sub
+
+Private Sub SetHeightBasedOnMBaseHieght
 	pnlBottom.Top = mBase.Height - pnlBottom.Height
+	pnlMedia.Top = BBListItem1.mBase.Top + BBListItem1.mBase.Height + 5dip
 End Sub
 
 Private Sub SetBBListContent
@@ -103,11 +144,9 @@ Private Sub EmojiReactions (Runs As List)
 	Next
 End Sub
 
-
 Private Sub FavouriteClick
-	XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
-	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
-	B4XPages.MainPage.ShowProgress
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	If j = Null Then Return
 	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}/"$
 	If mStatus.Favourited Then
 		link = link & "unfavourite"
@@ -115,8 +154,7 @@ Private Sub FavouriteClick
 		link = link & "favourite"
 	End If
 	Dim s As PLMStatus = mStatus
-	Dim j As HttpJob
-	j.Initialize("", Me)
+	
 	j.PostString(link, "")
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	Wait For (j) JobDone (j As HttpJob)
@@ -132,15 +170,40 @@ Private Sub FavouriteClick
 	B4XPages.MainPage.HideProgress
 End Sub
 
+Private Sub ReblogClick
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	If j = Null Then Return
+	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}/"$
+	If mStatus.Reblogged Then
+		link = link & "unreblog"
+	Else
+		link = link & "reblog"
+	End If
+	Dim s As PLMStatus = mStatus
+	j.PostString(link, "")
+	B4XPages.MainPage.auth.AddAuthorization(j)
+	Wait For (j) JobDone (j As HttpJob)
+	If j.Success Then
+		Wait For (tu.DownloadStatus(mStatus.id)) Complete (status As PLMStatus)
+		If s = mStatus And status <> Null Then
+			mStatus.Reblogged = status.Reblogged
+			mStatus.ReblogsCount = status.ReblogsCount
+			SetBottomPanel
+		End If
+	End If
+	j.Release
+	B4XPages.MainPage.HideProgress
+	
+End Sub
+
+
+
 Private Sub EmojiClick (url As String)
-	XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
-	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
-	B4XPages.MainPage.ShowProgress
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	If j = Null Then Return
 	Dim emoji As String = url.SubString(url.IndexOf(":") + 1)
 	Dim su As StringUtils
 	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/pleroma/statuses/${mStatus.id}/reactions/${su.EncodeUrl(emoji, "utf8")}"$
-	Dim j As HttpJob
-	j.Initialize("", Me)
 	Dim s As PLMStatus = mStatus
 	If url.StartsWith("~emoji_delete:") Then
 		j.Delete(link)
@@ -215,11 +278,11 @@ End Sub
 
 Private Sub SetBottomPanel
 	BBBottom.PrepareBeforeRuns
-	Dim fnt As B4XFont = xui.CreateFontAwesome(15)
+	Dim fnt As B4XFont = xui.CreateFontAwesome(18)
 	Dim runs As List
 	runs.Initialize
 	Dim r As BCTextRun
-	r = tu.CreateUrlRun("~replies",  " " & Chr(0xF112) & CountToString(mStatus.RepliesCount) & " ", BBBottom.ParseData)
+	r = tu.CreateUrlRun("~replies",  "  " & Chr(0xF112) & CountToString(mStatus.RepliesCount) & " ", BBBottom.ParseData)
 	r.TextColor = GetIsUserColor(False)
 	runs.Add(r)
 	runs.Add(mTextEngine.CreateRun(TAB))
@@ -243,7 +306,7 @@ End Sub
 
 Private Sub CountToString (c As Int) As String
 	If c > 0 Then Return " " & c
-	Return ""
+	Return "  "
 End Sub
 
 Private Sub HandleAttachments As Int
@@ -375,6 +438,11 @@ Private Sub BBBottom_LinkClicked (URL As String, Text As String)
 	
 	If URL.StartsWith("~favourites") Then
 		FavouriteClick
+	Else If URL.StartsWith("~reblog") Then
+		ReblogClick
+	Else If URL.StartsWith("~replies") Then
+		XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
+		CallSub(mCallBack, mEventName & "_Reply")
 	End If
 End Sub
 
@@ -409,6 +477,8 @@ Public Sub RemoveFromParent
 	mBase.RemoveViewFromParent
 	BBListItem1.ReleaseInlineImageViews
 	bbTop.ReleaseInlineImageViews
+	imgReadMore.Clear
+	imgReadMore.mBase.Visible = False
 End Sub
 
 Public Sub ParentScrolled(ScrollViewOffset As Int, CLVHeight As Int)

@@ -13,5 +13,15 @@ Sub Process_Globals
 	Public Const SearchIconChar As String = Chr(0xF002)
 	Public Const NoMoreItemsBackground As Int = 0xFFAEAEAE
 	Public Const EmptyList As List = Array()
+	Public ReadMoreGradient As B4XBitmap
+	Public Const MaxTextHeight As Int = 250dip
+	Public Const CLVAnimationDuration as int = 100
+End Sub
+
+Public Sub Initialize
+	Dim bc As BitmapCreator
+	bc.Initialize(200, 50)
+	bc.FillGradient(Array As Int(0x00FFFFFF, xui.Color_White), bc.TargetRect, "TOP_BOTTOM")
+	ReadMoreGradient = bc.Bitmap
 End Sub
 

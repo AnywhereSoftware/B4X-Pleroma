@@ -4,11 +4,12 @@ File10=MiniAccountView.bal
 File11=Missing-image-232x150.png
 File12=nsfw.74818f9.png
 File13=play.png
-File14=Search.bal
-File15=StatusList.bal
-File16=StatusViewImpl.bal
-File17=VideoPlayer.bal
-File18=WebViewDialog.bal
+File14=PostView.bal
+File15=Search.bal
+File16=StatusList.bal
+File17=StatusViewImpl.bal
+File18=VideoPlayer.bal
+File19=WebViewDialog.bal
 File2=CardView.bal
 File3=DialogContainer.bal
 File4=empty.png
@@ -27,6 +28,7 @@ FileGroup15=Default Group
 FileGroup16=Default Group
 FileGroup17=Default Group
 FileGroup18=Default Group
+FileGroup19=Default Group
 FileGroup2=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
@@ -48,6 +50,7 @@ Library17=reflection
 Library18=bctoast
 Library19=firebaseanalytics
 Library2=b4xpages
+Library20=ime
 Library3=bctextengine
 Library4=json
 Library5=xui views
@@ -55,21 +58,22 @@ Library6=exoplayer
 Library7=b4xgifview
 Library8=minihtmlparser
 Library9=bitmapsasync
-ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.LightTheme)~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~CreateResourceFromFile(Macro, Themes.LightTheme)~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   SetActivityAttribute(main, android:windowSoftInputMode, adjustResize|stateHidden)~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)
 Module1=|relative|..\AccountView
 Module10=|relative|..\MiniAccountView
 Module11=|relative|..\OAuth
 Module12=|relative|..\PleromaFeed
-Module13=|relative|..\RequestsManager
-Module14=|relative|..\SearchManager
-Module15=|relative|..\StackManager
-Module16=Starter
-Module17=|relative|..\StatusView
-Module18=|relative|..\StubView
-Module19=|relative|..\TextUtils
+Module13=|relative|..\PostView
+Module14=|relative|..\RequestsManager
+Module15=|relative|..\SearchManager
+Module16=|relative|..\StackManager
+Module17=Starter
+Module18=|relative|..\StatusView
+Module19=|relative|..\StubView
 Module2=|relative|..\B4XMainPage
-Module20=|relative|..\ViewsCache
-Module21=|relative|..\WebViewDialog
+Module20=|relative|..\TextUtils
+Module21=|relative|..\ViewsCache
+Module22=|relative|..\WebViewDialog
 Module3=|relative|..\BBListItem
 Module4=|relative|..\CardView
 Module5=|relative|..\Constants
@@ -77,9 +81,9 @@ Module6=|relative|..\DrawerManager
 Module7=|relative|..\HtmlToRuns
 Module8=|relative|..\ImagesCache
 Module9=|relative|..\ListOfStatuses
-NumberOfFiles=18
-NumberOfLibraries=19
-NumberOfModules=21
+NumberOfFiles=19
+NumberOfLibraries=20
+NumberOfModules=22
 Version=10.17
 @EndOfDesignText@
 #Region  Project Attributes 
@@ -103,14 +107,19 @@ Sub Process_Globals
 End Sub
 
 Sub Globals
-
+	Private ime As IME
 End Sub
 
 Sub Activity_Create(FirstTime As Boolean)
+	ime.Initialize("IME")
+	ime.AddHeightChangedEvent
 	Dim pm As B4XPagesManager
 	pm.Initialize(Activity)
 End Sub
 
+Sub IME_HeightChanged (NewHeight As Int, OldHeight As Int)
+	B4XPages.GetManager.RaiseEvent(B4XPages.GetManager.GetTopPage, "IME_HeightChanged", Array(NewHeight, OldHeight))
+End Sub
 'Template version: B4A-1.0
 #Region Delegates
 

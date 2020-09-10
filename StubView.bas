@@ -11,19 +11,20 @@ End Sub
 
 Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
-	mBase.SetLayoutAnimated(0, 0, 0, width, 30dip)
-	mBase.SetColorAndBorder(Constants.NoMoreItemsBackground, 0, 0, 1dip)
+	mBase.SetLayoutAnimated(0, 0, 0, width, 300dip)
+	mBase.SetColorAndBorder(xui.Color_White, 0, 0, 1dip)
 	Dim lbl As Label
 	lbl.Initialize("")
 	Dim xlbl As B4XView = lbl
-	mBase.AddView(xlbl, 0, 0, mBase.Width, mBase.Height)
+	mBase.AddView(xlbl, 0, 0, mBase.Width, 50dip)
 	xlbl.SetTextAlignment("CENTER", "CENTER")
 	xlbl.Text = "No more items"
 	xlbl.TextColor = xui.Color_White
 	xlbl.Font = xui.CreateDefaultFont(16)
+	xlbl.Color = Constants.NoMoreItemsBackground
 End Sub
 
-Public Sub SetContent(Content As Object)
+Public Sub SetContent(Content As Object, ListItem As PLMCLVItem)
 	
 End Sub
 
