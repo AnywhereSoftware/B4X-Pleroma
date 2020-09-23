@@ -31,11 +31,8 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
 	mCallBack = Callback
 	mEventName = EventName
-	#if B4A
-	Dim jo As JavaObject = ImageView1
-	Dim alpha As Float = 0.7
-	jo.RunMethod("setAlpha", Array(alpha))
-	#End If
+	B4XPages.MainPage.ViewsCache1.SetAlpha(ImageView1, 0.7)
+	
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
 	tu = B4XPages.MainPage.TextUtils1
 End Sub

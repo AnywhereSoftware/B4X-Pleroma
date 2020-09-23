@@ -56,7 +56,7 @@ End Sub
 Public Sub Start (KeepStatuses As Boolean)
 	Timer1.Enabled = True
 	DownloadIndex = DownloadIndex + 1
-	server = B4XPages.MainPage.Servers.Get(user.ServerName)
+	server = B4XPages.MainPage.GetServer
 	If KeepStatuses = False Then
 		Dim Statuses As B4XOrderedMap
 		Statuses.Initialize

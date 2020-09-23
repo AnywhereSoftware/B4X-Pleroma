@@ -11,11 +11,15 @@ Sub Process_Globals
 	Public Const ColorDefaultText As Int = 0xFF585858
 	Public Const ImageParentColor As Int = 0xFFF5F5F5
 	Public Const SearchIconChar As String = Chr(0xF002)
+	Public Const PlusChar As String = Chr(0xF067)
 	Public Const NoMoreItemsBackground As Int = 0xFFAEAEAE
 	Public Const EmptyList As List = Array()
 	Public ReadMoreGradient As B4XBitmap
 	Public Const MaxTextHeight As Int = 250dip
-	Public Const CLVAnimationDuration as int = 100
+	Public Const MissingBitmapFileName As String = "Missing-image-232x150.png"
+	Public Const CLVAnimationDuration As Int = 100
+	Public Const DefaultTextBackground As Int = xui.Color_White
+	Public Const OverlayColor as int = 0x44000000
 End Sub
 
 Public Sub Initialize

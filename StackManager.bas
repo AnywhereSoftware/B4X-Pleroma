@@ -61,7 +61,9 @@ Public Sub GetDataToStore As Object
 	Dim links As List
 	links.Initialize
 	For Each item As StackItem In Stack.Values
-		links.Add(item.Link)	
+		Dim link As PLMLink = item.Link
+		If link = B4XPages.MainPage.LINK_HOME Or link = B4XPages.MainPage.LINK_PUBLIC Then Continue
+		links.Add(link)	
 	Next
 	links.Add(mList.feed.mLink)
 	For Each link As PLMLink In links

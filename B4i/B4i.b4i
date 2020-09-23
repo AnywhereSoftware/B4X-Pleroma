@@ -5,12 +5,14 @@ File11=Missing-image-232x150.png
 File12=nsfw.74818f9.png
 File13=play.png
 File14=PostView.bil
-File15=Search.bil
-File16=StatusList.bil
-File17=StatusViewImpl.bil
-File18=VideoPlayer.bil
-File19=WebViewDialog.bil
+File15=PostView.json
+File16=PostViewMedia.bil
+File17=Search.bil
+File18=StatusList.bil
+File19=StatusViewImpl.bil
 File2=CardView.bil
+File20=VideoPlayer.bil
+File21=WebViewDialog.bil
 File3=DialogContainer.bil
 File4=empty.png
 File5=GifView.bil
@@ -30,6 +32,8 @@ FileGroup17=Default Group
 FileGroup18=Default Group
 FileGroup19=Default Group
 FileGroup2=Default Group
+FileGroup20=Default Group
+FileGroup21=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -46,6 +50,7 @@ Library13=b4xdrawer
 Library14=b4xpreferencesdialog
 Library15=bctoast
 Library16=ifirebaseanalytics
+Library17=imedia
 Library2=b4xpages
 Library3=xui views
 Library4=bctextengine
@@ -61,13 +66,14 @@ Module12=|relative|..\PleromaFeed
 Module13=|relative|..\PostView
 Module14=|relative|..\RequestsManager
 Module15=|relative|..\SearchManager
-Module16=|relative|..\StackManager
-Module17=|relative|..\StatusView
-Module18=|relative|..\StubView
-Module19=|relative|..\TextUtils
+Module16=|relative|..\ServerManager
+Module17=|relative|..\StackManager
+Module18=|relative|..\StatusView
+Module19=|relative|..\StubView
 Module2=|relative|..\B4XMainPage
-Module20=|relative|..\ViewsCache
-Module21=|relative|..\WebViewDialog
+Module20=|relative|..\TextUtils
+Module21=|relative|..\ViewsCache
+Module22=|relative|..\WebViewDialog
 Module3=|relative|..\BBListItem
 Module4=|relative|..\CardView
 Module5=|relative|..\Constants
@@ -75,9 +81,9 @@ Module6=|relative|..\DrawerManager
 Module7=|relative|..\HtmlToRuns
 Module8=|relative|..\ImagesCache
 Module9=|relative|..\ListOfStatuses
-NumberOfFiles=19
-NumberOfLibraries=16
-NumberOfModules=21
+NumberOfFiles=21
+NumberOfLibraries=17
+NumberOfModules=22
 Version=6.8
 @EndOfDesignText@
 'Code module
@@ -97,6 +103,9 @@ Version=6.8
 	#AdditionalLib: SystemConfiguration.framework
 	#AdditionalLib: libc++.dylib
 	#AdditionalLib: libz.dylib
+	#PlistExtra:<key>NSPhotoLibraryUsageDescription</key><string>Add images and videos as attachments.</string>
+	#PlistExtra:<key>NSCameraUsageDescription</key><string>Add images and videos as attachments.</string>
+	#PlistExtra:<key>NSMicrophoneUsageDescription</key><string>Add videos as attachments.</string>
 #End Region
 
 Sub Process_Globals

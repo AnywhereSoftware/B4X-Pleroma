@@ -19,13 +19,13 @@ Sub Class_Globals
 		SignedIn As Boolean, Id As String)
 	Public LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
 		LINKTYPE_SEARCH = 6 As Int
-	Private Root As B4XView 'ignore
+	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
 	Public TextUtils1 As TextUtils
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.13
+	Public VERSION As Float = 1.15
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
@@ -34,11 +34,11 @@ Sub Class_Globals
 	Public Drawer As B4XDrawer
 	Private HamburgerIcon As B4XBitmap
 	
-	Public Servers As B4XOrderedMap
+	
 	Private DefaultServer As String = "mas.to"
-	Private Dialog As B4XDialog
-	Private lstTemplate As B4XListTemplate
-	Private PrefDialog As PreferencesDialog
+	Public Dialog As B4XDialog
+	Public Dialog2 As B4XDialog
+	
 	Public LINK_PUBLIC, LINK_HOME As PLMLink
 	Public URL_TAG As String = "/api/v1/timelines/tag/"
 	Public URL_USER As String = "/api/v1/accounts/:id"
@@ -47,9 +47,7 @@ Sub Class_Globals
 	
 	Private AccountView1 As AccountView
 	Private wvdialog As WebViewDialog
-	#if B4i
-	Private FeedbackGenerator As NativeObject
-	#End If
+	
 	Private DialogContainer As B4XView
 	Private DialogListOfStatuses As ListOfStatuses
 	Private DialogBtnExit As B4XView
@@ -63,12 +61,19 @@ Sub Class_Globals
 	Private pnlListDefaultTop As Int
 	Private SignInIndex As Int
 	Private StoreVersion As Float
+	Private ServerMan As ServerManager
+	Private PostView1 As PostView
+	Private Dialog2ListTemplate As B4XListTemplate
+	#if B4A
+	Public Provider As FileProvider
+	#End If
+	Private B4iKeyboardHeight As Int
 End Sub
 
 Public Sub Initialize
 	Log($"Version:${NumberFormat2(VERSION, 0, 2, 2, False)}"$)
 	xui.SetDataFolder("b4x_pleroma")
-	Servers.Initialize
+	ServerMan.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
@@ -80,17 +85,14 @@ Public Sub Initialize
 	xui.SetDataFolder("B4X_Pleroma")
 	CreateInitialLinks
 	LoadSavedData
-	#if B4I
-	FeedbackGenerator.Initialize("UIImpactFeedbackGenerator")
-	If FeedbackGenerator.IsInitialized Then
-		FeedbackGenerator = FeedbackGenerator.RunMethod("alloc", Null).RunMethod("initWithStyle:", Array(0)) 'light
-	End If
+	#if B4A
+	Provider.Initialize
 	#End If
 	Constants.Initialize
 End Sub
 
 Private Sub CreateInitialLinks
-	LINK_PUBLIC = TextUtils1.CreatePLMLink("/api/v1/timelines/public", LINKTYPE_TIMELINE, NumberFormat2(B4XPages.MainPage.VERSION, 0, 2, 2, False))
+	LINK_PUBLIC = TextUtils1.CreatePLMLink("/api/v1/timelines/public", LINKTYPE_TIMELINE, AppName & " - " & NumberFormat2(B4XPages.MainPage.VERSION, 0, 2, 2, False))
 	LINK_HOME = TextUtils1.CreatePLMLink("/api/v1/timelines/home", LINKTYPE_TIMELINE, "Home")
 	
 End Sub
@@ -98,15 +100,7 @@ End Sub
 Private Sub LoadSavedData
 '	store.Remove("user")
 '	store.Remove("servers")
-	If store.ContainsKey("servers") Then
-		Dim s As List = store.Get("servers")
-		For Each server As PLMServer In s
-			Servers.Put(server.Name, server)
-		Next
-	Else
-		CreateServersList
-		PersistUserAndServers
-	End If
+	ServerMan.LoadFromStore(store)
 	If store.ContainsKey("user") Then
 		User = store.Get("user")
 		If User.SignedIn = True Then
@@ -122,6 +116,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Root = Root1
 	Drawer.Initialize(Me, "Drawer", Root, 200dip)
 	Drawer.CenterPanel.LoadLayout("MainPage")
+	
 	DrawerManager1.Initialize(Drawer)
 	#if B4A
 	Drawer.ExtraWidth = 30dip
@@ -131,15 +126,14 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	B4XPages.SetTitle(Me, AppName)
 	CreateMenu
 	Dialog.Initialize(Root)
-	lstTemplate.Initialize
-	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
-	PrefDialog.Dialog.OverlayColor = 0x64000000
+'	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
+'	PrefDialog.Dialog.OverlayColor = 0x64000000
 	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
 	If store.ContainsKey("stack") Then
 		Statuses.Stack.SetDataFromStore(store.Get("stack"))
 	End If
 	DrawerManager1.UpdateLeftDrawerList
-	DialogSetLightTheme
+	DialogSetLightTheme (Dialog)
 	If Root.Width = 0 Then
 		Wait For B4XPage_Resize (Width As Int, Height As Int)
 		Drawer.Resize(Width, Height)
@@ -167,12 +161,17 @@ End Sub
 Private Sub CreateMenu
 	#if B4A
 	Dim cs As CSBuilder
-	Dim mi As B4AMenuItem = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Chr(0xF021)).PopAll)
+	Dim mi As B4AMenuItem
+	mi = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(22).Append(Constants.PlusChar).PopAll)
+	mi.AddToBar = True
+	mi.Tag = "new post"
+	mi = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Chr(0xF021)).PopAll)
 	mi.AddToBar = True
 	mi.Tag = "refresh"
 	mi = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Constants.SearchIconChar).PopAll)
 	mi.AddToBar = True
 	mi.Tag = "search"
+	
 	#Else if B4i
 	Dim bb As BarButton
 	bb.InitializeBitmap(HamburgerIcon, "hamburger")
@@ -180,7 +179,9 @@ Private Sub CreateMenu
 	bb.InitializeSystem(bb.ITEM_REFRESH, "refresh")
 	Dim bb2 As BarButton
 	bb2.InitializeSystem(bb.ITEM_SEARCH, "search")
-	B4XPages.GetNativeParent(Me).TopRightButtons = Array(bb2, bb)
+	Dim bb3 As BarButton
+	bb3.InitializeSystem(bb.ITEM_ADD, "new post")
+	B4XPages.GetNativeParent(Me).TopRightButtons = Array(bb2, bb, bb3)
 	#Else If B4J
 	Dim iv As ImageView
 	iv.Initialize("imgHamburger")
@@ -190,11 +191,6 @@ Private Sub CreateMenu
 	#end if
 End Sub
 
-Private Sub CreateServersList
-	For Each ser As PLMServer In Array(CreatePLMServer("https://mas.to/", "mas.to"), CreatePLMServer("https://pleroma.com", "pleroma.com"))
-		Servers.Put(ser.Name, ser)
-	Next
-End Sub
 
 #if B4J
 Private Sub imgHamburger_MouseClicked (EventData As MouseEvent)
@@ -209,6 +205,8 @@ Private Sub B4XPage_MenuClick (Tag As String)
 		btnRefresh_Click
 	Else If Tag = "search" Then
 		btnSearch_Click
+	Else If Tag = "new post" Then
+		btnPlus_Click
 	End If
 End Sub
 #end if
@@ -244,7 +242,7 @@ Public Sub PersistUserAndServers
 	If User.IsInitialized Then
 		store.Put("user", User)
 	End If
-	store.Put("servers", Servers.Values)
+	ServerMan.SaveToStore(store)
 End Sub
 
 Private Sub B4XPage_CloseRequest As ResumableSub
@@ -257,6 +255,10 @@ Private Sub B4XPage_CloseRequest As ResumableSub
 	'back key
 	If Drawer.LeftOpen Then
 		Drawer.LeftOpen = False
+		Return False
+	End If
+	If Dialog2.IsInitialized And Dialog2.Visible Then
+		Dialog2.Close(xui.DialogResponse_Cancel)
 		Return False
 	End If
 	If Dialog.Visible Then
@@ -299,20 +301,13 @@ End Sub
 Public Sub SignIn
 	SignInIndex = SignInIndex + 1
 	Dim MyIndex As Int = SignInIndex
-	lstTemplate.Options = Servers.Keys
-	Dialog.Title = "Select Server"
-	Dialog.ButtonsHeight = 40dip
-	lstTemplate.Resize(300dip, 150dip)
-	lstTemplate.CustomListView1.AsView.Height = 150dip
-	Wait For (Dialog.ShowTemplate(lstTemplate, "", "", "Cancel")) Complete (Result As Int)
-	If SignInIndex <> MyIndex Then Return
-	If Result = xui.DialogResponse_Cancel Then
-		Return
-	End If
 	
-	User.ServerName = lstTemplate.SelectedItem
-	If GetServer.AppClientSecret = "" Then
-		Wait For (auth.RegisterApp) Complete (Success As Boolean)
+	Dialog.ButtonsHeight = 40dip
+	Wait For (ServerMan.RequestServerName(Dialog)) Complete (Server As PLMServer)
+	If SignInIndex <> MyIndex Or Server.IsInitialized = False Then Return
+	User.ServerName = Server.Name
+	If Server.AppClientSecret = "" Then
+		Wait For (auth.RegisterApp (Server)) Complete (Success As Boolean)
 		If SignInIndex <> MyIndex Then Return
 		If Success = False Then
 			ShowMessage("Error registering app.")
@@ -321,7 +316,7 @@ Public Sub SignIn
 			PersistUserAndServers
 		End If
 	End If
-	auth.SignIn(User)
+	auth.SignIn(User, Server)
 	Wait For Auth_SignedIn (Success As Boolean)
 	If SignInIndex <> MyIndex Then Return
 	If Success Then
@@ -329,8 +324,7 @@ Public Sub SignIn
 	Else
 		ShowMessage("Failed to sign in.")
 		User.SignedIn = False
-		Dim server As PLMServer = GetServer
-		server.AppClientSecret = ""
+		Server.AppClientSecret = ""
 	End If
 End Sub
 
@@ -352,11 +346,21 @@ Public Sub MakeSureThatUserSignedIn As Boolean
 End Sub
 
 Public Sub ShowMessage(str As String)
+	If B4iKeyboardHeight > 0 Then
+		Toast.VerticalCenterPercentage = 30
+	Else
+		Toast.VerticalCenterPercentage = 85
+	End If
 	Toast.Show(str)
 End Sub
 
+Public Sub ConfirmMessage (Message As String) As ResumableSub
+	Wait For (xui.Msgbox2Async(Message, AppName, "Yes", "Cancel", "", Null)) Msgbox_Result (Result As Int)
+	Return Result
+End Sub
+
 Private Sub VerifyUser
-	Wait For (auth.VerifyUser) Complete (Success As Boolean)
+	Wait For (auth.VerifyUser (GetServer)) Complete (Success As Boolean)
 	If Success Then
 		AfterSignIn
 	End If
@@ -365,24 +369,19 @@ End Sub
 Private Sub AfterSignIn
 	Log("after sign in!")
 	User.SignedIn = True
+	ServerMan.AfterSignIn (User.ServerName)
 	PersistUserAndServers
-	Statuses.Refresh2(User, LINK_HOME, False, False)
+	Statuses.Refresh2(User, LINK_HOME, True, False)
 	DrawerManager1.SignIn
 	DrawerManager1.UpdateLeftDrawerList
+	
 End Sub
 
 Public Sub GetServer As PLMServer
-	Return Servers.Get(User.ServerName)
+	Return ServerMan.GetServer(User)
 End Sub
 
 
-Public Sub CreatePLMServer (URL As String, Name As String) As PLMServer
-	Dim t1 As PLMServer
-	t1.Initialize
-	t1.URL = URL
-	t1.Name = Name
-	Return t1
-End Sub
 
 Private Sub btnRefresh_Click
 	CloseDialogAndDrawer
@@ -390,24 +389,20 @@ Private Sub btnRefresh_Click
 End Sub
 
 Private Sub CloseDialogAndDrawer
+	If Dialog2.IsInitialized And Dialog2.Visible Then Dialog2.Close(xui.DialogResponse_Cancel)
 	ClosePrevDialog
 	Drawer.LeftOpen = False
 End Sub
 
 
-Private Sub DialogSetLightTheme
-	Dim TextColor As Int = 0xFF5B5B5B
-	Dialog.BackgroundColor = xui.Color_White
-	Dialog.ButtonsColor = xui.Color_White
-	Dialog.TitleBarColor = 0xFF007EA9
-	Dialog.ButtonsTextColor = Dialog.TitleBarColor
-	Dialog.BorderColor = xui.Color_Transparent
-	
-	lstTemplate.CustomListView1.DefaultTextBackgroundColor = xui.Color_White
-	lstTemplate.CustomListView1.DefaultTextColor = TextColor
-	lstTemplate.CustomListView1.AsView.Color = xui.Color_White
-	Dialog.BorderWidth = 0dip
-	lstTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = 0xFFC3C3C3
+Private Sub DialogSetLightTheme (diag As B4XDialog)
+	diag.BackgroundColor = xui.Color_White
+	diag.ButtonsColor = xui.Color_White
+	diag.TitleBarColor = 0xFF007EA9
+	diag.ButtonsTextColor = diag.TitleBarColor
+	diag.BorderColor = xui.Color_Transparent
+	diag.BorderWidth = 0dip
+	diag.OverlayColor = Constants.OverlayColor
 End Sub
 
 Private Sub Statuses_AvatarClicked (Account As PLMAccount)
@@ -435,6 +430,27 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 		v.Enabled = True
 	Next
 	DialogListOfStatuses.StopAndClear
+End Sub
+
+Private Sub btnPlus_Click
+	ShowCreatePostInDialog
+End Sub
+
+Private Sub ShowCreatePostInDialog
+	If MakeSureThatUserSignedIn = False Then Return
+	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
+	If ShouldReturn Then Return
+	If PostView1.IsInitialized = False Then
+		PostView1.Initialize(Me, "PostView1", Root.Width * 0.9)
+	End If
+	Dim post As PLMPost
+	post.Initialize
+	PostView1.SetContent(post, Null)
+	Dim rs As Object = ShowDialogWithoutButtons(PostView1.mBase, False)
+	Sleep(0)
+	PostView1.B4XFloatTextField1.RequestFocusAndShowKeyboard
+	Wait For (rs) Complete (Result As Int)
+	PostView1.RemoveFromParent
 End Sub
 
 Private Sub Statuses_LinkClicked (Link As PLMLink)
@@ -478,7 +494,7 @@ End Sub
 Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As ResumableSub
 	Dialog.Title = ""
 	Dialog.ButtonsHeight = -1dip
-	Dialog.VisibleAnimationDuration = 500
+	Dialog.VisibleAnimationDuration = 300
 	Dim sv As B4XView = DialogContainer.GetView(0)
 	sv.Visible = WithSV
 	If WithSV Then
@@ -496,7 +512,9 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 		DialogBtnExit.BringToFront
 	End If
 	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height
+	Dialog.PutAtTop = True
 	Dim rs As Object = Dialog.ShowCustom(DialogContainer, "", "", "")
+	Dialog.Base.Parent.Tag = "" 'this will prevent the dialog from closing when the second dialog appears.
 	Dialog.VisibleAnimationDuration = 0
 	#if B4i
 	Statuses.RemoveClickRecognizer(Dialog.Base)
@@ -531,7 +549,7 @@ End Sub
 Private Sub Statuses_TitleChanged (Title As String)
 	Dim st As ListOfStatuses = Sender
 	If st = DialogListOfStatuses Then Return
-	B4XPages.SetTitle(Me, AppName & " - " & Title)
+	B4XPages.SetTitle(Me, Title)
 	DrawerManager1.StackChanged
 End Sub
 
@@ -569,4 +587,45 @@ End Sub
 
 Private Sub B4XPage_Background
 	store.Put("stack", Statuses.Stack.GetDataToStore)
+End Sub
+
+Private Sub PostView1_Close
+	If Dialog.Visible Then Dialog.Close(xui.DialogResponse_Cancel)
+End Sub
+
+Private Sub PostView1_NewPost (Status As PLMStatus)
+	Dialog.close(xui.DialogResponse_Cancel)
+	Statuses.Refresh2(User, LINK_HOME, True, False)
+	
+End Sub
+
+Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
+	If Dialog2.IsInitialized = False Then
+		Dialog2.Initialize(Root)
+		Dialog2ListTemplate.Initialize
+		DialogSetLightTheme(Dialog2)
+		Dialog2ListTemplate.CustomListView1.DefaultTextBackgroundColor = Constants.DefaultTextBackground
+		Dialog2ListTemplate.CustomListView1.DefaultTextColor = Constants.ColorDefaultText
+		Dialog2.BackgroundColor = Constants.DefaultTextBackground
+		Dialog2.BorderColor = Constants.ColorDefaultText
+		Dialog2.BorderCornersRadius = 10dip
+		Dialog2ListTemplate.CustomListView1.sv.Color = Constants.DefaultTextBackground
+		Dialog2ListTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = 0xFFDFDFDF
+	End If
+	Dialog2ListTemplate.Options = Options
+	Dialog2ListTemplate.Resize(200dip, Min(70dip * Options.Size, 250dip))
+	Dialog2ListTemplate.CustomListView1.AsView.Height = Dialog2ListTemplate.mBase.Height
+	Dialog2.PutAtTop = PutAtTop
+	Dim rs As ResumableSub = Dialog2.ShowTemplate(Dialog2ListTemplate, "", "", "Cancel")
+	ViewsCache1.SetClipToOutline(Dialog2.Base) 'apply the round corners to the content
+	Wait For (rs) Complete (Result As Int)
+	If Result = xui.DialogResponse_Positive Then
+		Return Dialog2ListTemplate.SelectedItem
+	Else
+		Return ""
+	End If
+End Sub
+
+Private Sub B4XPage_KeyboardStateChanged (Height As Float)
+	B4iKeyboardHeight = Height
 End Sub

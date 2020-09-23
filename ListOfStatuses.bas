@@ -173,6 +173,8 @@ Private Sub PostView1_NewPost (Status As PLMStatus)
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
 End Sub
 
+
+
 Private Sub JumpToTarget
 	Log("jump to target")
 	Sleep(0)
@@ -449,6 +451,7 @@ Public Sub BackKeyPressedShouldClose As Boolean
 		CloseLargeImage
 		Return False
 	Else If PostViewListIndex >= 0 Then
+		If PostView1.BackKeyPressed Then Return False
 		RemovePostView(False)
 		Return False
 	Else If btnBack.Visible Then
@@ -525,14 +528,25 @@ End Sub
 'returns true if it was open
 Private Sub RemovePostView (Animated As Boolean) As Boolean
 	If PostViewListIndex < 0 Then Return False
-	If Animated = False Then CLV.AnimationDuration = 0
-	CLV.RemoveAt(PostViewListIndex)
-	CLV.AnimationDuration = Constants.CLVAnimationDuration
+	RemoveItemFromList(Animated, PostViewListIndex)
 	feed.Statuses.Remove(feed.NewPostId)
-	UpdateIndicesAboveIndex(PostViewListIndex, -1)
 	PostView1.RemoveFromParent
 	PostViewListIndex = -1
 	Return True
+End Sub
+
+Private Sub StatusView1_StatusDeleted
+	Dim sv As StatusView = Sender
+	RemoveItemFromList(True, GetUsedItemIndex(StatusesViewsManager, sv))
+	RemoveView(StatusesViewsManager, sv)
+	feed.Statuses.Remove(sv.mStatus.id)
+End Sub
+
+Private Sub RemoveItemFromList  (animated As Boolean, index As Int)
+	If animated = False Then CLV.AnimationDuration = 0
+	CLV.RemoveAt(index)
+	CLV.AnimationDuration = Constants.CLVAnimationDuration
+	UpdateIndicesAboveIndex(index, -1)
 End Sub
 
 Private Sub UpdateIndicesAboveIndex (Index As Int, Delta As Int)

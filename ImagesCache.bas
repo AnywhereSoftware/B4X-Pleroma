@@ -36,7 +36,7 @@ Public Sub Initialize
 	NoImage.Initialize
 	PermCache.Initialize
 	PermCache.Put(NSFW_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "nsfw.74818f9.png"), NSFW_URL))
-	PermCache.Put(MISSING_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "Missing-image-232x150.png"), MISSING_URL))
+	PermCache.Put(MISSING_URL, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, Constants.MissingBitmapFileName), MISSING_URL))
 	PermCache.Put(PLAY, CreateImageCacheBmp(xui.LoadBitmap(File.DirAssets, "play.png"), PLAY))
 	PermCache.Put("null", PermCache.Get(MISSING_URL))
 	PermCache.Put("", PermCache.Get(MISSING_URL))

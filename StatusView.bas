@@ -9,6 +9,7 @@ Version=8.3
 #Event: LinkClicked (Link As PLMLink) 
 #Event: HeightChanged
 #Event: Reply
+#Event: StatusDeleted
 Sub Class_Globals
 	Private mEventName As String 'ignore
 	Private mCallBack As Object 'ignore
@@ -80,7 +81,7 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	SetBBListContent
 	SetTime
 	ImagesCache1.SetImage(mStatus.Account.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
-	If BBListItem1.mBase.Height > Constants.MaxTextHeight And ListItem.Expanded = False Then
+	If BBListItem1.mBase.Height > Constants.MaxTextHeight + 20dip And ListItem.Expanded = False Then
 		FullHeight = BBListItem1.mBase.Height
 		BBListItem1.mBase.Height = Constants.MaxTextHeight
 		imgReadMore.Bitmap = Constants.ReadMoreGradient
@@ -293,6 +294,11 @@ Private Sub SetBottomPanel
 	r = tu.CreateUrlRun("~reblog", " " &  Chr(0xF079) & CountToString(mStatus.ReblogsCount) & " ", BBBottom.ParseData)
 	r.TextColor = GetIsUserColor(mStatus.Reblogged)
 	runs.Add(r)
+	runs.Add(mTextEngine.CreateRun(TAB))
+	r = tu.CreateUrlRun("~more", " " &  Chr(0xF141) & " ", BBBottom.ParseData)
+	r.TextColor = GetIsUserColor(False)
+	runs.Add(r)
+	
 	For Each r As BCTextRun In runs
 		r.TextFont = fnt
 	Next
@@ -435,7 +441,6 @@ Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
 End Sub
 
 Private Sub BBBottom_LinkClicked (URL As String, Text As String)
-	
 	If URL.StartsWith("~favourites") Then
 		FavouriteClick
 	Else If URL.StartsWith("~reblog") Then
@@ -443,7 +448,41 @@ Private Sub BBBottom_LinkClicked (URL As String, Text As String)
 	Else If URL.StartsWith("~replies") Then
 		XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
 		CallSub(mCallBack, mEventName & "_Reply")
+	Else If URL.StartsWith("~more") Then
+		ShowMoreOptions
 	End If
+End Sub
+
+Private Sub ShowMoreOptions
+	Dim options As List
+	options.Initialize
+	options.Add("Share")
+	If B4XPages.MainPage.User.SignedIn And mStatus.Account.Id = B4XPages.MainPage.User.Id Then
+		options.Add("Delete")
+	End If
+	Wait For (B4XPages.MainPage.ShowListDialog(options, False)) Complete (Result As String)
+	If Result = "Delete" Then
+		DeleteStatus
+	Else
+		B4XPages.MainPage.ShowMessage("Not implemented...")
+	End If
+End Sub
+
+Private Sub DeleteStatus
+	Wait For (B4XPages.MainPage.ConfirmMessage("Delete status?")) Complete (Result As Int)
+	If Result <> xui.DialogResponse_Positive Then Return
+	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+	If j = Null Then Return
+	j.Delete(B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}"$)
+	B4XPages.MainPage.auth.AddAuthorization(j)
+	Wait For (j) JobDone(j As HttpJob)
+	If j.Success Then
+		CallSub(mCallBack, mEventName & "_StatusDeleted")
+	Else
+		B4XPages.MainPage.ShowMessage("Error deleting status.")
+	End If
+	j.Release
+	B4XPages.MainPage.HideProgress
 End Sub
 
 Private Sub lblTime_Click

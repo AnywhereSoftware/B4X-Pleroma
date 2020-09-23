@@ -19,6 +19,7 @@ Sub Class_Globals
 	Private mCallback As Object
 	Private mEventName As String
 	Private packageName As String 'ignore
+	Private CurrentlySignedInServer As PLMServer
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -31,7 +32,7 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	#End If
 End Sub
 
-Public Sub RegisterApp  As ResumableSub
+Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
 	Dim j As HttpJob
 	j.Initialize("", Me)
 	Dim sb As StringBuilder
@@ -40,15 +41,19 @@ Public Sub RegisterApp  As ResumableSub
 	sb.Append("&redirect_uris=").Append(su.EncodeUrl(GetRedirectUri & " " & "urn:ietf:wg:oauth:2.0:oob", "UTF8"))
 	sb.Append("&scopes=read+write+follow+push")
 	sb.Append("&website=").Append("www.b4x.com")
-	Dim server As PLMServer = B4XPages.MainPage.GetServer
-	j.PostString(server.URL & "/api/v1/apps", sb.ToString)
+	Try
+		j.PostString(Server.URL & "/api/v1/apps", sb.ToString)
+	Catch
+		Log(LastException)
+		Return False
+	End Try
 	Wait For (j) JobDone (j As HttpJob)
 	If j.Success Then
 		Try
 			Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
 			If m.IsInitialized Then
-				server.AppClientId = m.Get("client_id")
-				server.AppClientSecret = m.Get("client_secret")
+				Server.AppClientId = m.Get("client_id")
+				Server.AppClientSecret = m.Get("client_secret")
 				Log("server client id and secret set.")
 				B4XPages.MainPage.PersistUserAndServers
 			End If
@@ -57,16 +62,16 @@ Public Sub RegisterApp  As ResumableSub
 		End Try
 	End If
 	j.Release
-	Return server.AppClientSecret <> ""
+	Return Server.AppClientSecret <> ""
 End Sub
 
-Public Sub SignIn (User As PLMUser)
-	Dim server As PLMServer = B4XPages.MainPage.GetServer
-	Dim link As String = BuildLink(server.URL & "/oauth/authorize", _
-		 CreateMap("client_id": server.AppClientId, _
+Public Sub SignIn (User As PLMUser, Server As PLMServer)
+	Dim link As String = BuildLink(Server.URL & "/oauth/authorize", _
+		 CreateMap("client_id": Server.AppClientId, _
 		"redirect_uri": GetRedirectUri, _
 		"response_type": "code", "scope": "read write follow push"))
 	B4XPages.MainPage.ShowExternalLink(link)
+	CurrentlySignedInServer = Server
 	#if B4J
 	PrepareServer
 	#end if
@@ -159,7 +164,7 @@ End Sub
 
 Private Sub GetTokenFromAuthorizationCode (Code As String)
 	Dim user As PLMUser = B4XPages.MainPage.User
-	Dim server As PLMServer = B4XPages.MainPage.GetServer
+	Dim server As PLMServer = CurrentlySignedInServer
 	Log("Getting access token from authorization code...")
 	Dim j As HttpJob
 	j.Initialize("", Me)
@@ -173,8 +178,7 @@ Private Sub GetTokenFromAuthorizationCode (Code As String)
 		If m.IsInitialized Then
 			user.AccessToken = m.Get("access_token")
 			user.MeURL = m.Get("me")
-			VerifyUser
-			Wait For (VerifyUser) Complete (Success As Boolean)
+			Wait For (VerifyUser (CurrentlySignedInServer)) Complete (Success As Boolean)
 			j.Release
 			RaiseEvent(m.IsInitialized)
 			Return
@@ -197,13 +201,12 @@ Private Sub GetRedirectUri As String
 	#End If
 End Sub
 
-Public Sub VerifyUser As ResumableSub
+Public Sub VerifyUser (Server As PLMServer) As ResumableSub
 	Dim user As PLMUser = B4XPages.MainPage.User
-	Dim server As PLMServer = B4XPages.MainPage.GetServer
 	Dim j As HttpJob
 	j.Initialize("", Me)
-	j.Download(server.URL & "/api/v1/accounts/verify_credentials")
-	AddAuthorization(j)
+	j.Download(Server.URL & "/api/v1/accounts/verify_credentials")
+	j.GetRequest.SetHeader("Authorization", "Bearer " & user.AccessToken)
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
 		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)

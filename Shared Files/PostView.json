@@ -1,0 +1,24 @@
+{
+    "Version": 1.66,
+    "Theme": "Light Theme",
+    "Items": [
+        {
+            "title": "NSFW",
+            "type": "Boolean",
+            "key": "nsfw",
+            "required": false
+        },
+        {
+            "options": [
+                "Public",
+                "Unlisted",
+                "Private",
+                "Direct"
+            ],
+            "title": "Visibility",
+            "type": "Short Options",
+            "key": "visibility",
+            "required": false
+        }
+    ]
+}

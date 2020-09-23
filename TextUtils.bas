@@ -177,12 +177,13 @@ Private Sub GetEmojies (Raw As Map, Size As Int) As List
 	Return res
 End Sub
 
-Private Sub CreateAttachment (Attachment As Map) As PLMMedia
+Public Sub CreateAttachment (Attachment As Map) As PLMMedia
 	Dim m As PLMMedia
 	m.Initialize
 	m.TType = Attachment.Get("type")
 	m.Url = Attachment.GetDefault("url", "")
 	m.PreviewUrl = Attachment.GetDefault("preview_url", "")
+	m.Id = Attachment.GetDefault("id", "")
 	Return m
 End Sub
 
