@@ -16,7 +16,7 @@ Sub Class_Globals
 		Mentions As List, Emojis As List, InReplyToAccountId As String, InReplyToId As String, ExtraContent As Map, _
 		EmojiReactions As List, Favourited As Boolean, Reblogged As Boolean)
 	Type PLMMedia (Id As String, TType As String, Url As String, PreviewUrl As String)
-	Type PLMLink (URL As String, LINKTYPE As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
+	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
 	Type PLMPost (ReplyId As String)
 	Type PLMMiniAccount (Account As PLMAccount)
@@ -84,10 +84,16 @@ Private Sub Timer1_Tick
 			settings.Put("limit", 5)
 '			settings.Put("max_id", "9yXOFMjCv39XhF6fgG")
 		End If
-		If mLink.LINKTYPE = B4XPages.MainPage.LINKTYPE_SEARCH Then
+		If mLink.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 			
 			settings.Put("q", mLink.Extra.Get("query"))
 			settings.Put("limit", 20)
+		End If
+		If mLink.Extra.IsInitialized And mLink.Extra.ContainsKey("params") Then
+			Dim p As Map = mLink.Extra.Get("params")
+			For Each k As String In p.Keys
+				settings.Put(k, p.Get(k))
+			Next
 		End If
 		Download(settings)
 	End If
@@ -122,14 +128,14 @@ Private Sub Download (Params As Map)
 		Dim CurrentSize As Int = Statuses.Size
 		Dim str As String = j.GetString
 		Select mLink.LINKTYPE
-			Case B4XPages.MainPage.LINKTYPE_SEARCH
+			Case Constants.LINKTYPE_SEARCH
 				Wait For (ParseSearch(str)) Complete (res2 As B4XOrderedMap)
 				res = res2
-			Case B4XPages.MainPage.LINKTYPE_THREAD
+			Case Constants.LINKTYPE_THREAD
 				res = ParseThread(str)
-			Case B4XPages.MainPage.LINKTYPE_TAG, B4XPages.MainPage.LINKTYPE_TIMELINE
+			Case Constants.LINKTYPE_TAG, Constants.LINKTYPE_TIMELINE
 				res = ParseTimelines(str)
-			Case B4XPages.MainPage.LINKTYPE_USER
+			Case Constants.LINKTYPE_USER
 				Dim IsStatuses As Boolean = mLink.URL.EndsWith("statuses")
 				If IsFirst Then
 					Dim acct As PLMAccount = ParseAccount (str)

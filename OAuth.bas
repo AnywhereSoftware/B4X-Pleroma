@@ -37,7 +37,7 @@ Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
 	j.Initialize("", Me)
 	Dim sb As StringBuilder
 	sb.Initialize
-	sb.Append("client_name=").Append(su.EncodeUrl(B4XPages.MainPage.AppName, "UTF8"))
+	sb.Append("client_name=").Append(su.EncodeUrl(Constants.AppName, "UTF8"))
 	sb.Append("&redirect_uris=").Append(su.EncodeUrl(GetRedirectUri & " " & "urn:ietf:wg:oauth:2.0:oob", "UTF8"))
 	sb.Append("&scopes=read+write+follow+push")
 	sb.Append("&website=").Append("www.b4x.com")

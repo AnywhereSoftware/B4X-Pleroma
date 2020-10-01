@@ -19,7 +19,20 @@ Sub Process_Globals
 	Public Const MissingBitmapFileName As String = "Missing-image-232x150.png"
 	Public Const CLVAnimationDuration As Int = 100
 	Public Const DefaultTextBackground As Int = xui.Color_White
-	Public Const OverlayColor as int = 0x44000000
+	Public Const OverlayColor As Int = 0x44000000
+	Public Const StackItemRelevantPeriod As Int = 5 * DateTime.TicksPerMinute
+	
+	Public Const URL_TAG As String = "/api/v1/timelines/tag/"
+	Public Const URL_USER As String = "/api/v1/accounts/:id"
+	Public Const URL_THREAD As String = "/api/v1/statuses/:id/context"
+	Public Const URL_SEARCH As String = "/api/v2/search/"
+	Public Const LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
+		LINKTYPE_SEARCH = 6 As Int
+	Public AppName As String = "B4X Pleroma"
+	
+	Public Const StackMaximumNumberOfItems As Int = 6
+	Public Const Version As Float = 1.16
+	Public Const TempImageFileName as string = "tempimage"
 End Sub
 
 Public Sub Initialize
@@ -27,5 +40,8 @@ Public Sub Initialize
 	bc.Initialize(200, 50)
 	bc.FillGradient(Array As Int(0x00FFFFFF, xui.Color_White), bc.TargetRect, "TOP_BOTTOM")
 	ReadMoreGradient = bc.Bitmap
+	
 End Sub
+
+
 

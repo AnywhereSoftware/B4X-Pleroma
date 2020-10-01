@@ -353,7 +353,7 @@ Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
 	Dim url As String = attachment.PreviewUrl
 	If mStatus.Sensitive Then url = B4XPages.MainPage.ImagesCache1.NSFW_URL
 	ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-	If mStatus.Sensitive Then B4XPages.MainPage.ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag)
+	If mStatus.Sensitive Then ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag)
 End Sub
 
 Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
@@ -376,11 +376,11 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	Dim Parent As B4XView = CreateAttachmentPanel(attachment, h, MediaSize, 2dip, iv.Tag)
 	Dim playerview As B4XView = B4XPages.MainPage.ViewsCache1.GetVideoPlayer
 	Parent.AddView(playerview, 0, 0, Parent.Width, Parent.Height)
-	Parent.AddView(iv, Parent.Width / 2 - 40dip, Parent.Height / 2 - 30dip, 80dip, 60dip)
+	Parent.AddView(iv, 0, 0, 0, 0)
 	If mStatus.Sensitive Then
 		ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.NSFW_URL, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
 	Else
-		B4XPages.MainPage.ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.PLAY, iv.Tag, ImagesCache1.RESIZE_NONE)
+		ShowPlayButton(iv)
 	End If
 	#if B4A
 	Dim player As SimpleExoPlayer = playerview.Tag
@@ -391,6 +391,12 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	#end if
 End Sub
 
+Private Sub ShowPlayButton (iv As B4XView)
+	Dim parent As B4XView = iv.Parent
+	iv.SetLayoutAnimated(0, parent.Width / 2 - 40dip, parent.Height / 2 - 30dip, 80dip, 60dip)
+	ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.PLAY, iv.Tag, ImagesCache1.RESIZE_NONE)
+End Sub
+
 #if B4J
 Private Sub AttachmentParent_MouseClicked (EventData As MouseEvent)
 #else
@@ -398,12 +404,24 @@ Private Sub AttachmentParent_Click
 #End If
 	Dim Parent As B4XView = Sender
 	Dim attachment As PLMMedia = Parent.Tag
+	
 	If attachment.TType = "image" Then
-		CallSubDelayed2(mCallBack, mEventName & "_ShowLargeImage", attachment.Url)
+		If mStatus.Sensitive Then
+			Dim iv As B4XView = Parent.GetView(0)
+			iv.SetBitmap(Null)
+			ImagesCache1.SetImage(attachment.PreviewUrl, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
+		Else
+			CallSubDelayed2(mCallBack, mEventName & "_ShowLargeImage", attachment.Url)
+		End If
 	Else If attachment.TType = "video" Then
-		Parent.GetView(1).Visible = False
-		ToggleVideo(Parent.GetView(0))
+		If mStatus.Sensitive Then
+			ShowPlayButton(Parent.GetView(1))
+		Else	
+			Parent.GetView(1).Visible = False
+			ToggleVideo(Parent.GetView(0))
+		End If
 	End If
+	mStatus.Sensitive = False
 End Sub
 
 Private Sub ToggleVideo (PlayerView As B4XView) 'ignore
@@ -456,16 +474,31 @@ End Sub
 Private Sub ShowMoreOptions
 	Dim options As List
 	options.Initialize
-	options.Add("Share")
+	options.Add(Chr(0xF1E0) & "  Share")
 	If B4XPages.MainPage.User.SignedIn And mStatus.Account.Id = B4XPages.MainPage.User.Id Then
-		options.Add("Delete")
+		options.Add(Chr(0xF014) & "  Delete")
 	End If
 	Wait For (B4XPages.MainPage.ShowListDialog(options, False)) Complete (Result As String)
-	If Result = "Delete" Then
-		DeleteStatus
-	Else
-		B4XPages.MainPage.ShowMessage("Not implemented...")
-	End If
+	Select options.IndexOf(Result)
+		Case 0
+			SharePost
+		Case 1
+			DeleteStatus
+	End Select
+End Sub
+
+Private Sub SharePost
+#if B4A
+	Dim in As Intent
+	in.Initialize(in.ACTION_SEND, "")
+	in.SetType("text/plain")
+	in.PutExtra("android.intent.extra.TEXT", mStatus.Url)
+	StartActivity(in)	
+#Else If B4i
+	Dim avc As ActivityViewController
+	avc.Initialize("avc", Array(mStatus.URI))
+	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+#End If
 End Sub
 
 Private Sub DeleteStatus

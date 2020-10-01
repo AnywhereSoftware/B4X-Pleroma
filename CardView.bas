@@ -98,5 +98,5 @@ Sub pnlTouch_MouseClicked (EventData As MouseEvent)
 #else
 Private Sub pnlTouch_Click
 #end if
-	CallSub2(mCallback, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.CreatePLMLink(url, B4XPages.MainPage.LINKTYPE_OTHER, url))
+	CallSub2(mCallback, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.CreatePLMLink(url, Constants.LINKTYPE_OTHER, url))
 End Sub

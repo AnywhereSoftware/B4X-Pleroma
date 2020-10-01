@@ -32,8 +32,8 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 	End If
 	If Status <> Null Then
 		If URL = "~time" Then
-			Dim u As String = B4XPages.MainPage.URL_THREAD.Replace(":id", Status.Id)
-			Dim link As PLMLink = CreatePLMLink2(u, B4XPages.MainPage.LINKTYPE_THREAD, "Conversation", "")
+			Dim u As String = Constants.URL_THREAD.Replace(":id", Status.Id)
+			Dim link As PLMLink = CreatePLMLink2(u, Constants.LINKTYPE_THREAD, "Conversation", "")
 			link.Extra = CreateMap("current": Status, "targetId": Status.id)
 			Return link
 		Else If Text.Length > 1 And Text.StartsWith("@") Then
@@ -51,15 +51,15 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 	If URL = "@" Then
 		Return CreateUserLink(Account.Id, Account.UserName, "statuses")
 	Else If Regex.IsMatch("#\w+", Text) Then
-		Return CreatePLMLink(B4XPages.MainPage.URL_TAG & Text.SubString(1), B4XPages.MainPage.LINKTYPE_TAG, Text)
+		Return CreatePLMLink(Constants.URL_TAG & Text.SubString(1), Constants.LINKTYPE_TAG, Text)
 	End If
-	Return CreatePLMLink(URL, B4XPages.MainPage.LINKTYPE_OTHER, URL)
+	Return CreatePLMLink(URL, Constants.LINKTYPE_OTHER, URL)
 End Sub
 
 
 Public Sub CreateUserLink (id As String, name As String, method As String) As PLMLink
-	Dim u As String = B4XPages.MainPage.URL_USER.Replace(":id", id)
-	Return CreatePLMLink2(u & "/" & method, B4XPages.MainPage.LINKTYPE_USER, "@" & name, u)
+	Dim u As String = Constants.URL_USER.Replace(":id", id)
+	Return CreatePLMLink2(u & "/" & method, Constants.LINKTYPE_USER, "@" & name, u)
 End Sub
 
 

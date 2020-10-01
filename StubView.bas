@@ -16,7 +16,7 @@ Public Sub Initialize (width As Int)
 	Dim lbl As Label
 	lbl.Initialize("")
 	Dim xlbl As B4XView = lbl
-	mBase.AddView(xlbl, 0, 0, mBase.Width, 50dip)
+	mBase.AddView(xlbl, 0, 0, mBase.Width, 40dip)
 	xlbl.SetTextAlignment("CENTER", "CENTER")
 	xlbl.Text = "No more items"
 	xlbl.TextColor = xui.Color_White

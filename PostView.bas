@@ -23,7 +23,7 @@ Sub Class_Globals
 	Private ion As Object
 	Private VideoRecorder As VideoRecordApp
 	#Else If B4i
-	Private llCamera As LLCamera
+	Private llCamera As LLCamera 'ignore, just used for the authorization status
 	Private Camera As Camera
 	#End If
 	Type PostMedia (Media As PLMMedia, Pnl As B4XView, Uploading As Boolean, UploadedSuccessfully As Boolean, _
@@ -438,10 +438,17 @@ End Sub
 
 Private Sub btnOptions_Click
 	If PrefDialog.IsInitialized = False Then
-		PrefDialog.Initialize(B4XPages.MainPage.Root, "", 300dip, 200dip)
+		PrefDialog.Initialize(B4XPages.MainPage.Root, "", 250dip, 200dip)
+		B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
 		PrefDialog.LoadFromJson(File.ReadString(File.DirAssets, "PostView.json"))
+		PrefDialog.Dialog.BackgroundColor = Constants.DefaultTextBackground
+		PrefDialog.Dialog.BorderColor = xui.Color_Transparent
+		PrefDialog.Dialog.BorderCornersRadius = 10dip
+		
 	End If
-	Wait For (PrefDialog.ShowDialog(PostOptions, "Ok", "Cancel")) Complete (Success As Int)
+	Dim rs As Object = PrefDialog.ShowDialog(PostOptions, "Ok", "Cancel")
+	B4XPages.MainPage.ViewsCache1.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	Wait For (rs) Complete (Success As Int)
 	
 End Sub
 

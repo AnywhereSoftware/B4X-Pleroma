@@ -1,0 +1,45 @@
+﻿AppType=StandardJava
+Build1=Default,b4j.example
+Build2=Online,b4j.example,ONLINE
+Group=Default Group
+Library1=jcore
+Library2=jserver
+Module1=Config
+Module2=Push
+NumberOfFiles=0
+NumberOfLibraries=2
+NumberOfModules=2
+Version=8.5
+@EndOfDesignText@
+#Region Project Attributes 
+	#CommandLineArgs:
+	#MergeLibraries: False 
+#End Region
+
+Sub Process_Globals
+	Private srvr As Server
+	Public Config1 As Config
+End Sub
+
+Sub AppStart (Args() As String)
+	srvr.Initialize("srvr")
+	Config1.Initialize
+	srvr.Port = 51050
+	srvr.StaticFilesFolder = File.Combine(File.DirApp, "www")
+	srvr.AddHandler("/push/*", "push", False)
+	#if ONLINE
+	ConfigureSSL(srvr.Port + 1)
+	#End If
+	srvr.Start
+	StartMessageLoop
+End Sub
+
+Private Sub ConfigureSSL (SslPort As Int) 'ignore
+	'example of SSL connector configuration
+	Dim ssl As SslConfiguration
+	ssl.Initialize
+	ssl.SetKeyStorePath(File.DirApp, "domain.keystore") 'path to keystore file
+	ssl.KeyStorePassword = Config1.Settings.Get("keystore_password")
+	ssl.KeyManagerPassword = Config1.Settings.Get("keystore_password")
+	srvr.SetSslConfiguration(ssl, SslPort)
+End Sub

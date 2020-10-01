@@ -56,9 +56,9 @@ Public Sub Refresh
 End Sub
 
 Public Sub Refresh2 (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GetFromStackIfAvailable As Boolean)
-	If GetFromStackIfAvailable And Stack.Stack.ContainsKey(NewLink.Title) Then
-		Dim item As StackItem = Stack.Stack.Get(NewLink.Title)
-		Stack.Stack.Remove(NewLink.Title)
+	If GetFromStackIfAvailable And Stack.ContainsTitle(NewLink.Title) Then
+		Dim item As StackItem = Stack.GetFromTitle(NewLink.Title)
+		Stack.RemoveTitle(NewLink.Title)
 		RefreshImpl(User, Null, AddCurrentToStack, item)
 	Else
 		RefreshImpl(User, NewLink, AddCurrentToStack, Null)
@@ -70,18 +70,22 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 	RemovePostView (False)
 	If AddCurrentToStack Then
 		If GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title Then
-			Stack.Push(feed, CLV)
+			Stack.PushToStack(feed, CLV)
 		End If
 	End If
 	Wait For (StopAndClear) Complete (unused As Boolean)
 	TargetId = ""
+	Dim KeepOldStatuses As Boolean
 	If GoToItem <> Null Then
 		NewLink = GoToItem.Link
 		feed.user = GoToItem.User
 		feed.server = GoToItem.Server
 		feed.mLink = GoToItem.Link
-		feed.Statuses = GoToItem.Statuses
-		CreateItemsFromStack(GoToItem.CLVItems, GoToItem.CurrentScrollOffset)
+		If GoToItem.Time + Constants.StackItemRelevantPeriod > DateTime.Now Then
+			feed.Statuses = GoToItem.Statuses
+			CreateItemsFromStack(GoToItem.CLVItems, GoToItem.CurrentScrollOffset)
+			KeepOldStatuses = True
+		End If
 	Else
 		feed.user = User
 		feed.mLink = NewLink
@@ -90,7 +94,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 			B4XPages.MainPage.ShowProgress
 		End If
 	End If
-	feed.Start (GoToItem <> Null)
+	feed.Start (KeepOldStatuses)
 	CallSub2(mCallBack, mEventName & "_TitleChanged", NewLink.Title)
 	If CLV.Size = 0 Then
 		AddMoreItems
@@ -125,9 +129,9 @@ End Sub
 
 
 Private Sub GoBack
-	Dim items As B4XOrderedMap = Stack.Stack
+	Dim items As B4XOrderedMap = Stack.Items
 	Dim LastItem As StackItem = items.Get(items.Keys.Get(items.Keys.Size - 1))
-	Stack.Stack.Remove(LastItem.Link.Title)
+	Stack.Items.Remove(LastItem.Link)
 	RefreshImpl(Null, Null, False, LastItem)
 End Sub
 
@@ -180,7 +184,9 @@ Private Sub JumpToTarget
 	Sleep(0)
 	B4XPages.MainPage.HideProgress
 	Dim i As Int = feed.Statuses.Keys.IndexOf(TargetId)
-	CLV.JumpToItem(i)
+	If i > 0 And i < CLV.Size Then
+		CLV.JumpToItem(i)
+	End If
 	TargetId = ""
 End Sub
 
@@ -380,6 +386,7 @@ Private Sub GetStatusView (ListIndex As Int) As StatusView
 	End If
 	StatusesViewsManager.UsedStatusViews.Put(sv, Array As Int(ListIndex)) 'by using an array as the value, we can later modify it easily.
 	Return sv
+	
 End Sub
 
 Private Sub GetViewFromManager (Manager As StatusesListUsedManager) As Object
@@ -423,6 +430,41 @@ Private Sub StatusView1_ShowLargeImage (URL As String)
 	ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
 End Sub
 
+
+Private Sub btnShare_Click
+	Dim consumer As ImageConsumer = ZoomImageView1.Tag
+	If consumer.CBitmaps.Size = 0 Then
+		Log("image not ready")
+		Return
+	End If
+	Dim cb As CachedBitmap = consumer.CBitmaps.Get(0)
+	If cb.Bmp.IsInitialized = False Then Return
+	#if B4A
+	Dim provider As FileProvider = B4XPages.MainPage.Provider
+	Dim f As String = provider.SharedFolder
+	Dim name As String =Constants.TempImageFileName
+	If cb.IsGif Then
+		name = name & ".gif"
+		File.Copy(xui.DefaultFolder, cb.GifFile, f, name)
+	Else
+		name = name & ".jpg"
+		Dim out As OutputStream = File.OpenOutput(f, name, False)
+		cb.Bmp.WriteToStream(out, 100, "JPEG")
+		out.Close
+	End If
+	Dim in As Intent
+	in.Initialize(in.ACTION_SEND, "")
+	in.PutExtra("android.intent.extra.STREAM", provider.GetFileUri(name))
+	in.SetType("image/*")
+	in.Flags = 1
+	StartActivity(in)
+	#Else
+	Dim avc As ActivityViewController
+	avc.Initialize("avc", Array(cb.Bmp))
+	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+	#End If
+End Sub
+
 Private Sub StatusView1_AvatarClicked (Account As PLMAccount)
 	CallSub2(mCallBack, mEventName & "_AvatarClicked", Account)
 End Sub
@@ -444,6 +486,10 @@ Private Sub CloseLargeImage
 		B4XPages.MainPage.Drawer.GestureEnabled = True
 		pnlLargeImage.SetVisibleAnimated(100, False)
 	End If
+End Sub
+
+Private Sub btnLargeImageClose_Click
+	CloseLargeImage
 End Sub
 
 Public Sub BackKeyPressedShouldClose As Boolean

@@ -17,19 +17,18 @@ Sub Class_Globals
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
 		SignedIn As Boolean, Id As String)
-	Public LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
-		LINKTYPE_SEARCH = 6 As Int
+	
 	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
 	Public TextUtils1 As TextUtils
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	Public VERSION As Float = 1.15
+	
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
-	Public AppName As String = "B4X Pleroma"
+	
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
 	Private HamburgerIcon As B4XBitmap
@@ -39,11 +38,7 @@ Sub Class_Globals
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
 	
-	Public LINK_PUBLIC, LINK_HOME As PLMLink
-	Public URL_TAG As String = "/api/v1/timelines/tag/"
-	Public URL_USER As String = "/api/v1/accounts/:id"
-	Public URL_THREAD As String = "/api/v1/statuses/:id/context"
-	Public URL_SEARCH As String = "/api/v2/search/"
+	
 	
 	Private AccountView1 As AccountView
 	Private wvdialog As WebViewDialog
@@ -68,34 +63,44 @@ Sub Class_Globals
 	Public Provider As FileProvider
 	#End If
 	Private B4iKeyboardHeight As Int
+	Private push1 As Push
+	Public LinksManager As B4XLinksManager
 End Sub
 
 Public Sub Initialize
-	Log($"Version:${NumberFormat2(VERSION, 0, 2, 2, False)}"$)
+	Log($"Version:${NumberFormat2(Constants.Version, 0, 2, 2, False)}"$)
 	xui.SetDataFolder("b4x_pleroma")
+	TextUtils1.Initialize
+	LinksManager.Initialize
+	Constants.Initialize
 	ServerMan.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
-	store.Put("version", VERSION)
-	TextUtils1.Initialize
+	If StoreVersion < Constants.Version Then
+		UpdateOldStore
+	End If
+	store.Put("version", Constants.VERSION)
 	ImagesCache1.Initialize
 	ViewsCache1.Initialize
 	auth.Initialize(Me, "auth")
 	xui.SetDataFolder("B4X_Pleroma")
-	CreateInitialLinks
 	LoadSavedData
 	#if B4A
 	Provider.Initialize
 	#End If
+	
 	Constants.Initialize
+	push1.Initialize
 End Sub
 
-Private Sub CreateInitialLinks
-	LINK_PUBLIC = TextUtils1.CreatePLMLink("/api/v1/timelines/public", LINKTYPE_TIMELINE, AppName & " - " & NumberFormat2(B4XPages.MainPage.VERSION, 0, 2, 2, False))
-	LINK_HOME = TextUtils1.CreatePLMLink("/api/v1/timelines/home", LINKTYPE_TIMELINE, "Home")
-	
+Private Sub UpdateOldStore
+	If StoreVersion < 1.16 Then
+		store.Remove("stack")
+	End If
 End Sub
+
+
 
 Private Sub LoadSavedData
 '	store.Remove("user")
@@ -123,12 +128,12 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	#end if
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcon = xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True)
-	B4XPages.SetTitle(Me, AppName)
+	B4XPages.SetTitle(Me, Constants.AppName)
 	CreateMenu
 	Dialog.Initialize(Root)
 '	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
 '	PrefDialog.Dialog.OverlayColor = 0x64000000
-	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
+	Statuses.Refresh2(User, LinksManager.LINK_PUBLIC, False, False)
 	If store.ContainsKey("stack") Then
 		Statuses.Stack.SetDataFromStore(store.Get("stack"))
 	End If
@@ -334,7 +339,7 @@ Public Sub SignOut
 	User.AccessToken = ""
 	PersistUserAndServers
 	Statuses.Stack.Clear
-	Statuses.Refresh2(User, LINK_PUBLIC, False, False)
+	Statuses.Refresh2(User, LinksManager.LINK_PUBLIC, False, False)
 	DrawerManager1.UpdateLeftDrawerList
 End Sub
 
@@ -355,7 +360,7 @@ Public Sub ShowMessage(str As String)
 End Sub
 
 Public Sub ConfirmMessage (Message As String) As ResumableSub
-	Wait For (xui.Msgbox2Async(Message, AppName, "Yes", "Cancel", "", Null)) Msgbox_Result (Result As Int)
+	Wait For (xui.Msgbox2Async(Message, Constants.AppName, "Yes", "Cancel", "", Null)) Msgbox_Result (Result As Int)
 	Return Result
 End Sub
 
@@ -371,10 +376,10 @@ Private Sub AfterSignIn
 	User.SignedIn = True
 	ServerMan.AfterSignIn (User.ServerName)
 	PersistUserAndServers
-	Statuses.Refresh2(User, LINK_HOME, True, False)
+	Statuses.Refresh2(User, LinksManager.LINK_HOME, True, False)
 	DrawerManager1.SignIn
 	DrawerManager1.UpdateLeftDrawerList
-	
+'	push1.Subscribe
 End Sub
 
 Public Sub GetServer As PLMServer
@@ -395,7 +400,7 @@ Private Sub CloseDialogAndDrawer
 End Sub
 
 
-Private Sub DialogSetLightTheme (diag As B4XDialog)
+Public Sub DialogSetLightTheme (diag As B4XDialog)
 	diag.BackgroundColor = xui.Color_White
 	diag.ButtonsColor = xui.Color_White
 	diag.TitleBarColor = 0xFF007EA9
@@ -464,14 +469,14 @@ End Sub
 Private Sub LinkClickedShared (Link As PLMLink)
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
-	If Link.LINKTYPE = LINKTYPE_OTHER Then
+	If Link.LINKTYPE = Constants.LINKTYPE_OTHER Then
 		If wvdialog.IsInitialized = False Then
 			wvdialog.Initialize(CreatePanelForDialog)
 		End If
 		wvdialog.Show(Dialog, Link)
 		Wait For (ShowDialogWithoutButtons(wvdialog.mParent, False)) Complete (Result As Int)
 		wvdialog.Close
-	Else If Link.LINKTYPE = LINKTYPE_THREAD Then
+	Else If Link.LINKTYPE = Constants.LINKTYPE_THREAD Then
 		ShowThreadInDialog(Link)
 	Else
 		Statuses.Refresh2(User, Link, True, False)
@@ -511,7 +516,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 		DialogContainer.AddView(pnl, 0, 0, DialogContainer.Width, DialogContainer.Height)
 		DialogBtnExit.BringToFront
 	End If
-	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height
+	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height - 2dip
 	Dialog.PutAtTop = True
 	Dim rs As Object = Dialog.ShowCustom(DialogContainer, "", "", "")
 	Dialog.Base.Parent.Tag = "" 'this will prevent the dialog from closing when the second dialog appears.
@@ -582,10 +587,10 @@ Public Sub btnSearch_Click
 		Search.mBase.SetLayoutAnimated(100, 0, Search.mBase.Top + h, Search.mBase.Width, h)
 		Search.Focus
 	End If
-
 End Sub
 
 Private Sub B4XPage_Background
+	If store.IsInitialized = False Then Return 
 	store.Put("stack", Statuses.Stack.GetDataToStore)
 End Sub
 
@@ -595,7 +600,7 @@ End Sub
 
 Private Sub PostView1_NewPost (Status As PLMStatus)
 	Dialog.close(xui.DialogResponse_Cancel)
-	Statuses.Refresh2(User, LINK_HOME, True, False)
+	Statuses.Refresh2(User, LinksManager.LINK_HOME, True, False)
 	
 End Sub
 
@@ -611,6 +616,9 @@ Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
 		Dialog2.BorderCornersRadius = 10dip
 		Dialog2ListTemplate.CustomListView1.sv.Color = Constants.DefaultTextBackground
 		Dialog2ListTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = 0xFFDFDFDF
+		Dim lbl As B4XView = Dialog2ListTemplate.CustomListView1.DesignerLabel
+		lbl.Font = xui.CreateFontAwesome(15)
+		lbl.SetTextAlignment("CENTER", "LEFT")
 	End If
 	Dialog2ListTemplate.Options = Options
 	Dialog2ListTemplate.Resize(200dip, Min(70dip * Options.Size, 250dip))
@@ -618,6 +626,10 @@ Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
 	Dialog2.PutAtTop = PutAtTop
 	Dim rs As ResumableSub = Dialog2.ShowTemplate(Dialog2ListTemplate, "", "", "Cancel")
 	ViewsCache1.SetClipToOutline(Dialog2.Base) 'apply the round corners to the content
+	#if B4i
+	Sleep(10)
+	#End If
+	Dialog2ListTemplate.CustomListView1.AsView.Top = -2dip
 	Wait For (rs) Complete (Result As Int)
 	If Result = xui.DialogResponse_Positive Then
 		Return Dialog2ListTemplate.SelectedItem

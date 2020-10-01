@@ -12,6 +12,7 @@ Sub Class_Globals
 	Private xui As XUI
 	Private UserItem As B4XView
 	Private Divider As B4XView
+	Private LinksManager As B4XLinksManager
 End Sub
 
 Public Sub Initialize (Drawer As B4XDrawer)
@@ -25,6 +26,7 @@ Public Sub Initialize (Drawer As B4XDrawer)
 	Dim p As B4XView = xui.CreatePanel("")
 	Divider.AddView(p, 5dip, 0, lstDrawer.AsView.Width - 10dip, Divider.Height)
 	p.Color = xui.Color_Black
+	LinksManager = B4XPages.MainPage.LinksManager
 End Sub
 
 Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
@@ -34,10 +36,12 @@ Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 			mp.SignIn
 		Case "sign out"
 			mp.SignOut 
+		Case "settings"
+			B4XPages.MainPage.ShowMessage("not implemented...")
 		Case ""
 		Case Else
-			Dim link As PLMLink = Value
-			mp.Statuses.Refresh2(mp.User, link, True, True)
+			Dim Link As PLMLink = Value
+			mp.Statuses.Refresh2(mp.User, Link, True, True)
 	End Select
 End Sub
 
@@ -52,24 +56,32 @@ End Sub
 Public Sub UpdateLeftDrawerList
 	Dim spaces As String = "   "
 	lstDrawer.Clear
-	If mp.User.SignedIn = False Or UserItem.IsInitialized = False Then
+	Dim weHaveAUser As Boolean = Not(mp.User.SignedIn = False Or UserItem.IsInitialized = False)
+	If weHaveAUser = False Then
 		lstDrawer.AddTextItem($"${"" & Chr(0xF090)}${spaces}Sign in"$, "sign in")
 	Else
 		UserItem.RemoveViewFromParent
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
 		lstDrawer.AddTextItem($"${"" & Chr(0xF08B)}${spaces}Sign out"$, "sign out")
-		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, mp.LINK_HOME)
 	End If
-	lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}${spaces}Public"$, mp.LINK_PUBLIC)
+	lstDrawer.AddTextItem($"${"" & Chr(0xF013)}${spaces}${Constants.AppName} ${NumberFormat2(Constants.Version, 1, 2, 2, False)}"$, "settings")
+	If weHaveAUser Then
+		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, LinksManager.LINK_HOME)
+	End If
+	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
+		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}${spaces}${Link.Title}"$, Link)
+	Next
+	
 	Divider.RemoveViewFromParent
 	Divider.GetView(0).Width = lstDrawer.AsView.Width - 10dip
 	lstDrawer.Add(Divider, "")
-	Dim Titles As List = mp.Statuses.Stack.Stack.Keys
-	For i = Titles.Size - 1 To 0 Step - 1
-		Dim Title As String = Titles.Get(i)
-		If Title = mp.LINK_HOME.Title Or Title = mp.LINK_PUBLIC.Title Then Continue
-		Dim Si As StackItem = mp.Statuses.Stack.Stack.Get(Title)
-		If Si.Link.LINKTYPE = B4XPages.MainPage.LINKTYPE_SEARCH Then
+	Dim Links As List = mp.Statuses.Stack.Items.Keys
+	For i = Links.Size - 1 To 0 Step - 1
+		Dim Link As PLMLink = Links.Get(i)
+		If LinksManager.IsRecentLink(Link) = False Then Continue
+		Dim Si As StackItem = mp.Statuses.Stack.Items.Get(Link)
+		Dim Title As String = Link.Title
+		If Si.Link.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 			Title = Constants.SearchIconChar & spaces & Title
 		End If
 		lstDrawer.AddTextItem(Title, Si.Link)
@@ -131,3 +143,4 @@ Private Sub Delete(index As Int)
 	mp.Statuses.Stack.Delete(link)
 	lstDrawer.RemoveAt(index)
 End Sub
+
