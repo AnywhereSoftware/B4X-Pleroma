@@ -334,6 +334,7 @@ Public Sub SignIn
 End Sub
 
 Public Sub SignOut
+	push1.Unsubscribe
 	User.SignedIn = False
 	User.DisplayName = ""
 	User.AccessToken = ""
@@ -379,7 +380,7 @@ Private Sub AfterSignIn
 	Statuses.Refresh2(User, LinksManager.LINK_HOME, True, False)
 	DrawerManager1.SignIn
 	DrawerManager1.UpdateLeftDrawerList
-'	push1.Subscribe
+	push1.Subscribe
 End Sub
 
 Public Sub GetServer As PLMServer
@@ -516,7 +517,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 		DialogContainer.AddView(pnl, 0, 0, DialogContainer.Width, DialogContainer.Height)
 		DialogBtnExit.BringToFront
 	End If
-	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height - 2dip
+	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height - 4dip
 	Dialog.PutAtTop = True
 	Dim rs As Object = Dialog.ShowCustom(DialogContainer, "", "", "")
 	Dialog.Base.Parent.Tag = "" 'this will prevent the dialog from closing when the second dialog appears.

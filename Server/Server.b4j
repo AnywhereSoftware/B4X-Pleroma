@@ -4,29 +4,46 @@ Build2=Online,b4j.example,ONLINE
 Group=Default Group
 Library1=jcore
 Library2=jserver
-Module1=Config
-Module2=Push
+Library3=byteconverter
+Library4=javaobject
+Library5=jstringutils
+Library6=b4xcollections
+Library7=jokhttputils2
+Library8=json
+Module1=AesGCM
+Module2=Config
+Module3=Push
+Module4=PushFCM
 NumberOfFiles=0
-NumberOfLibraries=2
-NumberOfModules=2
+NumberOfLibraries=8
+NumberOfModules=4
 Version=8.5
 @EndOfDesignText@
 #Region Project Attributes 
 	#CommandLineArgs:
 	#MergeLibraries: False 
 #End Region
-
+#AdditionalJar: bcprov-jdk15on-154
 Sub Process_Globals
 	Private srvr As Server
 	Public Config1 As Config
+	Public gcm As AesGCM
+	Public fcm As PushFCM
+	Type NotificationMessage (Title As String, Body As String, Topic As String, B4i As Boolean)
 End Sub
 
 Sub AppStart (Args() As String)
-	srvr.Initialize("srvr")
+	Dim bouncy As JavaObject
+	bouncy.InitializeNewInstance("org.bouncycastle.jce.provider.BouncyCastleProvider", Null)
+	Dim jo As JavaObject
+	jo.InitializeStatic("java.security.Security").RunMethod("addProvider", Array(bouncy))
 	Config1.Initialize
+	fcm.Initialize
+	gcm.Initialize
+	srvr.Initialize("srvr")
 	srvr.Port = 51050
 	srvr.StaticFilesFolder = File.Combine(File.DirApp, "www")
-	srvr.AddHandler("/push/*", "push", False)
+	srvr.AddHandler("/push/*", "push", True)
 	#if ONLINE
 	ConfigureSSL(srvr.Port + 1)
 	#End If
@@ -42,4 +59,14 @@ Private Sub ConfigureSSL (SslPort As Int) 'ignore
 	ssl.KeyStorePassword = Config1.Settings.Get("keystore_password")
 	ssl.KeyManagerPassword = Config1.Settings.Get("keystore_password")
 	srvr.SetSslConfiguration(ssl, SslPort)
+End Sub
+
+Public Sub CreateNotificationMessage (Title As String, Body As String, Topic As String, B4i As Boolean) As NotificationMessage
+	Dim t1 As NotificationMessage
+	t1.Initialize
+	t1.Title = Title
+	t1.Body = Body
+	t1.Topic = Topic
+	t1.B4i = B4i
+	Return t1
 End Sub

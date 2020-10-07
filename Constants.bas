@@ -31,8 +31,11 @@ Sub Process_Globals
 	Public AppName As String = "B4X Pleroma"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.16
-	Public Const TempImageFileName as string = "tempimage"
+	Public Const Version As Float = 1.17
+	Public Const TempImageFileName As String = "tempimage"
+	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
+	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
+	Public Const NotificationSettingsStoreKey as String = "Notification Settings"
 End Sub
 
 Public Sub Initialize

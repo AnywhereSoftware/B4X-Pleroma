@@ -252,15 +252,15 @@ Private Sub AddItemToCLVAndRemoveTouchEvent(pnl As B4XView, value As PLMCLVItem,
 	#End If
 End Sub
 
-#if B4i
 Public Sub RemoveClickRecognizer (pnl As B4XView)
+#if B4i
 	Dim no As NativeObject = pnl.Parent
 	Dim recs As List = no.GetField("gestureRecognizers")
 	For Each rec As Object In recs
 		no.RunMethod("removeGestureRecognizer:", Array(rec))
 	Next
-End Sub
 #End If
+End Sub
 
 Private Sub AddContentView (Index As Int)
 	Dim value As PLMCLVItem = CLV.GetValue(Index)
@@ -458,7 +458,7 @@ Private Sub btnShare_Click
 	in.SetType("image/*")
 	in.Flags = 1
 	StartActivity(in)
-	#Else
+	#Else if B4A
 	Dim avc As ActivityViewController
 	avc.Initialize("avc", Array(cb.Bmp))
 	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
@@ -528,6 +528,7 @@ Private Sub StatusView1_HeightChanged
 	Dim sv As StatusView = Sender
 	Dim ItemIndex As Int = GetUsedItemIndex(StatusesViewsManager, sv)
 	CLV.ResizeItem(ItemIndex, sv.mBase.Height)
+	RemoveClickRecognizer(CLV.GetPanel(ItemIndex))
 	Dim i As PLMCLVItem = CLV.GetValue(ItemIndex)
 	i.ItemHeight = sv.mBase.Height
 	i.Expanded = True

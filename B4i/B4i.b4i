@@ -52,6 +52,7 @@ Library15=bctoast
 Library16=ifirebaseanalytics
 Library17=imedia
 Library18=iphone
+Library19=ifirebasenotifications
 Library2=b4xpages
 Library3=xui views
 Library4=bctextengine
@@ -75,8 +76,9 @@ Module2=|relative|..\B4XLinksManager
 Module20=|relative|..\StatusView
 Module21=|relative|..\StubView
 Module22=|relative|..\TextUtils
-Module23=|relative|..\ViewsCache
-Module24=|relative|..\WebViewDialog
+Module23=UserNotificationCenter
+Module24=|relative|..\ViewsCache
+Module25=|relative|..\WebViewDialog
 Module3=|relative|..\B4XMainPage
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
@@ -85,8 +87,8 @@ Module7=|relative|..\DrawerManager
 Module8=|relative|..\HtmlToRuns
 Module9=|relative|..\ImagesCache
 NumberOfFiles=21
-NumberOfLibraries=18
-NumberOfModules=24
+NumberOfLibraries=19
+NumberOfModules=25
 Version=6.8
 @EndOfDesignText@
 'Code module
@@ -109,6 +111,8 @@ Version=6.8
 	#PlistExtra:<key>NSPhotoLibraryUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSCameraUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSMicrophoneUsageDescription</key><string>Add videos as attachments.</string>
+	#ProvisionFile: pleroma.mobileprovision
+	#Entitlement: <key>aps-environment</key><string>production</string>
 #End Region
 
 Sub Process_Globals
@@ -117,6 +121,9 @@ Sub Process_Globals
 	Private reporter As NativeObject
 	Private xui As XUI
 	Private Analytics As FirebaseAnalytics
+	Public fm As FirebaseMessaging
+	Private ForegroundFlag As Boolean 'https://www.b4x.com/android/forum/threads/re-how-detect-user-tap-on-notification.117548/#content
+	Private unc As UserNotificationCenter
 End Sub
 
 Private Sub Application_Start (Nav As NavigationController)
@@ -138,7 +145,36 @@ Private Sub Application_Start (Nav As NavigationController)
 		SendReportsIfNeeded
 	End If
 	#end if
-	
+	fm.Initialize("fm")
+End Sub
+
+Private Sub fm_FCMConnected
+	Log("FCMConnected")
+	'here we can subscribe and unsubscribe from topics
+End Sub
+
+Private Sub Application_RemoteNotification (Message As Map, CompletionHandler As CompletionHandler)
+	If ForegroundFlag = False Then
+		Log("Notification clicked")
+	End If
+	Log($"Message arrived: ${Message}"$)
+	If unc.IsInitialized = False Then unc.Initialize
+	unc.CreateNotificationWithContent(Message.Get("title"), Message.Get("body"), Message.Get("gcm.message_id"), "", 1)
+	CompletionHandler.Complete
+End Sub
+
+
+Private Sub Application_Active
+	fm.FCMConnect 'should be called from Application_Active
+	Sleep(5000)
+	ForegroundFlag = True
+End Sub
+
+
+
+Sub Application_PushToken (Success As Boolean, Token() As Byte)
+	Log($"PushToken: ${Success}"$)
+	Log(LastException)
 End Sub
 
 Sub SendReportsIfNeeded As ResumableSub
@@ -208,6 +244,8 @@ End Sub
 #Region Delegates
 Private Sub Application_Background
 	B4XPages.Delegate.Activity_Pause
+	fm.FCMDisconnect
+	ForegroundFlag = False
 End Sub
 
 Private Sub Application_Foreground

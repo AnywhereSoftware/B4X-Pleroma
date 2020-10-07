@@ -38,9 +38,9 @@ Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
 	Dim sb As StringBuilder
 	sb.Initialize
 	sb.Append("client_name=").Append(su.EncodeUrl(Constants.AppName, "UTF8"))
-	sb.Append("&redirect_uris=").Append(su.EncodeUrl(GetRedirectUri & " " & "urn:ietf:wg:oauth:2.0:oob", "UTF8"))
+	sb.Append("&redirect_uris=").Append(su.EncodeUrl(GetRedirectUri, "UTF8"))
 	sb.Append("&scopes=read+write+follow+push")
-	sb.Append("&website=").Append("www.b4x.com")
+	sb.Append("&website=").Append("https://www.b4x.com")
 	Try
 		j.PostString(Server.URL & "/api/v1/apps", sb.ToString)
 	Catch
@@ -165,10 +165,11 @@ End Sub
 Private Sub GetTokenFromAuthorizationCode (Code As String)
 	Dim user As PLMUser = B4XPages.MainPage.User
 	Dim server As PLMServer = CurrentlySignedInServer
+	Log(Code)
 	Log("Getting access token from authorization code...")
 	Dim j As HttpJob
 	j.Initialize("", Me)
-	Dim postString As String = $"code=${Code}&client_id=${server.AppClientId}&grant_type=authorization_code&redirect_uri=urn:ietf:wg:oauth:2.0:oob"$
+	Dim postString As String = $"code=${Code}&client_id=${server.AppClientId}&grant_type=authorization_code&redirect_uri=${su.EncodeUrl(GetRedirectUri, "UTF8")}"$
 	postString = postString & $"&client_secret=${server.AppClientSecret}&scope=read+write+follow+push"$
 	j.PostString(server.URL & "/oauth/token", postString)
 		
@@ -212,6 +213,7 @@ Public Sub VerifyUser (Server As PLMServer) As ResumableSub
 		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
 		If m.IsInitialized Then
 			user.DisplayName = m.Get("display_name")
+			If user.DisplayName = "" Then user.DisplayName = m.Get("username")
 			user.Avatar = m.Get("avatar")
 			user.Id = m.Get("id")
 		Else

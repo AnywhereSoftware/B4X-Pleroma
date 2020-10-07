@@ -96,7 +96,7 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	h = h + HandleAttachments
 	
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
-	SetHeightBasedOnMBaseHieght
+	SetHeightBasedOnMBaseHeight
 End Sub
 
 #If B4J
@@ -107,13 +107,13 @@ Private Sub lblReadMore_Click
 	Dim diff As Int = FullHeight - BBListItem1.mBase.Height
 	BBListItem1.mBase.Height = FullHeight
 	mBase.Height = mBase.Height + diff
-	SetHeightBasedOnMBaseHieght
+	SetHeightBasedOnMBaseHeight
 	imgReadMore.mBase.Visible = False
 	CallSub(mCallBack, mEventName & "_HeightChanged")
 	BBListItem1.UpdateVisibleRegion(0, 1000dip)
 End Sub
 
-Private Sub SetHeightBasedOnMBaseHieght
+Private Sub SetHeightBasedOnMBaseHeight
 	pnlBottom.Top = mBase.Height - pnlBottom.Height
 	pnlMedia.Top = BBListItem1.mBase.Top + BBListItem1.mBase.Height + 5dip
 End Sub
