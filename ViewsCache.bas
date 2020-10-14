@@ -137,3 +137,14 @@ Public Sub SetAlpha (View As B4XView, Level As Float)
 	#End If
 End Sub
 
+Public Sub CreatePreferencesDialog (json As String) As PreferencesDialog
+	Dim PrefDialog As PreferencesDialog
+	PrefDialog.Initialize(B4XPages.MainPage.Root, "", 250dip, 200dip)
+	B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
+	PrefDialog.LoadFromJson(File.ReadString(File.DirAssets, json))
+	PrefDialog.Dialog.BackgroundColor = Constants.DefaultTextBackground
+	PrefDialog.Dialog.BorderColor = xui.Color_Transparent
+	PrefDialog.Dialog.BorderCornersRadius = 10dip
+	Return PrefDialog
+End Sub
+

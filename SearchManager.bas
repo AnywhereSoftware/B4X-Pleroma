@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=Misc
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -32,7 +32,7 @@ Private Sub B4XFloatTextField1_EnterPressed
 	If t.Length > 0 Then
 		Search(t)
 	End If
-	B4XPages.MainPage.btnSearch_Click 'hide the search result
+	B4XPages.MainPage.HideSearch
 End Sub
 
 Public Sub Focus

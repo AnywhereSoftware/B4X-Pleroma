@@ -10,7 +10,8 @@ Sub Class_Globals
 		Note As String, FollowersCount As Int, FollowingCount As Int, StatusesCount As Int, HeaderURL As String, Emojis As List, _
 		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean)
 	Type PLMTag (Name As String, Url As String)
-	Type PLMStatus (Account As PLMAccount, Content As PLMContent, _
+	Type PLMNotification (NotificationType As String, Id As String, CreatedAt As Long, Account As PLMAccount)
+	Type PLMStatus (StatusAuthor As PLMAccount, Content As PLMContent, _
 		id As String, CreatedAt As Long, Tags As List, URI As String, Url As String, Visibility As String, Attachments As List, _
 		Sensitive As Boolean, InReplyToAccountAcct As String, RepliesCount As Int, ReblogsCount As Int, FavouritesCount As Int, _
 		Mentions As List, Emojis As List, InReplyToAccountId As String, InReplyToId As String, ExtraContent As Map, _
@@ -19,7 +20,7 @@ Sub Class_Globals
 	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
 	Type PLMPost (ReplyId As String)
-	Type PLMMiniAccount (Account As PLMAccount)
+	Type PLMMiniAccount (Account As PLMAccount, Notification As PLMNotification)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
 	Private mCallback As Object
@@ -60,6 +61,7 @@ Public Sub Start (KeepStatuses As Boolean)
 	If KeepStatuses = False Then
 		Dim Statuses As B4XOrderedMap
 		Statuses.Initialize
+		mLink.NextURL = ""
 	End If
 	DownloadingTimeLines = False
 End Sub
@@ -82,7 +84,7 @@ Private Sub Timer1_Tick
 			settings.Put("max_id", sm.id)
 		Else
 			settings.Put("limit", 5)
-'			settings.Put("max_id", "9yXOFMjCv39XhF6fgG")
+'			settings.Put("max_id", "105029421452390882")
 		End If
 		If mLink.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 			
@@ -135,6 +137,10 @@ Private Sub Download (Params As Map)
 				res = ParseThread(str)
 			Case Constants.LINKTYPE_TAG, Constants.LINKTYPE_TIMELINE
 				res = ParseTimelines(str)
+			Case Constants.LINKTYPE_NOTIFICATIONS
+				Wait For (ParseNotifications(str)) Complete (res2 As B4XOrderedMap)
+				res = res2
+				SetNextLink(j)
 			Case Constants.LINKTYPE_USER
 				Dim IsStatuses As Boolean = mLink.URL.EndsWith("statuses")
 				If IsFirst Then
@@ -176,7 +182,6 @@ Private Sub SetNextLink (job As HttpJob)
 		#else if B4i
 		Dim raw As String = h.Get("link")
 		#end if
-		Log(raw)
 		Dim m As Matcher = Regex.Matcher("<([^>]+)>;\s*rel=\""next\""", raw)
 		If m.Find Then
 			mLink.NextURL = m.Group(1)
@@ -235,24 +240,43 @@ Private Sub ParseThread (s As String) As B4XOrderedMap
 	Dim m As Map = tu.JsonParseMap(s)
 	If m.IsInitialized = False Then Return res
 	FillStatuses(res, m.Get("ancestors"))
-	Dim status As PLMStatus = mLink.Extra.Get("current")
+	Dim status As PLMStatus = mLink.Extra.Get(Constants.LinkExtraCurrentStatus)
 	res.Put(status.id, status)
 	FillStatuses(res, m.Get("descendants"))
 	Return res
 End Sub
 
-Private Sub ParseTimelines(s As String) As B4XOrderedMap
+Private Sub ParseNotifications (s As String) As ResumableSub
 	Dim res As B4XOrderedMap = B4XCollections.CreateOrderedMap
-	FillStatuses (res, tu.JsonParseList(s))
-	Return res
-End Sub
-
-Private Sub FillStatuses (res As B4XOrderedMap, RawItems As List)
-	If RawItems.IsInitialized = False Then Return
-	For Each StatusMap As Map In RawItems
-		Dim status As PLMStatus = tu.ParseStatus(StatusMap)
-		res.Put(status.id, status)
+	Dim list As List = tu.JsonParseList(s)
+	If list.IsInitialized = False Then Return res
+	Dim StatusNotifications As List = Array("mention", "reblog", "poll", "favourite")
+	Dim AccountForRelationship As Map
+	AccountForRelationship.Initialize
+	For Each m As Map In list
+		Dim notif As PLMNotification = CreatePLMNotification(m.Get("type"), m.Get("id"), tu.ParseDate(m.Get("created_at")), _
+			tu.CreateAccount(m.Get("account")))
+		If StatusNotifications.IndexOf(notif.NotificationType) > -1 Then
+			If m.ContainsKey("status") Then
+				Dim St As PLMStatus = tu.ParseStatus(m.Get("status"))
+				res.Put(St.id, St)
+				tu.PutExtraInStatus(St, Constants.ExtraContentKeyNotification, notif)
+			Else
+				Log("Status missing from notification: " & s)
+			End If
+		Else
+			Dim mp As PLMMiniAccount
+			mp.Initialize
+			mp.Account = notif.Account
+			mp.Notification = notif
+			AccountForRelationship.Put(mp.Account.Id, mp.Account)
+			res.Put(notif.Id, mp)
+		End If
 	Next
+	If AccountForRelationship.Size > 0 Then
+		Wait For (tu.AddRelationship(AccountForRelationship)) Complete (Success As Boolean)
+	End If
+	Return res
 End Sub
 
 Private Sub ParseFollowersOrFollowing (accounts As List) As ResumableSub
@@ -274,6 +298,22 @@ Private Sub ParseFollowersOrFollowing (accounts As List) As ResumableSub
 	Return res
 End Sub
 
+
+Private Sub ParseTimelines(s As String) As B4XOrderedMap
+	Dim res As B4XOrderedMap = B4XCollections.CreateOrderedMap
+	FillStatuses (res, tu.JsonParseList(s))
+	Return res
+End Sub
+
+Private Sub FillStatuses (res As B4XOrderedMap, RawItems As List)
+	If RawItems.IsInitialized = False Then Return
+	For Each StatusMap As Map In RawItems
+		Dim status As PLMStatus = tu.ParseStatus(StatusMap)
+		res.Put(status.id, status)
+	Next
+End Sub
+
+
 Public Sub CreatePLMPost (ReplyId As String) As PLMPost
 	Dim t1 As PLMPost
 	t1.Initialize
@@ -283,4 +323,14 @@ End Sub
 
 Public Sub getIsRunning As Boolean
 	Return Timer1.Enabled
+End Sub
+
+Public Sub CreatePLMNotification (NotificationType As String, Id As String, CreatedAt As Long, Account As PLMAccount) As PLMNotification
+	Dim t1 As PLMNotification
+	t1.Initialize
+	t1.NotificationType = NotificationType
+	t1.Id = Id
+	t1.CreatedAt = CreatedAt
+	t1.Account = Account
+	Return t1
 End Sub

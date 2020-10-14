@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=Misc
 ModulesStructureVersion=1
 Type=StaticCode
 Version=8.5
@@ -26,16 +26,27 @@ Sub Process_Globals
 	Public Const URL_USER As String = "/api/v1/accounts/:id"
 	Public Const URL_THREAD As String = "/api/v1/statuses/:id/context"
 	Public Const URL_SEARCH As String = "/api/v2/search/"
+	Public Const URL_PUBLIC As String = "/api/v1/timelines/public"
+	Public Const URL_HOME As String = "/api/v1/timelines/home"
+	Public Const URL_NOTIFICATIONS As String = "/api/v1/notifications"
 	Public Const LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
-		LINKTYPE_SEARCH = 6 As Int
+		LINKTYPE_SEARCH = 6, LINKTYPE_NOTIFICATIONS = 7 As Int
 	Public AppName As String = "B4X Pleroma"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.17
+	Public Const Version As Float = 1.19
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
-	Public Const NotificationSettingsStoreKey as String = "Notification Settings"
+	Public Const NotificationSettingsStoreKey As String = "Notification Settings"
+	Public Const DefaultServer As String = "mas.to"
+	
+	Public Const ExtraContentKeyNotification As String = "notification"
+	Public Const ExtraContentKeyCard As String = "card"
+	Public Const ExtraContentKeyReblog As String = "reblog"
+	
+	Public Const LinkExtraCurrentStatus As String = "current"
+	Public Const TextRunThreadLink As String = "~time"
 End Sub
 
 Public Sub Initialize
@@ -43,7 +54,6 @@ Public Sub Initialize
 	bc.Initialize(200, 50)
 	bc.FillGradient(Array As Int(0x00FFFFFF, xui.Color_White), bc.TargetRect, "TOP_BOTTOM")
 	ReadMoreGradient = bc.Bitmap
-	
 End Sub
 
 

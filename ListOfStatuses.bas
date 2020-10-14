@@ -51,7 +51,6 @@ Public Sub ResizeVisibleList
 End Sub
 
 Public Sub Refresh
-	feed.mLink.NextURL = ""
 	Refresh2(feed.user, feed.mLink, False, False)
 End Sub
 
@@ -362,7 +361,7 @@ Private Sub GetContentView (ListIndex As Int, Content As Object) As Object
 		If mini = Null Then
 			Dim mini As MiniAccountView
 			Dim p As B4XView = xui.CreatePanel("")
-			p.SetLayoutAnimated (0, 0, 0, CLV.AsView.Width, 70dip)
+			p.SetLayoutAnimated (0, 0, 0, CLV.AsView.Width, 65dip)
 			mini.Initialize(p, Me, "StatusView1")
 		End If
 		MiniAccountsManager.UsedStatusViews.Put(mini, Array As Int(ListIndex))
@@ -411,7 +410,7 @@ Sub CLV_ItemClick (Index As Int, Value As Object)
 	End If
 End Sub
 
-Private Sub StatusView1_ShowLargeImage (URL As String)
+Private Sub StatusView1_ShowLargeImage (URL As String, PreviewUrl As String)
 	B4XPages.MainPage.Drawer.GestureEnabled = False
 	If ZoomImageView1.Tag Is ImageConsumer Then
 		B4XPages.MainPage.ImagesCache1.ReleaseImage(ZoomImageView1.Tag)
@@ -423,11 +422,21 @@ Private Sub StatusView1_ShowLargeImage (URL As String)
 	Consumer.IsVisible = True
 	ZoomImageView1.Tag = Consumer
 	Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
+	If ic.IsImageReady(URL) Then
+		ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
+	Else If ic.IsImageReady(PreviewUrl) Then
+		ic.SetImage(PreviewUrl, Consumer, ic.RESIZE_NONE)
+		ic.HoldAnotherImage(URL, Consumer, True, ic.RESIZE_NONE)
+	End If
 	If ic.IsImageReady(URL) = False Then
-		ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
+		If ic.IsImageReady(PreviewUrl) Then
+			
+		Else
+			ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
+		End If
 		Consumer.NoAnimation = True		
 	End If
-	ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
+	
 End Sub
 
 
@@ -499,6 +508,8 @@ Public Sub BackKeyPressedShouldClose As Boolean
 	Else If PostViewListIndex >= 0 Then
 		If PostView1.BackKeyPressed Then Return False
 		RemovePostView(False)
+		Return False
+	Else If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
 		Return False
 	Else If btnBack.Visible Then
 		GoBack

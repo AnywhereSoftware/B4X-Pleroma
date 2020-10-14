@@ -16,7 +16,7 @@ Sub Class_Globals
 		AccessToken As String)
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
-		SignedIn As Boolean, Id As String)
+		SignedIn As Boolean, Id As String, Note As String)
 	
 	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
@@ -24,25 +24,17 @@ Sub Class_Globals
 	Public Statuses As ListOfStatuses
 	Public ImagesCache1 As ImagesCache
 	Public ViewsCache1 As ViewsCache
-	
 	Public store As KeyValueStore
 	Public auth As OAuth
 	Public User As PLMUser
-	
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
 	Private HamburgerIcon As B4XBitmap
 	
-	
-	Private DefaultServer As String = "mas.to"
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
-	
-	
-	
 	Private AccountView1 As AccountView
 	Private wvdialog As WebViewDialog
-	
 	Private DialogContainer As B4XView
 	Private DialogListOfStatuses As ListOfStatuses
 	Private DialogBtnExit As B4XView
@@ -65,6 +57,7 @@ Sub Class_Globals
 	Private B4iKeyboardHeight As Int
 	Private push1 As Push
 	Public LinksManager As B4XLinksManager
+	Public MediaChooser1 As MediaChooser
 End Sub
 
 Public Sub Initialize
@@ -74,6 +67,7 @@ Public Sub Initialize
 	LinksManager.Initialize
 	Constants.Initialize
 	ServerMan.Initialize
+	
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
@@ -129,6 +123,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcon = xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True)
 	B4XPages.SetTitle(Me, Constants.AppName)
+	MediaChooser1.Initialize
 	CreateMenu
 	Dialog.Initialize(Root)
 '	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
@@ -219,7 +214,7 @@ End Sub
 Private Sub CreateNewUser As PLMUser
 	Dim u As PLMUser
 	u.Initialize
-	u.ServerName = DefaultServer
+	u.ServerName = Constants.DefaultServer
 	Return u
 End Sub
 
@@ -260,6 +255,9 @@ Private Sub B4XPage_CloseRequest As ResumableSub
 	'back key
 	If Drawer.LeftOpen Then
 		Drawer.LeftOpen = False
+		Return False
+	End If
+	If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
 		Return False
 	End If
 	If Dialog2.IsInitialized And Dialog2.Visible Then
@@ -352,6 +350,7 @@ Public Sub MakeSureThatUserSignedIn As Boolean
 End Sub
 
 Public Sub ShowMessage(str As String)
+	Sleep(0)
 	If B4iKeyboardHeight > 0 Then
 		Toast.VerticalCenterPercentage = 30
 	Else
@@ -390,6 +389,7 @@ End Sub
 
 
 Private Sub btnRefresh_Click
+	'ImagesCache1.LogCacheState
 	CloseDialogAndDrawer
 	Statuses.Refresh
 End Sub
@@ -578,7 +578,7 @@ Public Sub HideProgress
 	End If
 End Sub
 
-Public Sub btnSearch_Click
+Private Sub btnSearch_Click
 	CloseDialogAndDrawer
 	If Search.mBase.Parent.IsInitialized Then
 		Search.mBase.RemoveViewFromParent
@@ -590,9 +590,15 @@ Public Sub btnSearch_Click
 	End If
 End Sub
 
+Public Sub HideSearch
+	If Search.mBase.Parent.IsInitialized Then
+		Search.mBase.RemoveViewFromParent
+	End If
+End Sub
+
 Private Sub B4XPage_Background
 	If store.IsInitialized = False Then Return 
-	store.Put("stack", Statuses.Stack.GetDataToStore)
+	store.Put("stack", Statuses.Stack.GetDataForStore)
 End Sub
 
 Private Sub PostView1_Close
@@ -641,4 +647,12 @@ End Sub
 
 Private Sub B4XPage_KeyboardStateChanged (Height As Float)
 	B4iKeyboardHeight = Height
+End Sub
+
+Public Sub UserDetailsChanged
+	Wait For (auth.VerifyUser(GetServer)) Complete (Success As Boolean)
+	Log($"User verified: ${Success}"$)
+	If Success Then
+		DrawerManager1.UpdateAvatarAndDisplayName
+	End If
 End Sub

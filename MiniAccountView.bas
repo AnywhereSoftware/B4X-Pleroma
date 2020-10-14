@@ -17,6 +17,7 @@ Sub Class_Globals
 	Private mAccount As PLMAccount
 	Private btnFollow As B4XView
 	Private tu As TextUtils
+	Private Notif As PLMNotification
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -31,6 +32,7 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 End Sub
 
 Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
+	Notif = Account.Notification
 	mAccount = Account.Account
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)
@@ -43,8 +45,12 @@ Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	tu.TextWithEmojisToRuns(mAccount.DisplayName & " ", runs, mAccount.Emojis, bbTop.ParseData, xui.CreateDefaultBoldFont(14))
 	Dim r As BCTextRun = tu.CreateUrlRun("@", mAccount.Acct, bbTop.ParseData)
 	runs.Add(r)
+	If Notif.IsInitialized Then
+		runs.Add(tu.TextEngine.CreateRun(CRLF))
+		runs.Add(tu.CreateRun(Chr(0xF234) & " followed you", xui.CreateFontAwesome(14)))
+	End If
 	bbTop.SetRuns(runs)
-	bbTop.UpdateVisibleRegion(0, bbTop.mBase.Height)
+	bbTop.UpdateVisibleRegion(0, 200dip)
 	
 	tu.UpdateFollowButton(btnFollow, mAccount)
 End Sub

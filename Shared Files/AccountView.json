@@ -1,0 +1,30 @@
+{
+    "Version": 1.66,
+    "Theme": "Light Theme",
+    "Items": [
+        {
+            "title": "Display Name",
+            "type": "Separator",
+            "key": "",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "display_name",
+            "required": false
+        },
+        {
+            "title": "Note",
+            "type": "Separator",
+            "key": "",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Multiline Text",
+            "key": "note",
+            "required": false
+        }
+    ]
+}

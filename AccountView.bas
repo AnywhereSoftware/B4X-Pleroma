@@ -20,6 +20,12 @@ Sub Class_Globals
 	Private mAccount As PLMAccount
 	Private btnFollow As B4XView
 	Private tu As TextUtils
+	Private lblLogOut As B4XView
+	Private btnMention As B4XView
+	Private btnMute As B4XView
+	Private pnlCurrentUser As B4XView
+	Private lblChangeAvatar As B4XView
+	Private PrefDialog As PreferencesDialog
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -82,6 +88,18 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
 	tu.UpdateFollowButton(btnFollow, mAccount)
+	btnMention.Visible = True
+	btnMute.Visible = True
+	pnlCurrentUser.Visible = False
+	lblChangeAvatar.Visible = False
+	If mAccount.Id = B4XPages.MainPage.User.Id Then CurrentUser
+End Sub
+
+Private Sub CurrentUser
+	pnlCurrentUser.Visible = True
+	btnMention.Visible = False
+	btnMute.Visible = False
+	lblChangeAvatar.Visible = True
 End Sub
 
 Private Sub WrapURL(method As String, text As String) As String
@@ -145,4 +163,89 @@ End Sub
 
 Public Sub GetBase As B4XView
 	Return mBase
+End Sub
+
+
+Private Sub lblLogOut_Click
+	B4XPages.MainPage.SignOut
+End Sub
+
+Private Sub lblChangeAvatar_Click
+	UploadMedia("avatar")
+End Sub
+
+Private Sub lblChangeHeader_Click
+	UploadMedia("header")
+End Sub
+
+Private Sub UploadMedia (MediaKey As String)
+	Wait For (B4XPages.MainPage.MediaChooser1.AddImageFromGallery (lblChangeAvatar)) Complete (pm As PostMedia)
+	If pm.IsInitialized Then
+		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+		If j = Null Then Return
+		Dim part As MultipartFileData
+		part.Initialize
+		part.FileName = pm.FileName
+		part.KeyName = MediaKey
+		Log($"Uploading ${pm.FileName}, size: $1.0{File.Size(pm.FileName, "") / 1024 / 1024} MB"$)
+		Dim b() As Byte = tu.CreateMultipart(Null, Array(part))
+		j.PatchBytes(B4XPages.MainPage.GetServer.URL & "/api/v1/accounts/update_credentials", b)
+		B4XPages.MainPage.auth.AddAuthorization(j)
+		j.GetRequest.SetContentType("multipart/form-data; boundary=" & tu.MultipartBoundary)
+		j.GetRequest.SetContentEncoding("UTF8")
+		Wait For (j) JobDone(j As HttpJob)
+		If j.Success Then
+			AfterUserUpdate
+		Else
+			Log("Failed to upload")
+			B4XPages.MainPage.ShowMessage("Error uploading attachment.")
+		End If
+		j.Release
+		B4XPages.MainPage.HideProgress
+	End If
+End Sub
+
+Private Sub lblEdit_Click
+	If PrefDialog.IsInitialized = False Then
+		PrefDialog = B4XPages.MainPage.ViewsCache1.CreatePreferencesDialog("AccountView.json")
+	End If
+	Dim user As PLMUser = B4XPages.MainPage.user
+	Dim m As Map = CreateMap("display_name": user.DisplayName, "note": user.Note)
+	Dim rs As Object = PrefDialog.ShowDialog(m, "Ok", "Cancel")
+	B4XPages.MainPage.ViewsCache1.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	Wait For (rs) Complete (Result As Int)
+	If Result = xui.DialogResponse_Positive Then
+		Dim note As String = m.Get("note")
+		If note = user.Note Then m.Remove("note")
+		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+		Dim jg As JSONGenerator
+		jg.Initialize(m)
+		j.PatchBytes(B4XPages.MainPage.GetServer.URL & "/api/v1/accounts/update_credentials", jg.ToString.GetBytes("UTF8"))
+		B4XPages.MainPage.auth.AddAuthorization(j)
+		j.GetRequest.SetContentType("application/json")
+		Wait For (j) JobDone(j As HttpJob)
+		If j.Success Then
+			AfterUserUpdate
+		Else
+			B4XPages.MainPage.ShowMessage("Error updating profile")
+		End If
+		j.Release
+		B4XPages.MainPage.HideProgress
+	End If
+End Sub
+
+Private Sub AfterUserUpdate
+	B4XPages.MainPage.UserDetailsChanged
+	CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(Null, mAccount, tu.CreateSpecialUrl("statuses", mAccount.Id), mAccount.UserName))
+End Sub
+
+
+
+'returns True if the dialog was closed
+Public Sub BackKeyPressed As Boolean
+	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
+		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		Return True
+	End If
+	Return False
 End Sub

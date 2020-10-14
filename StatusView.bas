@@ -4,7 +4,7 @@ ModulesStructureVersion=1
 Type=Class
 Version=8.3
 @EndOfDesignText@
-#Event: ShowLargeImage (URL As String)
+#Event: ShowLargeImage (URL As String, PreviewURL as String)
 #Event: AvatarClicked (Account As PLMAccount) 
 #Event: LinkClicked (Link As PLMLink) 
 #Event: HeightChanged
@@ -32,6 +32,7 @@ Sub Class_Globals
 	Private tu As TextUtils
 	Private imgReadMore As B4XImageView
 	Private FullHeight As Int
+	Private Notif As PLMNotification
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -76,11 +77,15 @@ End Sub
 
 Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	mStatus = Status
+	Dim Notif As PLMNotification 'this will set it to be uninitialized.
+	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyNotification) Then
+		 Notif = mStatus.ExtraContent.Get(Constants.ExtraContentKeyNotification)
+	End If
 	SetTopText
 	SetBottomPanel
 	SetBBListContent
 	SetTime
-	ImagesCache1.SetImage(mStatus.Account.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
+	ImagesCache1.SetImage(GetAvatarAccount.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
 	If BBListItem1.mBase.Height > Constants.MaxTextHeight + 20dip And ListItem.Expanded = False Then
 		FullHeight = BBListItem1.mBase.Height
 		BBListItem1.mBase.Height = Constants.MaxTextHeight
@@ -97,6 +102,10 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
 	SetHeightBasedOnMBaseHeight
+End Sub
+
+Private Sub GetAvatarAccount As PLMAccount
+	If Notif.IsInitialized Then Return Notif.Account Else Return mStatus.StatusAuthor
 End Sub
 
 #If B4J
@@ -246,10 +255,10 @@ Private Sub SetTopText
 	bbTop.PrepareBeforeRuns
 	Dim runs As List
 	runs.Initialize
-	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey("reblog") Then
-		Dim reblog As PLMAccount = mStatus.ExtraContent.Get("reblog")
+	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyReblog) Then
+		Dim reblog As PLMAccount = mStatus.ExtraContent.Get(Constants.ExtraContentKeyReblog)
 		runs.Add(tu.CreateRun(Chr(0xF079) & " ", xui.CreateFontAwesome(12)))
-		runs.Add(tu.CreateUrlRun("~@statuses:" &reblog.Id, "by " & reblog.Acct, bbTop.ParseData))
+		runs.Add(tu.CreateUrlRun(tu.CreateSpecialUrl("statuses", reblog.Id), "by " & reblog.Acct, bbTop.ParseData))
 		runs.Add(mTextEngine.CreateRun(CRLF))
 		For i = 0 To runs.Size - 1
 			Dim r As BCTextRun = runs.Get(i)
@@ -257,24 +266,49 @@ Private Sub SetTopText
 			If i > 0 Then r.TextFont = TopFont
 		Next
 	End If
-	tu.TextWithEmojisToRuns(mStatus.Account.DisplayName & " ", runs, mStatus.Account.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
-	Dim r As BCTextRun = tu.CreateUrlRun("@", mStatus.Account.Acct, bbTop.ParseData)
+	Dim acc As PLMAccount
+	If Notif.IsInitialized Then acc = Notif.Account Else acc = mStatus.StatusAuthor
+	tu.TextWithEmojisToRuns(acc.DisplayName & " ", runs, acc.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
+	Dim r As BCTextRun = tu.CreateUrlRun("@", acc.Acct, bbTop.ParseData)
 	r.TextFont = TopFont
 	runs.Add(r)
-	If mStatus.InReplyToAccountAcct <> "" Then
-		runs.Add(mTextEngine.CreateRun(CRLF))
-		Dim r As BCTextRun = tu.CreateUrlRun("~time", "" & Chr(0xF064) & " Reply to", bbTop.ParseData)
-		r.TextFont = xui.CreateFontAwesome(12)
-		r.TextColor = Constants.ColorDefaultText
-		runs.Add(r)
-		runs.Add(mTextEngine.CreateRun(" "))
-		r = tu.CreateUrlRun("~@statuses:" & mStatus.InReplyToAccountId, mStatus.InReplyToAccountAcct, bbTop.ParseData)
-		r.TextFont = TopFont
-		r.TextColor = Constants.ColorDefaultText
-		runs.Add(r)
+	If Notif.IsInitialized Then
+		NotificationToText(runs)
+	Else
+		If mStatus.InReplyToAccountAcct <> "" Then
+			runs.Add(mTextEngine.CreateRun(CRLF))
+			Dim r As BCTextRun = tu.CreateUrlRun(Constants.TextRunThreadLink, "" & Chr(0xF064) & " Reply to", bbTop.ParseData)
+			r.TextFont = xui.CreateFontAwesome(12)
+			r.TextColor = Constants.ColorDefaultText
+			runs.Add(r)
+			runs.Add(mTextEngine.CreateRun(" "))
+			r = tu.CreateUrlRun(tu.CreateSpecialUrl("statuses", mStatus.InReplyToAccountId) , mStatus.InReplyToAccountAcct, bbTop.ParseData)
+			r.TextFont = TopFont
+			r.TextColor = Constants.ColorDefaultText
+			runs.Add(r)
+		End If
 	End If
 	bbTop.SetRuns(runs)
 	bbTop.UpdateVisibleRegion(0, 300dip)
+End Sub
+
+Private Sub NotificationToText (runs As List)
+	Dim fnt As B4XFont = xui.CreateFontAwesome(14)
+	runs.Add(mTextEngine.CreateRun(CRLF))
+	Dim r As BCTextRun
+	Select Notif.NotificationType
+		Case "reblog"
+			r = tu.CreateRun(Chr(0xF079) & " reblogged your status", fnt)
+		Case "favourite"
+			r = tu.CreateRun(Chr(0xF006) & " favorited your status", fnt)
+		Case "mention"
+			r = tu.CreateRun(Chr(0xF1FA) & " mentioned you in their status", fnt)
+		Case Else
+			Log("Not implemented: " & Notif.NotificationType)
+	End Select
+	If r.IsInitialized Then
+		runs.Add(r)
+	End If
 End Sub
 
 Private Sub SetBottomPanel
@@ -327,8 +361,8 @@ Private Sub HandleAttachments As Int
 			
 		End If
 	Next
-	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey("card") Then
-		CardAttachment(mStatus.ExtraContent.Get("card"), h)
+	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyCard) Then
+		CardAttachment(mStatus.ExtraContent.Get(Constants.ExtraContentKeyCard), h)
 	End If
 	pnlMedia.Height = h(0)
 	pnlMedia.Visible = h(0) > 0
@@ -353,7 +387,7 @@ Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
 	Dim url As String = attachment.PreviewUrl
 	If mStatus.Sensitive Then url = B4XPages.MainPage.ImagesCache1.NSFW_URL
 	ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-	If mStatus.Sensitive Then ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag)
+	If mStatus.Sensitive Then ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag, False, 0)
 End Sub
 
 Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
@@ -411,7 +445,7 @@ Private Sub AttachmentParent_Click
 			iv.SetBitmap(Null)
 			ImagesCache1.SetImage(attachment.PreviewUrl, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
 		Else
-			CallSubDelayed2(mCallBack, mEventName & "_ShowLargeImage", attachment.Url)
+			CallSubDelayed3(mCallBack, mEventName & "_ShowLargeImage", attachment.Url, attachment.PreviewUrl)
 		End If
 	Else If attachment.TType = "video" Then
 		If mStatus.Sensitive Then
@@ -454,7 +488,7 @@ Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
 	If URL.StartsWith("~emoji") Then
 		EmojiClick(URL)
 	Else
-		CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(mStatus, mStatus.Account, URL, Text))
+		CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(mStatus, GetAvatarAccount, URL, Text))
 	End If
 End Sub
 
@@ -475,7 +509,7 @@ Private Sub ShowMoreOptions
 	Dim options As List
 	options.Initialize
 	options.Add(Chr(0xF1E0) & "  Share")
-	If B4XPages.MainPage.User.SignedIn And mStatus.Account.Id = B4XPages.MainPage.User.Id Then
+	If B4XPages.MainPage.User.SignedIn And mStatus.StatusAuthor.Id = B4XPages.MainPage.User.Id Then
 		options.Add(Chr(0xF014) & "  Delete")
 	End If
 	Wait For (B4XPages.MainPage.ShowListDialog(options, False)) Complete (Result As String)
@@ -519,7 +553,7 @@ Private Sub DeleteStatus
 End Sub
 
 Private Sub lblTime_Click
-	BBListItem1_LinkClicked("~time", "")
+	BBListItem1_LinkClicked(Constants.TextRunThreadLink, "")
 End Sub
 
 Public Sub RemoveFromParent
@@ -572,7 +606,9 @@ Private Sub Base_Resize (Width As Double, Height As Double)
 End Sub
 
 Private Sub SetTime
-	Dim DeltaSeconds As Int = (DateTime.Now - mStatus.CreatedAt) / DateTime.TicksPerSecond
+	Dim t As Long = mStatus.CreatedAt
+	If Notif.IsInitialized Then t = Notif.CreatedAt
+	Dim DeltaSeconds As Int = (DateTime.Now - t) / DateTime.TicksPerSecond
 	Dim s As String
 	Select True
 		Case DeltaSeconds < 30
@@ -596,7 +632,7 @@ Private Sub imgAvatar_MouseClicked (EventData As MouseEvent)
 Private Sub imgAvatar_Click
 #end if
 	If mStatus.IsInitialized Then
-		CallSub2(mCallBack, mEventName & "_AvatarClicked", mStatus.Account)
+		CallSub2(mCallBack, mEventName & "_AvatarClicked", GetAvatarAccount)
 	End If
 End Sub
 

@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=Misc
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -89,7 +89,7 @@ Public Sub RequestServerName (Dialog As B4XDialog) As ResumableSub
 		If name <> "" Then
 			If BaseServers.ContainsKey(name) = False Then
 				Dim url As String = name
-				if url.EndsWith("/") Then url = url.SubString2(0, url.Length - 1)
+				If url.EndsWith("/") Then url = url.SubString2(0, url.Length - 1)
 				If url.StartsWith("http") = False Then url = "https://" & url
 				TempServer = CreatePLMServer(url, name)
 				Return TempServer

@@ -12,6 +12,7 @@ Sub Class_Globals
 	Public HtmlConverter As HtmlToRuns
 	Public NBSP As String
 	Private JParser As JSONParser
+	Public Const MultipartBoundary As String = "---------------------------14623423412"
 End Sub
 
 Public Sub Initialize
@@ -31,10 +32,15 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 		Return CreateUserLink(id, Text, method)
 	End If
 	If Status <> Null Then
-		If URL = "~time" Then
+		If URL = Constants.TextRunThreadLink Then
 			Dim u As String = Constants.URL_THREAD.Replace(":id", Status.Id)
 			Dim link As PLMLink = CreatePLMLink2(u, Constants.LINKTYPE_THREAD, "Conversation", "")
-			link.Extra = CreateMap("current": Status, "targetId": Status.id)
+			Dim NewStatus As PLMStatus = DuplicateStatus(Status)
+			If NewStatus.ExtraContent.IsInitialized Then
+				NewStatus.ExtraContent.Remove(Constants.ExtraContentKeyNotification)
+				NewStatus.ExtraContent.Remove(Constants.ExtraContentKeyReblog)
+			End If
+			link.Extra = CreateMap(Constants.LinkExtraCurrentStatus: NewStatus, "targetId": Status.id)
 			Return link
 		Else If Text.Length > 1 And Text.StartsWith("@") Then
 			Dim name As String = Text.SubString(1)
@@ -42,7 +48,7 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 				If name = m.Get("username") Then
 					Return CreateUserLink(m.Get("id"), name, "statuses")
 				End If
-				If name = Status.Account.UserName Then
+				If name = Status.StatusAuthor.UserName Then
 					Return ManageLink(Status, Account, "@", Text)
 				End If
 			Next
@@ -54,6 +60,10 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 		Return CreatePLMLink(Constants.URL_TAG & Text.SubString(1), Constants.LINKTYPE_TAG, Text)
 	End If
 	Return CreatePLMLink(URL, Constants.LINKTYPE_OTHER, URL)
+End Sub
+
+Public Sub CreateSpecialUrl(Method As String, Id As String) As String
+	Return "~@" & Method & ":" & Id
 End Sub
 
 
@@ -122,20 +132,20 @@ Public Sub CreateUrlRun (URL As String, Text As String, Data As BBCodeParseData)
 	Return Run
 End Sub
 
+
 Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	Dim status As PLMStatus
 	If StatusMap.IsInitialized = False Then Return status
 	status.Initialize
 	If StatusMap.Get("reblog") <> Null Then
 		Dim reblog As Map = StatusMap.Get("reblog")
-		status.ExtraContent = CreateMap("reblog": CreateAccount(StatusMap.Get("account")))
+		PutExtraInStatus(status, Constants.ExtraContentKeyReblog, CreateAccount(StatusMap.Get("account")))
 		StatusMap = reblog
 	End If
 	If StatusMap.Get("card") <> Null Then
-		If status.ExtraContent.IsInitialized = False Then status.ExtraContent.Initialize
-		status.ExtraContent.Put("card", StatusMap.Get("card"))
+		PutExtraInStatus(status, Constants.ExtraContentKeyCard, StatusMap.Get("card"))
 	End If
-	status.Account = CreateAccount(StatusMap.Get("account"))
+	status.StatusAuthor = CreateAccount(StatusMap.Get("account"))
 	status.Emojis = GetEmojies(StatusMap, 32)
 	status.Content = CreateContent(StatusMap.Get("content"))
 	status.Visibility = StatusMap.GetDefault("visibility", "")
@@ -165,6 +175,43 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	Return status
 End Sub
 
+Public Sub DuplicateStatus(OldStatus As PLMStatus) As PLMStatus
+	Dim status As PLMStatus
+	status.Initialize
+	If OldStatus.ExtraContent.IsInitialized Then
+		status.ExtraContent.Initialize
+		For Each k As String In OldStatus.ExtraContent.Keys
+			status.ExtraContent.Put(k, OldStatus.ExtraContent.Get(k))
+		Next
+	End If
+	status.StatusAuthor = OldStatus.StatusAuthor
+	status.Emojis = OldStatus.Emojis
+	status.Content = OldStatus.Content
+	status.Visibility = OldStatus.Visibility
+	status.URI = OldStatus.URI
+	status.Url = OldStatus.Url
+	status.id = OldStatus.id
+	status.CreatedAt = OldStatus.CreatedAt
+	status.Sensitive = OldStatus.Sensitive
+	status.ReblogsCount = OldStatus.ReblogsCount
+	status.FavouritesCount = OldStatus.FavouritesCount
+	status.Favourited = OldStatus.Favourited
+	status.Reblogged = OldStatus.Reblogged
+	status.RepliesCount = OldStatus.RepliesCount
+	status.Mentions = OldStatus.Mentions
+	status.Attachments = OldStatus.Attachments
+	status.EmojiReactions = OldStatus.EmojiReactions
+	status.InReplyToAccountAcct = OldStatus.InReplyToAccountAcct
+	status.InReplyToAccountId = OldStatus.InReplyToAccountId
+	status.InReplyToId = OldStatus.InReplyToId
+	Return status
+End Sub
+
+Public Sub PutExtraInStatus(Status As PLMStatus, Key As String, Value As Object)
+	If Status.ExtraContent.IsInitialized = False Then Status.ExtraContent.Initialize
+	Status.ExtraContent.Put(Key, Value)
+End Sub
+
 Private Sub GetEmojies (Raw As Map, Size As Int) As List
 	Dim res As List
 	Dim emojis As List = Raw.Get("emojis")
@@ -187,7 +234,7 @@ Public Sub CreateAttachment (Attachment As Map) As PLMMedia
 	Return m
 End Sub
 
-Private Sub ParseDate(s As String) As Long
+Public Sub ParseDate(s As String) As Long
 	Return DateTime.DateParse(s.Replace("Z", "+0000"))
 End Sub
 
@@ -363,5 +410,69 @@ Public Sub CreateHttpJob (target As Object, HapticView As B4XView) As HttpJob
 	Return j
 End Sub
 
+'Taken from HttpJob.PostMultipart
+Public Sub CreateMultipart(NameValues As Map, Files As List) As Byte()
+	Dim stream As OutputStream
+	stream.InitializeToBytesArray(0)
+	Dim b() As Byte
+	Dim eol As String = Chr(13) & Chr(10)
+	Dim empty As Boolean = True
+	If NameValues <> Null And NameValues.IsInitialized Then
+		For Each key As String In NameValues.Keys
+			Dim value As String = NameValues.Get(key)
+			empty = MultipartStartSection (stream, empty)
+			Dim s As String = _
+$"--${MultipartBoundary}
+Content-Disposition: form-data; name="${key}"
+
+${value}"$
+			b = s.Replace(CRLF, eol).GetBytes("UTF8")
+			stream.WriteBytes(b, 0, b.Length)
+		Next
+	End If
+	If Files <> Null And Files.IsInitialized Then
+		For Each fd As MultipartFileData In Files
+			empty = MultipartStartSection (stream, empty)
+			Dim s As String = _
+$"--${MultipartBoundary}
+Content-Disposition: form-data; name="${fd.KeyName}"; filename="${fd.FileName}"
+Content-Type: ${fd.ContentType}
+
+"$
+			b = s.Replace(CRLF, eol).GetBytes("UTF8")
+			stream.WriteBytes(b, 0, b.Length)
+			Dim in As InputStream = File.OpenInput(fd.Dir, fd.FileName)
+			File.Copy2(in, stream)
+		Next
+	End If
+	empty = MultipartStartSection (stream, empty)
+	s = _
+$"--${MultipartBoundary}--
+"$
+	b = s.Replace(CRLF, eol).GetBytes("UTF8")
+	stream.WriteBytes(b, 0, b.Length)
+	Return stream.ToBytesArray
+End Sub
+
+Private Sub MultipartStartSection (stream As OutputStream, empty As Boolean) As Boolean
+	If empty = False Then
+		stream.WriteBytes(Array As Byte(13, 10), 0, 2)
+	Else
+		empty = False
+	End If
+	Return empty
+End Sub
+
+Public Sub CheckPostMediaSize (pm As PostMedia) As Boolean
+	Dim FileSize As Long = File.Size(pm.FileName, "")
+	If pm.IsImage And FileSize > 8 * 1024 * 1024 Then
+		B4XPages.MainPage.ShowMessage($"Maximum image size: 8 MB. Current image size: $1.0{FileSize / 1024 / 1024} MB."$)
+		Return False
+	Else If FileSize > 40 * 1024 * 1024 Then
+		B4XPages.MainPage.ShowMessage($"Maximum video size: 40 MB. Current video size: $1.0{FileSize / 1024 / 1024} MB."$)
+		Return False
+	End If
+	Return True
+End Sub
 
 

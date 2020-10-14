@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=Misc
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -30,6 +30,9 @@ Public Sub PushToStack (Feed As PleromaFeed, CLV As CustomListView)
 			Exit
 		End If
 	Next
+	If NewItem.Link.LinkType = Constants.LINKTYPE_NOTIFICATIONS Then
+		NewItem.Time = 0 'always reload
+	End If
 	Items.Put(NewItem.Link, NewItem)
 	If Items.Size > Constants.StackMaximumNumberOfItems Then
 		Items.Remove(Items.Keys.Get(0))
@@ -82,7 +85,7 @@ Public Sub Delete (link As PLMLink)
 	mList.UpdateBackKey
 End Sub
 
-Public Sub GetDataToStore As Object
+Public Sub GetDataForStore As Object
 	Dim links As List
 	links.Initialize
 	Dim linksmanager As B4XLinksManager =  B4XPages.MainPage.LinksManager

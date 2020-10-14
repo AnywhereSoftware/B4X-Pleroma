@@ -50,13 +50,19 @@ Public Sub Initialize
 End Sub
 
 'should be called after a call to SetImage
-Public Sub HoldAnotherImage(URL As String, Consumer As ImageConsumer)
+Public Sub HoldAnotherImage(URL As String, Consumer As ImageConsumer, SetWhenReady As Boolean, ResizeMode As Int)
 	Dim id As Int = Consumer.WaitingId
 	Wait For (GetImage(URL, Consumer)) Complete (Result As CachedBitmap)
 	Result.ReferenceCount = Result.ReferenceCount - 1
 	If Consumer.WaitingId = id Then
-		Consumer.CBitmaps.Add(Result)
 		Result.ReferenceCount = Result.ReferenceCount + 1
+		If SetWhenReady Then
+			ReleaseImage(Consumer)
+			Result.ReferenceCount = Result.ReferenceCount - 1
+			SetImageAfterReady(Result, Consumer, ResizeMode)
+		Else
+			Consumer.CBitmaps.Add(Result)
+		End If
 	End If
 End Sub
 
@@ -71,21 +77,31 @@ End Sub
 Public Sub SetImage (Url As String, Consumer As ImageConsumer, ResizeMode As Int)
 	For Each cb As CachedBitmap In Consumer.CBitmaps
 		If cb.IsPermanent = False Then
-			Log("Previous image not released: " & Url & ", " & cb.Url)
+			If cb.Url = Url Then
+				cb.ReferenceCount = cb.ReferenceCount - 1
+			Else
+				Log("Previous image not released: " & Url & ", " & cb.Url)
+			End If
 		End If
 	Next
 	Consumer.CBitmaps.Clear
 	WaitingId = WaitingId + 1
 	Dim id As Int =  WaitingId
 	Consumer.WaitingId = id
-	Wait For (GetImage(Url, Consumer)) Complete (Result As CachedBitmap)
-	Result.ReferenceCount = Result.ReferenceCount - 1
-	If Consumer.WaitingId = id Then
-		SetImageAfterReady(Result, Consumer, ResizeMode)
+	If PermCache.ContainsKey(Url) Then
+		SetImageAfterReady(PermCache.Get(Url), Consumer, ResizeMode)
+	Else If Cache.ContainsKey(Url) Then
+		SetImageAfterReady(Cache.Get(Url), Consumer, ResizeMode)
+	Else
+		Wait For (GetImage(Url, Consumer)) Complete (Result As CachedBitmap)
+		Result.ReferenceCount = Result.ReferenceCount - 1
+		If Consumer.WaitingId = id Then
+			SetImageAfterReady(Result, Consumer, ResizeMode)
+		End If
 	End If
 End Sub
 
-
+'increases the reference count
 Private Sub SetImageAfterReady(Result As CachedBitmap, Consumer As ImageConsumer, ResizeMode As Int)
 
 	If ResizeMode = RESIZE_FILLWIDTH Then
@@ -338,7 +354,17 @@ Private Sub ClearCache
 			'Log("release: " & ic.Url)
 		End If
 	Next
-'	Log("Cache size: " & Cache.Size)
+End Sub
+
+Public Sub LogCacheState
+	Dim c As Int
+	For Each ic As CachedBitmap In Cache.Values
+		If ic.ReferenceCount > 0 Then
+			Log(ic.Url & " , " & ic.ReferenceCount)
+			c = c + ic.ReferenceCount
+		End If
+	Next
+	Log("Total references: " & c)
 End Sub
 
 Private Sub CreateImageCacheBmp (Bmp As B4XBitmap, Url As String) As CachedBitmap
@@ -384,6 +410,7 @@ Private Sub ImageViewSetBitmap(Target As B4XView, bmp As B4XBitmap)
 		If bmp.IsInitialized = False Then
 			Target.SetBitmap(Null)
 		Else
+			
 			Target.SetBitmap(bmp)
 			#if B4A
 			Dim iiv As ImageView = Target

@@ -1,5 +1,5 @@
 ﻿B4J=true
-Group=Default Group
+Group=Misc
 ModulesStructureVersion=1
 Type=Class
 Version=8.5
@@ -34,8 +34,6 @@ Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 	Select Value
 		Case "sign in"
 			mp.SignIn
-		Case "sign out"
-			mp.SignOut 
 		Case "settings"
 			B4XPages.MainPage.ShowMessage("not implemented...")
 		Case ""
@@ -62,11 +60,11 @@ Public Sub UpdateLeftDrawerList
 	Else
 		UserItem.RemoveViewFromParent
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
-		lstDrawer.AddTextItem($"${"" & Chr(0xF08B)}${spaces}Sign out"$, "sign out")
 	End If
 	lstDrawer.AddTextItem($"${"" & Chr(0xF013)}${spaces}${Constants.AppName} ${NumberFormat2(Constants.Version, 1, 2, 2, False)}"$, "settings")
 	If weHaveAUser Then
 		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, LinksManager.LINK_HOME)
+		lstDrawer.AddTextItem($"${"" & Chr(0xF0A2)}${spaces}Notifications"$, LinksManager.LINK_NOTIFICATIONS)
 	End If
 	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
 		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}${spaces}${Link.Title}"$, Link)
@@ -115,6 +113,10 @@ Public Sub SignIn
 		consumer.IsVisible = True
 		consumer.NoAnimation = True
 	End If
+	UpdateAvatarAndDisplayName
+End Sub
+
+Public Sub UpdateAvatarAndDisplayName
 	UserItem.GetView(1).Text = mp.User.DisplayName
 	Dim iv As B4XView = UserItem.Tag
 	mp.ImagesCache1.ReleaseImage(iv.Tag)
