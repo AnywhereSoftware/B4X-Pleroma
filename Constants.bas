@@ -34,7 +34,7 @@ Sub Process_Globals
 	Public AppName As String = "B4X Pleroma"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.19
+	Public Const Version As Float = 1.20
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
@@ -47,6 +47,10 @@ Sub Process_Globals
 	
 	Public Const LinkExtraCurrentStatus As String = "current"
 	Public Const TextRunThreadLink As String = "~time"
+	
+	Public Const DialogHeight As Int = 210dip
+	Public Const DialogWidth As Int = 280dip
+	Public Const DialogCornerRadius As Int = 5dip
 End Sub
 
 Public Sub Initialize

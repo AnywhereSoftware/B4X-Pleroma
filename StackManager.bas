@@ -5,7 +5,7 @@ Type=Class
 Version=8.5
 @EndOfDesignText@
 Sub Class_Globals
-	Public Items As B4XOrderedMap '<PLMLink, StackItem>
+	Private Items As B4XOrderedMap '<PLMLink, StackItem>
 	Type StackItem (User As PLMUser, Server As PLMServer, Link As PLMLink, Statuses As B4XOrderedMap, CLVItems As List, _
 		CurrentScrollOffset As Int, Time As Long)
 	
@@ -83,6 +83,17 @@ End Sub
 Public Sub Delete (link As PLMLink)
 	Items.Remove(link)
 	mList.UpdateBackKey
+End Sub
+
+'Returns a list of PLMLinks
+Public Sub GetLinks As List
+	Return Items.Keys
+End Sub
+
+Public Sub Pop As StackItem
+	Dim LastItem As StackItem = Items.Get(Items.Keys.Get(Items.Keys.Size - 1))
+	Items.Remove(LastItem.Link)
+	Return LastItem
 End Sub
 
 Public Sub GetDataForStore As Object

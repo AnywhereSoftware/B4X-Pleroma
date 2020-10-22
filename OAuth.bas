@@ -217,6 +217,7 @@ Public Sub VerifyUser (Server As PLMServer) As ResumableSub
 			user.Avatar = m.Get("avatar")
 			user.Id = m.Get("id")
 			user.Note = m.Get("note")
+			user.Acct = m.Get("acct")
 		Else
 			j.Success = False
 		End If

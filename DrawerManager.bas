@@ -34,8 +34,6 @@ Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 	Select Value
 		Case "sign in"
 			mp.SignIn
-		Case "settings"
-			B4XPages.MainPage.ShowMessage("not implemented...")
 		Case ""
 		Case Else
 			Dim Link As PLMLink = Value
@@ -61,7 +59,6 @@ Public Sub UpdateLeftDrawerList
 		UserItem.RemoveViewFromParent
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
 	End If
-	lstDrawer.AddTextItem($"${"" & Chr(0xF013)}${spaces}${Constants.AppName} ${NumberFormat2(Constants.Version, 1, 2, 2, False)}"$, "settings")
 	If weHaveAUser Then
 		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, LinksManager.LINK_HOME)
 		lstDrawer.AddTextItem($"${"" & Chr(0xF0A2)}${spaces}Notifications"$, LinksManager.LINK_NOTIFICATIONS)
@@ -73,16 +70,15 @@ Public Sub UpdateLeftDrawerList
 	Divider.RemoveViewFromParent
 	Divider.GetView(0).Width = lstDrawer.AsView.Width - 10dip
 	lstDrawer.Add(Divider, "")
-	Dim Links As List = mp.Statuses.Stack.Items.Keys
+	Dim Links As List = mp.Statuses.Stack.GetLinks
 	For i = Links.Size - 1 To 0 Step - 1
 		Dim Link As PLMLink = Links.Get(i)
 		If LinksManager.IsRecentLink(Link) = False Then Continue
-		Dim Si As StackItem = mp.Statuses.Stack.Items.Get(Link)
 		Dim Title As String = Link.Title
-		If Si.Link.LINKTYPE = Constants.LINKTYPE_SEARCH Then
+		If Link.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 			Title = Constants.SearchIconChar & spaces & Title
 		End If
-		lstDrawer.AddTextItem(Title, Si.Link)
+		lstDrawer.AddTextItem(Title, Link)
 		Dim lbl As B4XView = CreateXLabel
 		Dim p As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
 		p.AddView(lbl, lstDrawer.AsView.Width - 2dip - lbl.Width, p.Height / 2 - lbl.Height / 2, lbl.Width, lbl.Height)

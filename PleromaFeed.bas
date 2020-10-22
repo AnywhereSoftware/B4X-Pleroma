@@ -15,11 +15,11 @@ Sub Class_Globals
 		id As String, CreatedAt As Long, Tags As List, URI As String, Url As String, Visibility As String, Attachments As List, _
 		Sensitive As Boolean, InReplyToAccountAcct As String, RepliesCount As Int, ReblogsCount As Int, FavouritesCount As Int, _
 		Mentions As List, Emojis As List, InReplyToAccountId As String, InReplyToId As String, ExtraContent As Map, _
-		EmojiReactions As List, Favourited As Boolean, Reblogged As Boolean)
+		EmojiReactions As List, Favourited As Boolean, Reblogged As Boolean, StubForDuplicatedNotification As Boolean)
 	Type PLMMedia (Id As String, TType As String, Url As String, PreviewUrl As String)
 	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
-	Type PLMPost (ReplyId As String)
+	Type PLMPost (ReplyToStatusId As String, Mentions As B4XSet)
 	Type PLMMiniAccount (Account As PLMAccount, Notification As PLMNotification)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
@@ -55,8 +55,8 @@ End Sub
 
 
 Public Sub Start (KeepStatuses As Boolean)
-	Timer1.Enabled = True
 	DownloadIndex = DownloadIndex + 1
+	Dim MyIndex As Int = DownloadIndex
 	server = B4XPages.MainPage.GetServer
 	If KeepStatuses = False Then
 		Dim Statuses As B4XOrderedMap
@@ -64,6 +64,9 @@ Public Sub Start (KeepStatuses As Boolean)
 		mLink.NextURL = ""
 	End If
 	DownloadingTimeLines = False
+	Wait For (B4XPages.MainPage.ServerManager1.VerifyInstanceFeatures(server)) Complete (Success As Boolean)
+	If MyIndex <> DownloadIndex Then Return
+	Timer1.Enabled = Success
 End Sub
 
 Public Sub Stop
@@ -259,7 +262,12 @@ Private Sub ParseNotifications (s As String) As ResumableSub
 		If StatusNotifications.IndexOf(notif.NotificationType) > -1 Then
 			If m.ContainsKey("status") Then
 				Dim St As PLMStatus = tu.ParseStatus(m.Get("status"))
-				res.Put(St.id, St)
+				If res.ContainsKey(St.id) Then
+					St.StubForDuplicatedNotification = True
+					res.Put(notif.Id, St)
+				Else
+					res.Put(St.id, St)
+				End If
 				tu.PutExtraInStatus(St, Constants.ExtraContentKeyNotification, notif)
 			Else
 				Log("Status missing from notification: " & s)
@@ -317,7 +325,8 @@ End Sub
 Public Sub CreatePLMPost (ReplyId As String) As PLMPost
 	Dim t1 As PLMPost
 	t1.Initialize
-	t1.ReplyId = ReplyId
+	t1.ReplyToStatusId = ReplyId
+	t1.Mentions.Initialize
 	Return t1
 End Sub
 

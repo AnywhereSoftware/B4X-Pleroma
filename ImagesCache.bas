@@ -13,7 +13,8 @@ Sub Class_Globals
 	Public const NSFW_URL = "nsfw", MISSING_URL = "missing", PLAY = "play", EMPTY = "empty" As String
 	Private PermCache As B4XOrderedMap
 	Type CachedBitmap (Bmp As B4XBitmap, Url As String, ReferenceCount As Int, IsPermanent As Boolean, IsGif As Boolean, GifFile As String)
-	Type ImageConsumer (CBitmaps As List, WaitingId As Int, Target As B4XView, GifTarget As B4XGifView, IsVisible As Boolean, PanelColor As Int, NoAnimation As Boolean)
+	Type ImageConsumer (CBitmaps As List, WaitingId As Int, Target As B4XView, _
+		GifTarget As B4XGifView, IsVisible As Boolean, PanelColor As Int, NoAnimation As Boolean)
 	Public NoImage As CachedBitmap
 	Private WaitingId As Int
 	Private const MAX_IMAGE_SIZE As Int = 1000
@@ -25,6 +26,7 @@ Sub Class_Globals
 	Private const REMOVED_ID As Int = -1
 	Private RequestsManager1 As RequestsManager
 	Public RESIZE_FILLWIDTH = 1, RESIZE_FIT = 2, RESIZE_NONE = 0 , RESIZE_FILL_NO_DISTORTIONS = 3 As Int
+	Private NoGifView As B4XGifView
 End Sub
 
 Public Sub Initialize
@@ -48,6 +50,7 @@ Public Sub Initialize
 	Next
 	RequestsManager1.Initialize
 End Sub
+
 
 'should be called after a call to SetImage
 Public Sub HoldAnotherImage(URL As String, Consumer As ImageConsumer, SetWhenReady As Boolean, ResizeMode As Int)
@@ -390,7 +393,9 @@ Public Sub ReleaseImage(Consumer As ImageConsumer)
 					End If
 					#End If
 					Consumer.GifTarget.mBase.RemoveViewFromParent
+					Consumer.GifTarget.mBase.Tag = "removed"
 					GifViews.Add(Consumer.GifTarget)
+					Consumer.GifTarget = NoGifView
 				End If
 			End If
 		End If

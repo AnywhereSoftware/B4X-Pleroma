@@ -139,12 +139,41 @@ End Sub
 
 Public Sub CreatePreferencesDialog (json As String) As PreferencesDialog
 	Dim PrefDialog As PreferencesDialog
-	PrefDialog.Initialize(B4XPages.MainPage.Root, "", 250dip, 200dip)
-	B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
+	PrefDialog.Initialize(B4XPages.MainPage.Root, "", Constants.DialogWidth, Constants.DialogHeight)
 	PrefDialog.LoadFromJson(File.ReadString(File.DirAssets, json))
-	PrefDialog.Dialog.BackgroundColor = Constants.DefaultTextBackground
-	PrefDialog.Dialog.BorderColor = xui.Color_Transparent
-	PrefDialog.Dialog.BorderCornersRadius = 10dip
+	Dim views As ViewsCache = B4XPages.MainPage.ViewsCache1
+	B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
+	For Each pi As B4XPrefItem In PrefDialog.PrefItems
+		If pi.ItemType <> PrefDialog.TYPE_SEPARATOR Then
+			pi.Title = views.CreateRichTextWithSize(pi.Title, 14)
+		End If
+	Next
+	For Each v As B4XView In Array(PrefDialog.CustomListView1.AsView, PrefDialog.mBase)
+		v.SetColorAndBorder(xui.Color_Transparent, 0, 0, Constants.DialogCornerRadius)
+		views.SetClipToOutline(v)
+	Next
 	Return PrefDialog
 End Sub
 
+Public Sub CreateRichTextWithSize(s As String, size As Int) As Object
+	#if B4J
+	Return s
+	#else 
+	Dim cs As CSBuilder
+	cs.Initialize
+	#if B4A
+	cs.Size(14)
+	#Else
+	cs.Font(Font.CreateNew(14))
+	#End If
+	Return cs.Append(s).PopAll
+	#End If
+End Sub
+
+Private Sub VideoPlayer1_Ready (Success As Boolean)
+	Log("VideoPlayer_ready: " & Success)
+	If Success = False Then
+		B4XPages.MainPage.ShowMessage("Debug: Failed to load video: " & LastException)
+		Log(LastException)
+	End If
+End Sub

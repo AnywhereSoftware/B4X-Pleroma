@@ -1,0 +1,54 @@
+{
+    "Version": 1.66,
+    "Theme": "Light Theme",
+    "Items": [
+        {
+            "title": "B4X Pleroma",
+            "type": "Separator",
+            "key": "",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Explanation",
+            "key": "server",
+            "required": false
+        },
+        {
+            "title": "NSFW overlay",
+            "type": "Boolean",
+            "key": "nsfw_overlay",
+            "required": false
+        },
+        {
+            "title": "Push Notifications",
+            "type": "Separator",
+            "key": "",
+            "required": false
+        },
+        {
+            "title": "Favorite",
+            "type": "Boolean",
+            "key": "push_favourite",
+            "required": false
+        },
+        {
+            "title": "Follow",
+            "type": "Boolean",
+            "key": "push_follow",
+            "required": false
+        },
+        {
+            "title": "Mention",
+            "type": "Boolean",
+            "key": "push_mention",
+            "required": false
+        },
+        {
+            "title": "Reblog",
+            "type": "Boolean",
+            "key": "push_reblog",
+            "required": false
+        }
+    ]
+}

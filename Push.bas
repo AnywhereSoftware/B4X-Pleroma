@@ -7,8 +7,8 @@ Version=8.5
 Sub Class_Globals
 	Private tu As TextUtils
 	Private su As StringUtils
-	Type PLMNotificationSettings (Follow As Boolean, Favourite As Boolean, Reblog As Boolean, Mention As Boolean, _
-		Poll As Boolean, Auth() As Byte, Extra As Map)
+	Type PLMNotificationSettings (Auth() As Byte, KeysValues As Map)
+	Private PushSettingsStoreVersion As Float
 End Sub
 
 Public Sub Initialize
@@ -24,15 +24,10 @@ Public Sub Subscribe
 	#else if B4i
 	B4iSubscribe(UrlSafeAuth(settings.Auth))
 	#End If
-	Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root) 'ignore
+	Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root, True) 'ignore
 	Dim m As Map = CreateMap("subscription": CreateMap("endpoint": CreateEndpoint(settings.Auth) _
 		,"keys": CreateMap("p256dh": Constants.PushPublicKey, "auth": su.EncodeBase64(settings.Auth))))
-	m.Put("data", CreateMap("alerts": _
-		CreateMap("follow": settings.Follow, _
-				"favourite": settings.Favourite, _
-				"mention": settings.Mention, _
-				"reblog": settings.Reblog, _
-				"poll": settings.Poll)))
+	m.Put("data", CreateMap("alerts": settings.KeysValues))
 	Dim gen As JSONGenerator
 	gen.Initialize(m)
 	Log(gen.ToPrettyString(4))
@@ -53,15 +48,13 @@ End Sub
 
 Public Sub GetSettings As PLMNotificationSettings
 	Dim settings As PLMNotificationSettings
+	If PushSettingsStoreVersion = 0 Then PushSettingsStoreVersion = B4XPages.MainPage.StoreVersion
+	If PushSettingsStoreVersion < 1.20 Then
+		B4XPages.MainPage.store.Remove(Constants.NotificationSettingsStoreKey)
+	End If
 	If B4XPages.MainPage.store.ContainsKey(Constants.NotificationSettingsStoreKey) = False Then
 		settings.Initialize
-		
-		settings.Favourite = True
-		settings.Follow = True
-		settings.Mention = True
-		settings.Poll = True
-		settings.Reblog = True
-		settings.Extra.Initialize
+		settings.KeysValues = CreateMap("follow": True, "favourite": True, "mention": True, "reblog": True)
 		B4XPages.MainPage.store.Put(Constants.NotificationSettingsStoreKey, settings)
 		Return settings
 	Else
@@ -78,8 +71,9 @@ Public Sub GetSettings As PLMNotificationSettings
 	Return settings
 End Sub
 
-Private Sub PersistSettings (settings As PLMNotificationSettings)
+Public Sub PersistSettings (settings As PLMNotificationSettings)
 	B4XPages.MainPage.store.Put(Constants.NotificationSettingsStoreKey, settings)
+	PushSettingsStoreVersion = Constants.Version
 End Sub
 
 Private Sub CreateEndpoint (auth() As Byte) As String
@@ -100,10 +94,12 @@ End Sub
 #End If
 
 Public Sub Unsubscribe
+	If B4XPages.MainPage.User.SignedIn = False Then Return
 	Dim settings As PLMNotificationSettings = GetSettings
 	settings.Auth = Array As Byte()
 	PersistSettings(settings)
-	Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root) 
+	Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root, True) 
+	If j = Null Then Return
 	j.Delete(B4XPages.MainPage.GetServer.URL & "/api/v1/push/subscription")
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	Wait For (j) JobDone (j As HttpJob)

@@ -14,9 +14,10 @@ Version=8.31
 Sub Class_Globals
 	Type PLMServer (URL As String, Name As String, AppClientId As String, AppClientSecret As String, _
 		AccessToken As String)
+	
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
-		SignedIn As Boolean, Id As String, Note As String)
+		SignedIn As Boolean, Id As String, Note As String, Acct As String)
 	
 	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
@@ -47,17 +48,18 @@ Sub Class_Globals
 	Private Search As SearchManager
 	Private pnlListDefaultTop As Int
 	Private SignInIndex As Int
-	Private StoreVersion As Float
-	Private ServerMan As ServerManager
+	Public StoreVersion As Float
+	Public ServerManager1 As ServerManager
 	Private PostView1 As PostView
 	Private Dialog2ListTemplate As B4XListTemplate
 	#if B4A
 	Public Provider As FileProvider
 	#End If
 	Private B4iKeyboardHeight As Int
-	Private push1 As Push
+	Public push1 As Push
 	Public LinksManager As B4XLinksManager
 	Public MediaChooser1 As MediaChooser
+	Public Settings As PLMSettings
 End Sub
 
 Public Sub Initialize
@@ -66,8 +68,8 @@ Public Sub Initialize
 	TextUtils1.Initialize
 	LinksManager.Initialize
 	Constants.Initialize
-	ServerMan.Initialize
-	
+	ServerManager1.Initialize
+	Settings.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
@@ -75,17 +77,17 @@ Public Sub Initialize
 		UpdateOldStore
 	End If
 	store.Put("version", Constants.VERSION)
+	Settings.LoadFromStore(store, StoreVersion)
 	ImagesCache1.Initialize
 	ViewsCache1.Initialize
 	auth.Initialize(Me, "auth")
 	xui.SetDataFolder("B4X_Pleroma")
-	LoadSavedData
 	#if B4A
 	Provider.Initialize
 	#End If
-	
 	Constants.Initialize
 	push1.Initialize
+
 End Sub
 
 Private Sub UpdateOldStore
@@ -96,18 +98,20 @@ End Sub
 
 
 
-Private Sub LoadSavedData
-'	store.Remove("user")
-'	store.Remove("servers")
-	ServerMan.LoadFromStore(store)
+Private Sub LoadSavedDataAndStart
+	ServerManager1.LoadFromStore(store)
 	If store.ContainsKey("user") Then
 		User = store.Get("user")
-		If User.SignedIn = True Then
-			VerifyUser
-		End If
+		
 	Else
 		User = CreateNewUser
 		PersistUserAndServers
+		SignOut
+	End If
+	If User.SignedIn = True Then
+		VerifyUser
+	Else
+		SignOut
 	End If
 End Sub
 
@@ -126,9 +130,6 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	MediaChooser1.Initialize
 	CreateMenu
 	Dialog.Initialize(Root)
-'	PrefDialog.Initialize(Root, AppName, 300dip, 50dip)
-'	PrefDialog.Dialog.OverlayColor = 0x64000000
-	Statuses.Refresh2(User, LinksManager.LINK_PUBLIC, False, False)
 	If store.ContainsKey("stack") Then
 		Statuses.Stack.SetDataFromStore(store.Get("stack"))
 	End If
@@ -151,7 +152,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Toast.DefaultTextColor = xui.Color_White
 	pnlListDefaultTop = pnlList.Top
 	Search.Initialize(Root.Width)
-	
+	LoadSavedDataAndStart
 	
 	Sleep(4000)
 	MadeWithLove1.mBase.SetVisibleAnimated(300, False)
@@ -242,11 +243,14 @@ Public Sub PersistUserAndServers
 	If User.IsInitialized Then
 		store.Put("user", User)
 	End If
-	ServerMan.SaveToStore(store)
+	ServerManager1.SaveToStore(store)
 End Sub
 
 Private Sub B4XPage_CloseRequest As ResumableSub
 	#if B4A
+	If Settings.BackKeyPressed Then
+		Return False	
+	End If
 	'home button
 	If Main.ActionBarHomeClicked Then
 		Drawer.LeftOpen = Not(Drawer.LeftOpen)
@@ -306,8 +310,12 @@ Public Sub SignIn
 	Dim MyIndex As Int = SignInIndex
 	
 	Dialog.ButtonsHeight = 40dip
-	Wait For (ServerMan.RequestServerName(Dialog)) Complete (Server As PLMServer)
+	Wait For (ServerManager1.RequestServerName(Dialog)) Complete (Server As PLMServer)
 	If SignInIndex <> MyIndex Or Server.IsInitialized = False Then Return
+	Wait For (ServerManager1.VerifyInstanceFeatures(Server)) Complete (Success As Boolean)
+	If Success = False Then
+		Return
+	End If
 	User.ServerName = Server.Name
 	If Server.AppClientSecret = "" Then
 		Wait For (auth.RegisterApp (Server)) Complete (Success As Boolean)
@@ -328,6 +336,7 @@ Public Sub SignIn
 		ShowMessage("Failed to sign in.")
 		User.SignedIn = False
 		Server.AppClientSecret = ""
+		SignOut
 	End If
 End Sub
 
@@ -368,13 +377,15 @@ Private Sub VerifyUser
 	Wait For (auth.VerifyUser (GetServer)) Complete (Success As Boolean)
 	If Success Then
 		AfterSignIn
+	Else
+		SignOut
 	End If
 End Sub
 
 Private Sub AfterSignIn
 	Log("after sign in!")
 	User.SignedIn = True
-	ServerMan.AfterSignIn (User.ServerName)
+	ServerManager1.AfterSignIn (User.ServerName)
 	PersistUserAndServers
 	Statuses.Refresh2(User, LinksManager.LINK_HOME, True, False)
 	DrawerManager1.SignIn
@@ -383,7 +394,7 @@ Private Sub AfterSignIn
 End Sub
 
 Public Sub GetServer As PLMServer
-	Return ServerMan.GetServer(User)
+	Return ServerManager1.GetServer(User)
 End Sub
 
 
@@ -409,6 +420,10 @@ Public Sub DialogSetLightTheme (diag As B4XDialog)
 	diag.BorderColor = xui.Color_Transparent
 	diag.BorderWidth = 0dip
 	diag.OverlayColor = Constants.OverlayColor
+	diag.TitleBarColor = 0xFFD0D0D0
+	diag.TitleBarTextColor = 0xFF4E4F50
+	diag.BackgroundColor = Constants.DefaultTextBackground
+	diag.BorderCornersRadius = Constants.DialogCornerRadius
 End Sub
 
 Private Sub Statuses_AvatarClicked (Account As PLMAccount)
@@ -439,18 +454,18 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 End Sub
 
 Private Sub btnPlus_Click
-	ShowCreatePostInDialog
+	ShowCreatePostInDialog ("")
 End Sub
 
-Private Sub ShowCreatePostInDialog
+Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	If MakeSureThatUserSignedIn = False Then Return
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
 	If PostView1.IsInitialized = False Then
 		PostView1.Initialize(Me, "PostView1", Root.Width * 0.9)
 	End If
-	Dim post As PLMPost
-	post.Initialize
+	Dim post As PLMPost = Statuses.feed.CreatePLMPost("")
+	If MentionAcct <> "" Then post.Mentions.Add(MentionAcct)
 	PostView1.SetContent(post, Null)
 	Dim rs As Object = ShowDialogWithoutButtons(PostView1.mBase, False)
 	Sleep(0)
@@ -522,6 +537,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 	Dim rs As Object = Dialog.ShowCustom(DialogContainer, "", "", "")
 	Dialog.Base.Parent.Tag = "" 'this will prevent the dialog from closing when the second dialog appears.
 	Dialog.VisibleAnimationDuration = 0
+	ViewsCache1.SetClipToOutline(Dialog.Base)
 	#if B4i
 	Statuses.RemoveClickRecognizer(Dialog.Base)
 	#End If

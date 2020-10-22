@@ -44,17 +44,34 @@ End Sub
 
 Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	PostOptions = CreateMap("nsfw": False, "visibility": "Public")
-	mReplyToId = Content.ReplyId
+	mReplyToId = Content.ReplyToStatusId
 	For Each pm As PostMedia In Medias
 		pm.Pnl.RemoveViewFromParent
 	Next
 	Medias.Clear
-	InDialog = Content.ReplyId = ""
+	InDialog = Content.ReplyToStatusId = ""
 	btnCancel.Visible = Not(InDialog)
 	Pane1.Visible = Not(InDialog)
 	IdempotencyKey = Rnd(0, 0x7FFFFFFF)
-	B4XFloatTextField1.Text = ""
+	Dim mentions As StringBuilder
+	mentions.Initialize
+	For Each acct As String In Content.Mentions.AsList
+		If acct = B4XPages.MainPage.User.Acct Then Continue
+		mentions.Append("@").Append(acct).Append(" ")
+	Next
+	B4XFloatTextField1.Text = mentions.ToString
 	B4XFloatTextField1.RequestFocusAndShowKeyboard
+	#if B4J
+	Dim ta As TextArea = B4XFloatTextField1.TextField
+	ta.SetSelection(B4XFloatTextField1.Text.Length, B4XFloatTextField1.Text.Length)
+	#Else If B4i
+	Dim ta As TextView = B4XFloatTextField1.TextField
+	ta.SetSelection(B4XFloatTextField1.Text.Length, 0)
+	#Else If B4A
+	Dim et As EditText = B4XFloatTextField1.TextField
+	et.SelectionStart = et.Text.Length
+	et.SetSelection(B4XFloatTextField1.Text.Length, 0)
+	#End If
 	
 	If xui.IsB4i Then
 		B4XFloatTextField1.mBase.SetColorAndBorder(xui.Color_Transparent, 1dip, xui.Color_LightGray, 2dip)
@@ -81,7 +98,7 @@ Private Sub Post (status As String)
 		End If
 	Next
 	Posting = True
-	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 	If j = Null Then Return
 	Dim params As Map = CreateMap("status": status)
 	If mReplyToId <> "" Then params.Put("in_reply_to_id", mReplyToId)
@@ -176,7 +193,7 @@ End Sub
 
 Private Sub UploadMedia (pm As PostMedia)
 	pm.Uploading = True
-	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 	If j = Null Then Return
 	Dim part As MultipartFileData
 	part.Initialize

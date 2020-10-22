@@ -31,6 +31,9 @@ Sub Class_Globals
 	Public WordWrap As Boolean = True
 	Public LineSpacingFactor As Float = 1
 	Private UpdateOffsetY, UpdateHeight As Int
+	Public ClickHighlight As B4XView
+	Private PrevTouchX, PrevTouchY As Int
+	Private PrevTouchStart As Long
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -244,19 +247,54 @@ Private Sub TouchPanel_Touch (Action As Int, X As Float, Y As Float)
 		CollectURLs
 	End If
 	Dim run As BCTextRun = FindTouchedRun(X, Y)
+	Dim handled As Boolean
 	If run <> Null And ParseData.URLs.ContainsKey(run) Then 
 		If Action = TouchPanel.TOUCH_ACTION_UP Then
 			Dim url As String = ParseData.Urls.Get(run)
 			CallSubDelayed3(mCallBack, mEventName & "_LinkClicked", url, run.Text)
 			MarkURL(Null)
+			handled = True
 		Else If Action = 4 Then 'cancelled (B4i - see main module)
 			MarkURL(Null)
+			handled = True
 		Else
 			MarkURL(run)
 		End If
 		Return
 	End If
 	MarkURL(Null)
+	If ClickHighlight.IsInitialized = False Then Return
+	If handled Then
+		SetClickHighlightState(False)
+		Return
+	End If
+	Dim dist As Float = Sqrt(Power(PrevTouchX - X, 2) + Power(PrevTouchY - Y, 2))
+	If DateTime.Now > PrevTouchStart + 300 Then dist = 1000dip
+	Select Action
+		Case TouchPanel.TOUCH_ACTION_DOWN
+			PrevTouchX = X
+			PrevTouchY = Y
+			PrevTouchStart = DateTime.Now
+			SetClickHighlightState(True)
+		Case TouchPanel.TOUCH_ACTION_MOVE
+			SetClickHighlightState(dist < 30dip)
+		Case TouchPanel.TOUCH_ACTION_UP
+			If dist < 30dip Then
+				CallSubDelayed3(mCallBack, mEventName & "_LinkClicked", "~time click", "")
+			End If
+			SetClickHighlightState(False)
+		Case Else
+			SetClickHighlightState(False)
+	End Select
+End Sub
+
+
+Private Sub SetClickHighlightState (Click As Boolean)
+	If Click Then
+		ClickHighlight.Color = 0x116A6A6A
+	Else
+		ClickHighlight.Color = xui.Color_Transparent
+	End If
 End Sub
 
 Private Sub FindTouchedRun(x As Float, y As Float) As BCTextRun

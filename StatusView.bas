@@ -33,6 +33,7 @@ Sub Class_Globals
 	Private imgReadMore As B4XImageView
 	Private FullHeight As Int
 	Private Notif As PLMNotification
+	Private SensitiveOverlay As Boolean
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -72,11 +73,13 @@ Public Sub Create (Base As B4XView)
 	xlbl.Font = xui.CreateDefaultBoldFont(16)
 	imgReadMore.mBase.AddView(xlbl, 0, 20dip, mBase.Width, 30dip)
 	imgReadMore.mBase.Color = xui.Color_Red
+	BBListItem1.ClickHighlight = lblTime
 End Sub
 
 
 Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	mStatus = Status
+	SensitiveOverlay = mStatus.Sensitive And B4XPages.MainPage.Settings.NSFW_Overlay
 	Dim Notif As PLMNotification 'this will set it to be uninitialized.
 	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyNotification) Then
 		 Notif = mStatus.ExtraContent.Get(Constants.ExtraContentKeyNotification)
@@ -98,8 +101,10 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 		
 	End If
 	Dim h As Int = BBListItem1.mBase.Height + 8dip * 2
-	h = h + HandleAttachments
-	
+	If mStatus.StubForDuplicatedNotification = False Then
+		h = h + HandleAttachments
+	End If
+	BBBottom.mBase.Visible = mStatus.StubForDuplicatedNotification = False
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
 	SetHeightBasedOnMBaseHeight
 End Sub
@@ -155,7 +160,7 @@ Private Sub EmojiReactions (Runs As List)
 End Sub
 
 Private Sub FavouriteClick
-	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase, True)
 	If j = Null Then Return
 	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}/"$
 	If mStatus.Favourited Then
@@ -164,7 +169,6 @@ Private Sub FavouriteClick
 		link = link & "favourite"
 	End If
 	Dim s As PLMStatus = mStatus
-	
 	j.PostString(link, "")
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	Wait For (j) JobDone (j As HttpJob)
@@ -181,7 +185,7 @@ Private Sub FavouriteClick
 End Sub
 
 Private Sub ReblogClick
-	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase, True)
 	If j = Null Then Return
 	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}/"$
 	If mStatus.Reblogged Then
@@ -209,7 +213,7 @@ End Sub
 
 
 Private Sub EmojiClick (url As String)
-	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase, True)
 	If j = Null Then Return
 	Dim emoji As String = url.SubString(url.IndexOf(":") + 1)
 	Dim su As StringUtils
@@ -385,9 +389,13 @@ Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
 	Dim Parent As B4XView = CreateAttachmentPanel(attachment, h, MediaSize, 30dip, iv.Tag)
 	Parent.AddView(iv, 0, 0, 0, 0)
 	Dim url As String = attachment.PreviewUrl
-	If mStatus.Sensitive Then url = B4XPages.MainPage.ImagesCache1.NSFW_URL
-	ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-	If mStatus.Sensitive Then ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag, False, 0)
+	If SensitiveOverlay Then
+		url = B4XPages.MainPage.ImagesCache1.NSFW_URL
+		ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
+		ImagesCache1.HoldAnotherImage(attachment.PreviewUrl, iv.Tag, False, 0)
+	Else
+		ImagesCache1.SetImage(url, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
+	End If
 End Sub
 
 Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
@@ -411,7 +419,7 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	Dim playerview As B4XView = B4XPages.MainPage.ViewsCache1.GetVideoPlayer
 	Parent.AddView(playerview, 0, 0, Parent.Width, Parent.Height)
 	Parent.AddView(iv, 0, 0, 0, 0)
-	If mStatus.Sensitive Then
+	If SensitiveOverlay Then
 		ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.NSFW_URL, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
 	Else
 		ShowPlayButton(iv)
@@ -440,7 +448,7 @@ Private Sub AttachmentParent_Click
 	Dim attachment As PLMMedia = Parent.Tag
 	
 	If attachment.TType = "image" Then
-		If mStatus.Sensitive Then
+		If SensitiveOverlay Then
 			Dim iv As B4XView = Parent.GetView(0)
 			iv.SetBitmap(Null)
 			ImagesCache1.SetImage(attachment.PreviewUrl, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
@@ -448,14 +456,14 @@ Private Sub AttachmentParent_Click
 			CallSubDelayed3(mCallBack, mEventName & "_ShowLargeImage", attachment.Url, attachment.PreviewUrl)
 		End If
 	Else If attachment.TType = "video" Then
-		If mStatus.Sensitive Then
+		If SensitiveOverlay Then
 			ShowPlayButton(Parent.GetView(1))
 		Else	
 			Parent.GetView(1).Visible = False
 			ToggleVideo(Parent.GetView(0))
 		End If
 	End If
-	mStatus.Sensitive = False
+	SensitiveOverlay = False
 End Sub
 
 Private Sub ToggleVideo (PlayerView As B4XView) 'ignore
@@ -487,6 +495,8 @@ End Sub
 Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
 	If URL.StartsWith("~emoji") Then
 		EmojiClick(URL)
+	Else if URL = "~time click" Then
+		lblTime_Click
 	Else
 		CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(mStatus, GetAvatarAccount, URL, Text))
 	End If
@@ -538,7 +548,7 @@ End Sub
 Private Sub DeleteStatus
 	Wait For (B4XPages.MainPage.ConfirmMessage("Delete status?")) Complete (Result As Int)
 	If Result <> xui.DialogResponse_Positive Then Return
-	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 	If j = Null Then Return
 	j.Delete(B4XPages.MainPage.GetServer.URL & $"/api/v1/statuses/${mStatus.id}"$)
 	B4XPages.MainPage.auth.AddAuthorization(j)

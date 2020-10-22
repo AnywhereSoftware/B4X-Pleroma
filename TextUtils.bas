@@ -162,9 +162,11 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	status.Mentions = StatusMap.Get("mentions")
 	status.Attachments.Initialize
 	Dim attachments As List = StatusMap.Get("media_attachments")
-	For Each attachment As Map In attachments
-		status.Attachments.Add(CreateAttachment(attachment))
-	Next
+	If attachments.IsInitialized Then
+		For Each attachment As Map In attachments
+			status.Attachments.Add(CreateAttachment(attachment))
+		Next
+	End If
 	If StatusMap.ContainsKey("pleroma") Then
 		Dim plm As Map = StatusMap.Get("pleroma")
 		status.EmojiReactions = plm.Get("emoji_reactions")
@@ -215,7 +217,7 @@ End Sub
 Private Sub GetEmojies (Raw As Map, Size As Int) As List
 	Dim res As List
 	Dim emojis As List = Raw.Get("emojis")
-	If emojis.Size > 0 Then
+	If emojis.IsInitialized And emojis.Size > 0 Then
 		res.Initialize
 		For Each e As Map In emojis
 			res.Add(CreatePLMEmoji(e.Get("shortcode"), e.GetDefault("url", ""), Size))
@@ -401,9 +403,13 @@ Public Sub FollowButtonClicked (btnFollow As B4XView, mAccount As PLMAccount)
 	End If
 End Sub
 
-Public Sub CreateHttpJob (target As Object, HapticView As B4XView) As HttpJob
-	XUIViewsUtils.PerformHapticFeedback(HapticView)
-	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return Null
+Public Sub CreateHttpJob (target As Object, HapticView As B4XView, UserRequired As Boolean) As HttpJob
+	If HapticView.IsInitialized Then
+		XUIViewsUtils.PerformHapticFeedback(HapticView)
+	End If
+	If UserRequired And B4XPages.MainPage.MakeSureThatUserSignedIn = False Then 
+		Return Null
+	End If
 	B4XPages.MainPage.ShowProgress
 	Dim j As HttpJob
 	j.Initialize("", target)

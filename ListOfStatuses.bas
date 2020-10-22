@@ -68,7 +68,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 	btnBack.Visible = False
 	RemovePostView (False)
 	If AddCurrentToStack Then
-		If GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title Then
+		If feed.mLink.IsInitialized And (GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title) Then
 			Stack.PushToStack(feed, CLV)
 		End If
 	End If
@@ -128,10 +128,7 @@ End Sub
 
 
 Private Sub GoBack
-	Dim items As B4XOrderedMap = Stack.Items
-	Dim LastItem As StackItem = items.Get(items.Keys.Get(items.Keys.Size - 1))
-	Stack.Items.Remove(LastItem.Link)
-	RefreshImpl(Null, Null, False, LastItem)
+	RefreshImpl(Null, Null, False, Stack.Pop)
 End Sub
 
 Public Sub CreateItemsFromStack(Items As List, Offset As Int)
@@ -427,16 +424,11 @@ Private Sub StatusView1_ShowLargeImage (URL As String, PreviewUrl As String)
 	Else If ic.IsImageReady(PreviewUrl) Then
 		ic.SetImage(PreviewUrl, Consumer, ic.RESIZE_NONE)
 		ic.HoldAnotherImage(URL, Consumer, True, ic.RESIZE_NONE)
+	Else
+		ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
+		ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
 	End If
-	If ic.IsImageReady(URL) = False Then
-		If ic.IsImageReady(PreviewUrl) Then
-			
-		Else
-			ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
-		End If
-		Consumer.NoAnimation = True		
-	End If
-	
+
 End Sub
 
 
@@ -446,7 +438,7 @@ Private Sub btnShare_Click
 		Log("image not ready")
 		Return
 	End If
-	Dim cb As CachedBitmap = consumer.CBitmaps.Get(0)
+	Dim cb As CachedBitmap = consumer.CBitmaps.Get(consumer.CBitmaps.Size - 1)
 	If cb.Bmp.IsInitialized = False Then Return
 	#if B4A
 	Dim provider As FileProvider = B4XPages.MainPage.Provider
@@ -467,7 +459,7 @@ Private Sub btnShare_Click
 	in.SetType("image/*")
 	in.Flags = 1
 	StartActivity(in)
-	#Else if B4A
+	#Else if B4i
 	Dim avc As ActivityViewController
 	avc.Initialize("avc", Array(cb.Bmp))
 	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
@@ -550,15 +542,21 @@ Private Sub StatusView1_Reply
 	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
 	If RemovePostView (False) And PostView1.mReplyToId = sv.mStatus.id Then Return
 	Dim ListIndex As Int = GetUsedItemIndex(StatusesViewsManager, sv)
-	InsertPostView(ListIndex, sv.mStatus.id)
+	InsertPostView(ListIndex, sv.mStatus)
 End Sub
 
-Private Sub InsertPostView (ParentIndex As Int, ReplyToId As String)
+Private Sub InsertPostView (ParentIndex As Int, Status As PLMStatus)
 	If PostView1.IsInitialized = False Then
 		PostView1.Initialize(Me, "PostView1", mBase.Width)
 	End If
-	Dim content As PLMPost = feed.CreatePLMPost(ReplyToId)
-	feed.InsertItem(ReplyToId, content, feed.NewPostId)
+	Dim content As PLMPost = feed.CreatePLMPost(Status.id)
+	content.Mentions.Add(Status.StatusAuthor.Acct)
+	If Status.Mentions.IsInitialized Then
+		For Each m As Map In Status.Mentions
+			content.Mentions.Add(m.Get("acct"))
+		Next
+	End If
+	feed.InsertItem(Status.id, content, feed.NewPostId)
 	Dim Value As PLMCLVItem = CreatePLMCLVItem(PostView1)
 	Value.Empty = False
 	PostViewListIndex = ParentIndex + 1
