@@ -111,7 +111,7 @@ Private Sub btnFollow_Click
 End Sub
 
 Private Sub TableRow(Field1 As String, Field2 As String, Field3 As String) As String
-	Return $"[Span MinWidth=33%x Alignment=center][b]${Field1}[/b][/Span][Span MinWidth=33%x Alignment=center][b]${Field2}[/b][/Span][Span MinWidth=33%x Alignment=center][b]${Field3}[/b][/Span]"$
+	Return $"[Span MinWidth=25%x Alignment=center][b]${Field1}[/b][/Span][Span MinWidth=25%x Alignment=center][b]${Field2}[/b][/Span][Span MinWidth=25%x Alignment=center][b]${Field3}[/b][/Span]"$
 End Sub
 
 Public Sub RemoveFromParent
@@ -167,7 +167,10 @@ End Sub
 
 
 Private Sub lblLogOut_Click
-	B4XPages.MainPage.SignOut
+	Wait For (B4XPages.MainPage.ConfirmMessage("Sign out?")) Complete (Result As Int)
+	If Result = xui.DialogResponse_Positive Then
+		B4XPages.MainPage.SignOut
+	End If
 End Sub
 
 Private Sub lblChangeAvatar_Click
@@ -181,7 +184,7 @@ End Sub
 Private Sub UploadMedia (MediaKey As String)
 	Wait For (B4XPages.MainPage.MediaChooser1.AddImageFromGallery (lblChangeAvatar)) Complete (pm As PostMedia)
 	If pm.IsInitialized Then
-		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 		If j = Null Then Return
 		Dim part As MultipartFileData
 		part.Initialize
@@ -217,7 +220,7 @@ Private Sub lblEdit_Click
 	If Result = xui.DialogResponse_Positive Then
 		Dim note As String = m.Get("note")
 		If note = user.Note Then m.Remove("note")
-		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase)
+		Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 		Dim jg As JSONGenerator
 		jg.Initialize(m)
 		j.PatchBytes(B4XPages.MainPage.GetServer.URL & "/api/v1/accounts/update_credentials", jg.ToString.GetBytes("UTF8"))
@@ -248,4 +251,12 @@ Public Sub BackKeyPressed As Boolean
 		Return True
 	End If
 	Return False
+End Sub
+
+Private Sub lblSettings_Click
+	B4XPages.MainPage.Settings.ShowSettings
+End Sub
+
+Private Sub btnMention_Click
+	B4XPages.MainPage.ShowCreatePostInDialog (mAccount.Acct)
 End Sub
