@@ -21,8 +21,8 @@ File4=DialogContainer.bjl
 File5=empty.png
 File6=GifView.bjl
 File7=hamburger.png
-File8=LeftDrawer.bjl
-File9=logo.png
+File8=icon.png
+File9=LeftDrawer.bjl
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -111,7 +111,7 @@ End Sub
 Sub AppStart (Form1 As Form, Args() As String)
 	MainForm = Form1
 	MainForm.Show
-	MainForm.Icon = fx.LoadImage(File.DirAssets, "logo.png")
+	MainForm.Icon = fx.LoadImage(File.DirAssets, "icon.png")
 	Dim PagesManager As B4XPagesManager
 	PagesManager.Initialize(MainForm)
 End Sub

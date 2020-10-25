@@ -80,7 +80,6 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 End Sub
 
 Public Sub SetVisibility (visible As Boolean)
-	
 End Sub
 
 Private Sub Post (status As String)

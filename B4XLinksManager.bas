@@ -30,6 +30,7 @@ Private Sub CreateInitialLinks
 End Sub
 
 Public Sub IsRecentLink (LINK As PLMLink) As Boolean
+	If LINK.IsInitialized = False Then Return False
 	If LINK.LinkType = Constants.LINKTYPE_USER And B4XPages.MainPage.User.SignedIn Then
 		If LINK.URL.Contains(B4XPages.MainPage.User.Id) Then
 			Return False

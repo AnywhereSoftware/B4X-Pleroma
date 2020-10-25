@@ -79,6 +79,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=B4XMainPage,VerifyUser,370,0,OAuth,VerifyUser,213,6,Visual Designer,AccountView.bjl,-100,1,B4XMainPage,Class_Globals,13,0,B4XMainPage,ShowThreadInDialog,446,0,B4XMainPage,btnPlus_Click,453,3,AccountView,btnMention_Click,251,6,AccountView,lblEdit_Click,215,0,PostView,SetContent,67,6,ViewsCache,VideoPlayer1_Ready,173,0
+NavigationStack=AccountView,btnMention_Click,251,6,AccountView,lblEdit_Click,215,0,PostView,SetContent,67,6,ViewsCache,VideoPlayer1_Ready,170,0,PleromaFeed,Class_Globals,0,0,PleromaFeed,Timer1_Tick,98,2,Visual Designer,MainPage.bjl,-100,1,PostView,Class_Globals,6,0,Main,AppStart,13,1,Main,MainForm_IconifiedChanged,40,0,Main,MainForm_CloseRequest,33,0
 SelectedBuild=0
 VisibleModules=9,22,3,16,14,10,24,25,13,1

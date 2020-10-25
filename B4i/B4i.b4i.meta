@@ -82,6 +82,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=ListOfStatuses,btnShare_Click,439,0,ImagesCache,CallSetBitmap,208,6,ImagesCache,GetImage,204,0,StatusView,AttachmentParent_Click,449,0,StatusView,ImageAttachment,383,2,ListOfStatuses,PostView1_Close,606,0,ListOfStatuses,UpdateIndicesAboveIndex,603,0,ImagesCache,ReleaseImage,392,0,ImagesCache,LogCacheState,358,0,PostView,SetContent,63,6,PostView,Post,76,0
+NavigationStack=StatusView,ImageAttachment,383,2,ListOfStatuses,PostView1_Close,606,0,ListOfStatuses,UpdateIndicesAboveIndex,603,0,ImagesCache,ReleaseImage,392,0,ImagesCache,LogCacheState,358,0,Visual Designer,VideoPlayer.bil,-100,1,Visual Designer,AccountView.bil,-100,1,PostView,SetVisibility,76,2,PostView,SetContent,68,6,PostView,Post,112,0
 SelectedBuild=0
 VisibleModules=22,9,10,16
