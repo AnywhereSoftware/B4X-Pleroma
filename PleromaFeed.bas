@@ -8,7 +8,7 @@ Sub Class_Globals
 	Type PLMContent (RootHtmlNode As HtmlNode)
 	Type PLMAccount (Avatar As String, Id As String, Url As String, UserName As String, DisplayName As String, Acct As String, _
 		Note As String, FollowersCount As Int, FollowingCount As Int, StatusesCount As Int, HeaderURL As String, Emojis As List, _
-		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean)
+		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean, Muted As Boolean)
 	Type PLMTag (Name As String, Url As String)
 	Type PLMNotification (NotificationType As String, Id As String, CreatedAt As Long, Account As PLMAccount)
 	Type PLMStatus (StatusAuthor As PLMAccount, Content As PLMContent, _
@@ -32,7 +32,8 @@ Sub Class_Globals
 	Public mTitle As String
 	Public NoMoreItems As Object
 	Private tu As TextUtils
-	Public Const NewPostId = "newpost", LastPostId = "last" As String
+	Public Const NewPostId = "newpost", LastPostId = "last", ReactionsId = "reactions" As String
+	
 End Sub
 
 Public Sub Initialize (Callback As Object)
@@ -66,7 +67,15 @@ Public Sub Start (KeepStatuses As Boolean)
 	DownloadingTimeLines = False
 	Wait For (B4XPages.MainPage.ServerManager1.VerifyInstanceFeatures(server)) Complete (Success As Boolean)
 	If MyIndex <> DownloadIndex Then Return
+	If user.SignedIn And user.Verified = False Then
+		B4XPages.MainPage.VerifyUser
+		Success = False
+	End If
 	Timer1.Enabled = Success
+	If Success Then
+		Dim features As PLMInstanceFeatures = B4XPages.MainPage.ServerManager1.GetServerFeatures(server)
+		B4XPages.MainPage.ServerSupportsEmojiReactions = features.Features.Contains("pleroma_emoji_reactions")
+	End If
 End Sub
 
 Public Sub Stop

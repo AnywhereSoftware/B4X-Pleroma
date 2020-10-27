@@ -17,7 +17,7 @@ Sub Class_Globals
 	
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
-		SignedIn As Boolean, Id As String, Note As String, Acct As String)
+		SignedIn As Boolean, Id As String, Note As String, Acct As String, Verified As Boolean)
 	
 	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
@@ -60,6 +60,7 @@ Sub Class_Globals
 	Public LinksManager As B4XLinksManager
 	Public MediaChooser1 As MediaChooser
 	Public Settings As PLMSettings
+	Public ServerSupportsEmojiReactions As Boolean
 End Sub
 
 Public Sub Initialize
@@ -102,7 +103,7 @@ Private Sub LoadSavedDataAndStart
 	ServerManager1.LoadFromStore(store)
 	If store.ContainsKey("user") Then
 		User = store.Get("user")
-		
+		User.Verified = False
 	Else
 		User = CreateNewUser
 		PersistUserAndServers
@@ -373,12 +374,13 @@ Public Sub ConfirmMessage (Message As String) As ResumableSub
 	Return Result
 End Sub
 
-Private Sub VerifyUser
+Public Sub VerifyUser
 	Wait For (auth.VerifyUser (GetServer)) Complete (Success As Boolean)
 	If Success Then
+		User.Verified = True
 		AfterSignIn
 	Else
-		SignOut
+		ShowMessage("Error logging in.")
 	End If
 End Sub
 

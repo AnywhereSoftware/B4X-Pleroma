@@ -87,7 +87,7 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
-	tu.UpdateFollowButton(btnFollow, mAccount)
+	tu.UpdateFollowButton(btnFollow, btnMute, mAccount, False)
 	btnMention.Visible = True
 	btnMute.Visible = True
 	pnlCurrentUser.Visible = False
@@ -107,7 +107,11 @@ Private Sub WrapURL(method As String, text As String) As String
 End Sub
 
 Private Sub btnFollow_Click
-	tu.FollowButtonClicked(btnFollow, mAccount)
+	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "follow", False)
+End Sub
+
+Private Sub btnMute_Click
+	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "mute", False)
 End Sub
 
 Private Sub TableRow(Field1 As String, Field2 As String, Field3 As String) As String
@@ -158,7 +162,11 @@ End Sub
 
 Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
 	If URL.StartsWith("~@") Then Text = mAccount.UserName
-	CallSub2(mCallBack, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.ManageLink(Null, mAccount, URL, Text))
+	RaiseLinkClicked(B4XPages.MainPage.TextUtils1.ManageLink(Null, mAccount, URL, Text))
+End Sub
+
+Private Sub RaiseLinkClicked(Link As PLMLink)
+	CallSub2(mCallBack, mEventName & "_LinkClicked", Link)
 End Sub
 
 Public Sub GetBase As B4XView
@@ -259,4 +267,13 @@ End Sub
 
 Private Sub btnMention_Click
 	B4XPages.MainPage.ShowCreatePostInDialog (mAccount.Acct)
+End Sub
+
+Private Sub lblMore_Click
+	Dim options As List = Array("Mutes")
+	Wait For (B4XPages.MainPage.ShowListDialog(options, True)) Complete (Result As String)
+	Dim i As Int = options.IndexOf(Result)
+	If i = 0 Then
+		RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/mutes"))
+	End If
 End Sub

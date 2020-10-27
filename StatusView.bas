@@ -9,6 +9,7 @@ Version=8.3
 #Event: LinkClicked (Link As PLMLink) 
 #Event: HeightChanged
 #Event: Reply
+#Event: AddReaction
 #Event: StatusDeleted
 Sub Class_Globals
 	Private mEventName As String 'ignore
@@ -31,9 +32,10 @@ Sub Class_Globals
 	Private BBBottom As BBListItem
 	Private tu As TextUtils
 	Private imgReadMore As B4XImageView
-	Private FullHeight As Int
+	Private BBListItem1FullHeight As Int
 	Private Notif As PLMNotification
 	Private SensitiveOverlay As Boolean
+	Private pnlLine As B4XView
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -90,7 +92,7 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	SetTime
 	ImagesCache1.SetImage(GetAvatarAccount.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
 	If BBListItem1.mBase.Height > Constants.MaxTextHeight + 20dip And ListItem.Expanded = False Then
-		FullHeight = BBListItem1.mBase.Height
+		BBListItem1FullHeight = BBListItem1.mBase.Height
 		BBListItem1.mBase.Height = Constants.MaxTextHeight
 		imgReadMore.Bitmap = Constants.ReadMoreGradient
 		imgReadMore.mBase.Visible = True
@@ -98,13 +100,13 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 		imgReadMore.mbase.BringToFront
 	Else
 		imgReadMore.mBase.Visible = False
-		
 	End If
 	Dim h As Int = BBListItem1.mBase.Height + 8dip * 2
 	If mStatus.StubForDuplicatedNotification = False Then
 		h = h + HandleAttachments
 	End If
 	BBBottom.mBase.Visible = mStatus.StubForDuplicatedNotification = False
+	
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
 	SetHeightBasedOnMBaseHeight
 End Sub
@@ -118,8 +120,8 @@ Private Sub lblReadMore_MouseClicked (EventData As MouseEvent)
 #else
 Private Sub lblReadMore_Click
 #end if	
-	Dim diff As Int = FullHeight - BBListItem1.mBase.Height
-	BBListItem1.mBase.Height = FullHeight
+	Dim diff As Int = BBListItem1FullHeight - BBListItem1.mBase.Height
+	BBListItem1.mBase.Height = BBListItem1FullHeight
 	mBase.Height = mBase.Height + diff
 	SetHeightBasedOnMBaseHeight
 	imgReadMore.mBase.Visible = False
@@ -136,14 +138,12 @@ Private Sub SetBBListContent
 	BBListItem1.ReleaseInlineImageViews
 	BBListItem1.PrepareBeforeRuns
 	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(mStatus.Content.RootHtmlNode, BBListItem1.ParseData, mStatus.Emojis)
-	If mStatus.EmojiReactions.IsInitialized And mStatus.EmojiReactions.Size > 0 Then
-		EmojiReactions(runs)
-	End If
+	
 	BBListItem1.SetRuns(runs)
 End Sub
 
 Private Sub EmojiReactions (Runs As List)
-	Runs.Add(tu.TextEngine.CreateRun(CRLF & CRLF))
+	Dim fnt As B4XFont = xui.CreateFontAwesome(18)
 	For Each m As Map In mStatus.EmojiReactions
 		Dim IsMe As Boolean = m.Get("me") = True
 		Dim action As String
@@ -152,11 +152,16 @@ Private Sub EmojiReactions (Runs As List)
 		Else
 			action ="~emoji_put:"
 		End If
-		Dim r As BCTextRun = tu.CreateUrlRun(action & m.Get("name") , m.Get("name") & tu.NBSP & m.Get("count"), BBListItem1.ParseData)
+		Dim r As BCTextRun = tu.CreateUrlRun(action & m.Get("name") , m.Get("name") & tu.NBSP, BBBottom.ParseData)
 		r.TextColor = GetIsUserColor(IsMe)
+		r.TextFont = fnt
+		Runs.Add(r)
+		r = tu.CreateRun("(" & m.Get("count") & ")", TopFont)
+		r.TextColor = xui.Color_Gray
 		Runs.Add(r)
 		Runs.Add(tu.TextEngine.CreateRun("  "))
 	Next
+	Runs.Add(tu.TextEngine.CreateRun(CRLF & CRLF))
 End Sub
 
 Private Sub FavouriteClick
@@ -210,9 +215,7 @@ Private Sub ReblogClick
 	
 End Sub
 
-
-
-Private Sub EmojiClick (url As String)
+Public Sub EmojiClick (url As String)
 	Dim j As HttpJob = tu.CreateHttpJob(Me, BBBottom.mBase, True)
 	If j = Null Then Return
 	Dim emoji As String = url.SubString(url.IndexOf(":") + 1)
@@ -231,14 +234,18 @@ Private Sub EmojiClick (url As String)
 		Wait For (tu.DownloadStatus(mStatus.id)) Complete (status As PLMStatus)
 		If status <> Null And s = mStatus Then
 			mStatus.EmojiReactions = status.EmojiReactions
-			SetBBListContent
-			BBListItem1.UpdateLastVisibleRegion
+			Dim h As Int = pnlBottom.Height
+			SetBottomPanel
+			Dim diff As Int = pnlBottom.Height - h
+			If diff <> 0 Then
+				mBase.Height = mBase.Height + diff
+				SetHeightBasedOnMBaseHeight
+				CallSub(mCallBack, mEventName & "_HeightChanged")
+			End If
 		End If
 	End If
 	B4XPages.MainPage.HideProgress
 End Sub
-
-
 
 Public Sub SetVisibility (visible As Boolean)
 	Dim cache As ImagesCache = B4XPages.MainPage.ImagesCache1
@@ -320,6 +327,10 @@ Private Sub SetBottomPanel
 	Dim fnt As B4XFont = xui.CreateFontAwesome(18)
 	Dim runs As List
 	runs.Initialize
+	If mStatus.EmojiReactions.IsInitialized And mStatus.EmojiReactions.Size > 0 Then
+		EmojiReactions(runs)
+	End If
+	Dim AfterEmojiIndex As Int = runs.Size
 	Dim r As BCTextRun
 	r = tu.CreateUrlRun("~replies",  "  " & Chr(0xF112) & CountToString(mStatus.RepliesCount) & " ", BBBottom.ParseData)
 	r.TextColor = GetIsUserColor(False)
@@ -332,16 +343,27 @@ Private Sub SetBottomPanel
 	r = tu.CreateUrlRun("~reblog", " " &  Chr(0xF079) & CountToString(mStatus.ReblogsCount) & " ", BBBottom.ParseData)
 	r.TextColor = GetIsUserColor(mStatus.Reblogged)
 	runs.Add(r)
+	
+	If B4XPages.MainPage.ServerSupportsEmojiReactions Then
+		runs.Add(mTextEngine.CreateRun(TAB))
+		r = tu.CreateUrlRun("~reactions", " " &  Chr(0xF118) & " ", BBBottom.ParseData)
+		r.TextColor = GetIsUserColor(False)
+		runs.Add(r)
+	End If
+	
 	runs.Add(mTextEngine.CreateRun(TAB))
 	r = tu.CreateUrlRun("~more", " " &  Chr(0xF141) & " ", BBBottom.ParseData)
 	r.TextColor = GetIsUserColor(False)
 	runs.Add(r)
 	
-	For Each r As BCTextRun In runs
+	For i = AfterEmojiIndex To runs.Size - 1
+		Dim r As BCTextRun = runs.Get(i)
 		r.TextFont = fnt
 	Next
 	BBBottom.SetRuns(runs)
 	BBBottom.UpdateVisibleRegion(0, 300dip)
+	pnlBottom.Height = 5dip + BBBottom.mBase.Height
+	pnlLine.Top = pnlBottom.Height - 1dip
 End Sub
 
 Private Sub GetIsUserColor(b As Boolean) As Int
@@ -444,25 +466,33 @@ Private Sub AttachmentParent_MouseClicked (EventData As MouseEvent)
 #else
 Private Sub AttachmentParent_Click
 #End If
+	If SensitiveOverlay Then
+		RemoveSensitiveOverlay
+		Return
+	End If
 	Dim Parent As B4XView = Sender
 	Dim attachment As PLMMedia = Parent.Tag
-	
 	If attachment.TType = "image" Then
-		If SensitiveOverlay Then
-			Dim iv As B4XView = Parent.GetView(0)
-			iv.SetBitmap(Null)
-			ImagesCache1.SetImage(attachment.PreviewUrl, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-		Else
-			CallSubDelayed3(mCallBack, mEventName & "_ShowLargeImage", attachment.Url, attachment.PreviewUrl)
-		End If
+		CallSubDelayed3(mCallBack, mEventName & "_ShowLargeImage", attachment.Url, attachment.PreviewUrl)
 	Else If attachment.TType = "video" Then
-		If SensitiveOverlay Then
-			ShowPlayButton(Parent.GetView(1))
-		Else	
-			Parent.GetView(1).Visible = False
-			ToggleVideo(Parent.GetView(0))
-		End If
+		Parent.GetView(1).Visible = False
+		ToggleVideo(Parent.GetView(0))
 	End If
+End Sub
+
+Private Sub RemoveSensitiveOverlay
+	For i = 0 To pnlMedia.NumberOfViews - 1
+		Dim parent As B4XView = pnlMedia.GetView(i)
+		Dim attachment As PLMMedia = parent.Tag
+		Select attachment.TType
+			Case "image"
+				Dim iv As B4XView = parent.GetView(0)
+				iv.SetBitmap(Null)
+				ImagesCache1.SetImage(attachment.PreviewUrl, iv.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
+			Case "video"
+				ShowPlayButton(parent.GetView(1))
+		End Select
+	Next
 	SensitiveOverlay = False
 End Sub
 
@@ -493,9 +523,7 @@ Private Sub BBTOP_LinkClicked (URL As String, Text As String)
 End Sub
 
 Private Sub BBListItem1_LinkClicked (URL As String, Text As String)
-	If URL.StartsWith("~emoji") Then
-		EmojiClick(URL)
-	Else if URL = "~time click" Then
+	If URL = "~time click" Then
 		lblTime_Click
 	Else
 		CallSub2(mCallBack, mEventName & "_LinkClicked", tu.ManageLink(mStatus, GetAvatarAccount, URL, Text))
@@ -510,8 +538,13 @@ Private Sub BBBottom_LinkClicked (URL As String, Text As String)
 	Else If URL.StartsWith("~replies") Then
 		XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
 		CallSub(mCallBack, mEventName & "_Reply")
+	Else If URL.StartsWith("~reactions") Then
+		XUIViewsUtils.PerformHapticFeedback(BBBottom.mBase)
+		CallSub(mCallBack, mEventName & "_AddReaction")
 	Else If URL.StartsWith("~more") Then
 		ShowMoreOptions
+	Else If URL.StartsWith("~emoji") Then
+		EmojiClick(URL)
 	End If
 End Sub
 

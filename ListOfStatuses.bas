@@ -28,9 +28,10 @@ Sub Class_Globals
 	Private MiniAccountsManager As StatusesListUsedManager	
 	Private ViewsManagers As List
 	Private TargetId As String
+	Type PLMInsertedCLVItem (Item As Object, mBase As B4XView, ListIndex As Int, Key As String, AttachedId As String)
+	Private InsertedItems As Map
 	Private PostView1 As PostView
-	Private PostViewListIndex As Int = -1
-	
+	Private ReactionsView1 As ReactionsView
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
@@ -43,6 +44,7 @@ Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView
 	ViewsManagers = Array(StatusesViewsManager, MiniAccountsManager)
 	Stack.Initialize (Me)
 	feed.Initialize (Me)
+	InsertedItems.Initialize
 	AddMoreItems
 End Sub
 
@@ -50,7 +52,19 @@ Public Sub ResizeVisibleList
 	
 End Sub
 
+Private Sub RemoveInsertedItems
+	For Each key As String In InsertedItems.Keys
+		RemoveInsertedView(key, False)
+	Next
+End Sub
+
 Public Sub Refresh
+	If feed.mLink.IsInitialized = False Then
+		feed.mLink = B4XPages.MainPage.LinksManager.LINK_PUBLIC
+	End If
+	If feed.user.IsInitialized = False Then
+		feed.user = B4XPages.MainPage.User
+	End If
 	Refresh2(feed.user, feed.mLink, False, False)
 End Sub
 
@@ -66,7 +80,7 @@ End Sub
 
 Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GoToItem As StackItem)
 	btnBack.Visible = False
-	RemovePostView (False)
+	RemoveInsertedItems
 	If AddCurrentToStack Then
 		If feed.mLink.IsInitialized And (GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title) Then
 			Stack.PushToStack(feed, CLV)
@@ -87,6 +101,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 		End If
 	Else
 		feed.user = User
+		
 		feed.mLink = NewLink
 		If NewLink.Extra.IsInitialized And NewLink.Extra.ContainsKey("targetId") Then
 			TargetId = NewLink.Extra.Get("targetId")
@@ -164,7 +179,7 @@ End Sub
 
 Private Sub PostView1_NewPost (Status As PLMStatus)
 	Dim ReplyId As String = PostView1.mReplyToId
-	RemovePostView(False)
+	RemoveInsertedItems
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	Dim index As Int = feed.InsertItem(ReplyId, Status, Status.id)
 	If Success = False Then Return
@@ -316,9 +331,11 @@ Private Sub RemoveInvisibleItems (FirstIndex As Int, LastIndex As Int, All As Bo
 		Dim value As PLMCLVItem = CLV.GetValue(CLV.Size - 1)
 		value.Empty = True
 	End If
-	If PostViewListIndex >= 0 And (All Or IsVisible(PostViewListIndex, FirstIndex, LastIndex) = False) Then
-		RemovePostView(False)	
-	End If
+	For Each iv As PLMInsertedCLVItem In InsertedItems.Values
+		If All Or IsVisible(iv.ListIndex, FirstIndex, LastIndex) = False Then
+			RemoveInsertedView(iv.Key, False)
+		End If
+	Next
 End Sub
 
 Sub CLV_VisibleRangeChanged (FirstIndex As Int, LastIndex As Int)
@@ -419,6 +436,8 @@ Private Sub StatusView1_ShowLargeImage (URL As String, PreviewUrl As String)
 	Consumer.IsVisible = True
 	ZoomImageView1.Tag = Consumer
 	Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
+	pnlLargeImage.SetVisibleAnimated(100, True)
+	Consumer.NoAnimation = True
 	If ic.IsImageReady(URL) Then
 		ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
 	Else If ic.IsImageReady(PreviewUrl) Then
@@ -497,10 +516,12 @@ Public Sub BackKeyPressedShouldClose As Boolean
 	If pnlLargeImage.Visible Then
 		CloseLargeImage
 		Return False
-	Else If PostViewListIndex >= 0 Then
-		If PostView1.BackKeyPressed Then Return False
-		RemovePostView(False)
-		Return False
+	Else if InsertedItems.Size > 0 Then
+		For Each iv As PLMInsertedCLVItem In InsertedItems.Values
+			If CallSub(iv.Item, "BackKeyPressed") = True Then Return False
+			RemoveInsertedView(iv.Key, False)
+			Return False
+		Next
 	Else If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
 		Return False
 	Else If btnBack.Visible Then
@@ -538,12 +559,46 @@ Private Sub StatusView1_HeightChanged
 End Sub
 
 Private Sub StatusView1_Reply
-	Dim sv As StatusView = Sender
-	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
-	If RemovePostView (False) And PostView1.mReplyToId = sv.mStatus.id Then Return
-	Dim ListIndex As Int = GetUsedItemIndex(StatusesViewsManager, sv)
-	InsertPostView(ListIndex, sv.mStatus)
+	InsertReactOrPost(Sender, feed.NewPostId)
 End Sub
+
+Private Sub StatusView1_AddReaction
+	Dim sv As StatusView = Sender
+	If InsertedItems.ContainsKey(feed.NewPostId) Then 
+		If PostView1.mReplyToId = sv.mStatus.id Then Return 'don't show the reactions panel while the user is posting
+	End If
+	InsertReactOrPost(sv, feed.ReactionsId)
+End Sub
+
+Private Sub InsertReactOrPost(sv As StatusView, key As String)
+	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
+	Dim toggling As Boolean = AreWeTogglingInsertedView(key, sv.mStatus)
+	RemoveInsertedItems
+	If toggling Then Return
+	Dim ListIndex As Int = GetUsedItemIndex(StatusesViewsManager, sv)
+	If key = feed.ReactionsId Then
+		InsertReact(ListIndex, sv)
+	Else
+		InsertPostView(ListIndex, sv.mStatus)
+	End If
+	
+End Sub
+
+Private Sub AreWeTogglingInsertedView(Key As String, Status As PLMStatus) As Boolean
+	If InsertedItems.ContainsKey(Key) Then
+		Dim iv As PLMInsertedCLVItem = InsertedItems.Get(Key)
+		If iv.AttachedId = Status.id Then Return True
+	End If
+	Return False
+End Sub
+
+Private Sub InsertReact (ParentIndex As Int, StatusView1 As StatusView)
+	If ReactionsView1.IsInitialized = False Then
+		ReactionsView1.Initialize(mBase.Width)
+	End If
+	InsertInsertedView(feed.ReactionsId, ReactionsView1, ReactionsView1.mBase, StatusView1.mStatus.id, ParentIndex, StatusView1)
+End Sub
+
 
 Private Sub InsertPostView (ParentIndex As Int, Status As PLMStatus)
 	If PostView1.IsInitialized = False Then
@@ -556,18 +611,32 @@ Private Sub InsertPostView (ParentIndex As Int, Status As PLMStatus)
 			content.Mentions.Add(m.Get("acct"))
 		Next
 	End If
-	feed.InsertItem(Status.id, content, feed.NewPostId)
-	Dim Value As PLMCLVItem = CreatePLMCLVItem(PostView1)
-	Value.Empty = False
-	PostViewListIndex = ParentIndex + 1
-	CLV.InsertAt(PostViewListIndex, PostView1.mBase, Value)
-	UpdateIndicesAboveIndex (ParentIndex, 1)
-	PostView1.SetContent(content, Null)
-	MakePostViewVisible
+	InsertInsertedView(feed.NewPostId, PostView1, PostView1.mBase, Status.id, ParentIndex, content)
 End Sub
 
-Private Sub MakePostViewVisible
-	Dim raw As CLVItem = CLV.GetRawListItem(PostViewListIndex)
+Private Sub InsertInsertedView(Key As String, item As Object, ViewBase As B4XView, StatusId As String, ParentIndex As Int, Content As Object)
+	feed.InsertItem(StatusId, Content, Key)
+	Dim iv As PLMInsertedCLVItem
+	iv.Initialize
+	iv.AttachedId = StatusId
+	iv.ListIndex = ParentIndex + 1
+	iv.Item = item
+	iv.Key = Key
+	iv.mBase = ViewBase
+	Dim Value As PLMCLVItem = CreatePLMCLVItem(item)
+	InsertedItems.Put(Key, iv)
+	Value.Empty = False
+	CLV.InsertAt(iv.ListIndex, ViewBase, Value)
+	UpdateIndicesAboveIndex (ParentIndex, 1)
+	CallSub3(iv.Item, "SetContent", Content, Null)
+	If Key = feed.NewPostId Then
+		MakeInsertedViewVisible(iv)
+	End If
+	RemoveClickRecognizer(ViewBase)
+End Sub
+
+Private Sub MakeInsertedViewVisible (InsertedView As PLMInsertedCLVItem)
+	Dim raw As CLVItem = CLV.GetRawListItem(InsertedView.ListIndex)
 	Dim TargetY As Int = raw.Offset - 80dip
 	#if B4J
 	CLV.sv.ScrollViewOffsetY = TargetY	
@@ -582,17 +651,18 @@ Private Sub MakePostViewVisible
 End Sub
 
 'returns true if it was open
-Private Sub RemovePostView (Animated As Boolean) As Boolean
-	If PostViewListIndex < 0 Then Return False
-	RemoveItemFromList(Animated, PostViewListIndex)
+Private Sub RemoveInsertedView (Key As String, Animated As Boolean)
+	Dim InsertedView As PLMInsertedCLVItem = InsertedItems.Get(Key)
+	If InsertedView = Null Then Return
+	RemoveItemFromList(Animated, InsertedView.ListIndex)
 	feed.Statuses.Remove(feed.NewPostId)
-	PostView1.RemoveFromParent
-	PostViewListIndex = -1
-	Return True
+	CallSub(InsertedView.Item, "RemoveFromParent")
+	InsertedItems.Remove(Key)
 End Sub
 
 Private Sub StatusView1_StatusDeleted
 	Dim sv As StatusView = Sender
+	RemoveInsertedItems
 	RemoveItemFromList(True, GetUsedItemIndex(StatusesViewsManager, sv))
 	RemoveView(StatusesViewsManager, sv)
 	feed.Statuses.Remove(sv.mStatus.id)
@@ -617,5 +687,5 @@ Private Sub UpdateIndicesAboveIndex (Index As Int, Delta As Int)
 End Sub
 
 Private Sub PostView1_Close
-	RemovePostView (True)
+	RemoveInsertedView(feed.NewPostId, True)
 End Sub

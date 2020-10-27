@@ -18,6 +18,7 @@ Sub Class_Globals
 	Private btnFollow As B4XView
 	Private tu As TextUtils
 	Private Notif As PLMNotification
+	Private btnMute As B4XView
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -52,11 +53,15 @@ Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	bbTop.SetRuns(runs)
 	bbTop.UpdateVisibleRegion(0, 200dip)
 	
-	tu.UpdateFollowButton(btnFollow, mAccount)
+	tu.UpdateFollowButton(btnFollow, btnMute, mAccount, True)
 End Sub
 
 Private Sub btnFollow_Click
-	tu.FollowButtonClicked(btnFollow, mAccount)
+	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "follow", True)
+End Sub
+
+Private Sub btnMute_Click
+	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "mute", true)
 End Sub
 
 Public Sub RemoveFromParent

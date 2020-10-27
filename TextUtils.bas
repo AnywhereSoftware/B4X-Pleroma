@@ -72,6 +72,11 @@ Public Sub CreateUserLink (id As String, name As String, method As String) As PL
 	Return CreatePLMLink2(u & "/" & method, Constants.LINKTYPE_USER, "@" & name, u)
 End Sub
 
+Public Sub CreateUserLinkWithMutedOrSimilar (id As String, name As String, link As String) As PLMLink
+	Dim u As String = Constants.URL_USER.Replace(":id", id)
+	Return CreatePLMLink2(link, Constants.LINKTYPE_USER, "@" & name, u)
+End Sub
+
 
 Public Sub CreatePLMLink (URL As String, LINKTYPE As Int, Title As String) As PLMLink
 	Return CreatePLMLink2(URL, LINKTYPE, Title, "")	
@@ -341,19 +346,25 @@ End Sub
 
 Public Sub GetRelationshipFromRelationshipObject (Account As PLMAccount, m As Map)
 	Account.RelationshipAdded = True
-	Account.Following = m.Get("following")
-	Account.FollowRequested = m.Get("requested")
+	Account.Following = m.GetDefault("following", False)
+	Account.FollowRequested = m.GetDefault("requested", False)
+	Account.Muted = m.GetDefault("muting", False)
 End Sub
 
-Public Sub FollowOrUnfollow (Account As PLMAccount) As ResumableSub
+Private Sub VerbOrUnverb (Account As PLMAccount, Verb As String) As ResumableSub
 	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return False
+	Select Verb
+		Case "follow"
+			If Account.Following Or Account.FollowRequested Then
+				Verb = "unfollow"
+			End If
+		Case "mute"
+			If Account.Muted Then
+				Verb = "unmute"
+			End If
+	End Select
 	B4XPages.MainPage.ShowProgress
-	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/accounts/${Account.id}/"$
-	If Account.Following Or Account.FollowRequested Then
-		link = link & "unfollow"
-	Else
-		link = link & "follow"
-	End If
+	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/accounts/${Account.id}/${Verb}"$
 	Dim j As HttpJob
 	j.Initialize("", Me)
 	j.PostString(link, "")
@@ -370,9 +381,10 @@ Public Sub FollowOrUnfollow (Account As PLMAccount) As ResumableSub
 	Return False
 End Sub
 
-Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount)
+Public Sub UpdateFollowButton (btnFollow As B4XView, btnMute As B4XView, mAccount As PLMAccount, Mini As Boolean)
 	btnFollow.Tag = mAccount
 	btnFollow.Visible = False
+	btnMute.Visible = False
 	If mAccount.Id = B4XPages.MainPage.User.Id Then Return
 	If mAccount.RelationshipAdded = False Then
 		B4XPages.MainPage.ShowProgress
@@ -387,19 +399,25 @@ Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount)
 	Else
 		btnFollow.Text = "Follow"
 	End If
+	If mAccount.Muted Then
+		If Mini Then btnMute.Text = Chr(0xF026) Else btnMute.Text = "Unmute"
+	Else
+		If Mini Then btnMute.Text = Chr(0xF028) Else btnMute.Text = "Mute"
+	End If
 	btnFollow.Visible = True
+	btnMute.Visible = True
 End Sub
 
-Public Sub FollowButtonClicked (btnFollow As B4XView, mAccount As PLMAccount)
+Public Sub FollowButtonClicked (btnFollow As B4XView, btnMute As B4XView, mAccount As PLMAccount, Verb As String, Mini As Boolean)
 	Dim a As PLMAccount = mAccount
-	Wait For (FollowOrUnfollow(mAccount)) Complete (unused As Boolean)
+	Wait For (VerbOrUnverb(mAccount, Verb)) Complete (unused As Boolean)
 	If a <> mAccount Then Return
-	UpdateFollowButton(btnFollow, mAccount)
+	UpdateFollowButton(btnFollow, btnMute, mAccount, Mini)
 	If mAccount.Following = False And mAccount.FollowRequested Then
 		Sleep(1000)
 		Wait For (AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (unused As Boolean)
 		If a <> mAccount Then Return
-		UpdateFollowButton(btnFollow, mAccount)
+		UpdateFollowButton(btnFollow, btnMute, mAccount, Mini)
 	End If
 End Sub
 

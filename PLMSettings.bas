@@ -101,3 +101,7 @@ Public Sub BackKeyPressed As Boolean
 	End If
 	Return False
 End Sub
+
+Public Sub GetReactions As List
+	Return Constants.DefaultReactions
+End Sub
