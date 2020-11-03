@@ -27,6 +27,7 @@ Sub Class_Globals
 	Private RequestsManager1 As RequestsManager
 	Public RESIZE_FILLWIDTH = 1, RESIZE_FIT = 2, RESIZE_NONE = 0 , RESIZE_FILL_NO_DISTORTIONS = 3 As Int
 	Private NoGifView As B4XGifView
+	Private GifsViewsCreated As Int
 End Sub
 
 Public Sub Initialize
@@ -183,10 +184,13 @@ Private Sub CallSetBitmap(Consumer As ImageConsumer)
 	Dim cb As CachedBitmap = Consumer.CBitmaps.Get(0)
 	If cb.IsGif Then
 		If Target.Parent.IsInitialized = False Then Return
-		Consumer.GifTarget = GetGifView
-		Consumer.GifTarget.mBase.RemoveViewFromParent
-		Target.Parent.AddView(Consumer.GifTarget.mBase, Target.Left, Target.Top, Target.Width, Target.Height)
-		Consumer.GifTarget.Base_Resize(Target.Width, Target.Height)
+		If Consumer.GifTarget.IsInitialized = False Then
+			Consumer.GifTarget = GetGifView
+'			Log("add gif view. created = " & GifsViewsCreated & ", cached: " & GifViews.Size)
+			Consumer.GifTarget.mBase.RemoveViewFromParent
+			Target.Parent.AddView(Consumer.GifTarget.mBase, Target.Left, Target.Top, Target.Width, Target.Height)
+			Consumer.GifTarget.Base_Resize(Target.Width, Target.Height)
+		End If
 		Try
 			Consumer.GifTarget.SetGif(xui.DefaultFolder, cb.GifFile)
 		Catch
@@ -368,6 +372,7 @@ Public Sub LogCacheState
 		End If
 	Next
 	Log("Total references: " & c)
+	Log("Gifs created: " & GifsViewsCreated & ", gifs in cache: " & GifViews.Size)
 End Sub
 
 Private Sub CreateImageCacheBmp (Bmp As B4XBitmap, Url As String) As CachedBitmap
@@ -392,9 +397,10 @@ Public Sub ReleaseImage(Consumer As ImageConsumer)
 						Consumer.GifTarget.GifDrawable.RunMethod("recycle", Null)
 					End If
 					#End If
-					Consumer.GifTarget.mBase.RemoveViewFromParent
+'					Log("release gif view: " & GifViews.Size)
 					Consumer.GifTarget.mBase.Tag = "removed"
 					GifViews.Add(Consumer.GifTarget)
+					Consumer.GifTarget.mBase.RemoveViewFromParent
 					Consumer.GifTarget = NoGifView
 				End If
 			End If
@@ -436,6 +442,7 @@ Private Sub GetGifView As B4XGifView
 	Dim pnl As B4XView = xui.CreatePanel("")
 	pnl.SetLayoutAnimated(0, 0, 0, 102dip, 102dip)
 	pnl.LoadLayout("GifView")
+	GifsViewsCreated = GifsViewsCreated + 1
 	B4XGifView1.mBase.RemoveViewFromParent
 	'don't capture the touch events
 	#if B4J

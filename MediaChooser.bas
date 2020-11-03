@@ -107,9 +107,7 @@ Public Sub AddImageFromCamera As ResumableSub
 		B4XPages.MainPage.ShowMessage("Not supported")
 	Else
 		Camera.TakePicture
-		Dim TopPage As String = B4XPages.GetManager.GetTopPage.Id
 		Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
-		B4XPages.GetManager.mStackOfPageIds.Add(TopPage)
 		If Success Then
 			Return CreatePostMedia(File.Combine(xui.DefaultFolder, CopyImageFromCamera(Image)), True, True)
 		End If

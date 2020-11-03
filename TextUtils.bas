@@ -174,7 +174,7 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	End If
 	If StatusMap.ContainsKey("pleroma") Then
 		Dim plm As Map = StatusMap.Get("pleroma")
-		status.EmojiReactions = plm.Get("emoji_reactions")
+		status.EmojiReactions = plm.GetDefault("emoji_reactions", Constants.EmptyList)
 		status.InReplyToAccountAcct = plm.GetDefault("in_reply_to_account_acct", "")
 	End If
 	status.InReplyToAccountId = StatusMap.Get("in_reply_to_account_id")

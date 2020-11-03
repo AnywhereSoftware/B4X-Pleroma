@@ -35,7 +35,7 @@ Sub Class_Globals
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
 	Private AccountView1 As AccountView
-	Private wvdialog As WebViewDialog
+	Private wvdialog As WebViewDialog 'ignore
 	Private DialogContainer As B4XView
 	Private DialogListOfStatuses As ListOfStatuses
 	Private DialogBtnExit As B4XView
@@ -61,6 +61,9 @@ Sub Class_Globals
 	Public MediaChooser1 As MediaChooser
 	Public Settings As PLMSettings
 	Public ServerSupportsEmojiReactions As Boolean
+	#if B4i
+	Public safari As SafariController
+	#End If
 End Sub
 
 Public Sub Initialize
@@ -88,7 +91,6 @@ Public Sub Initialize
 	#End If
 	Constants.Initialize
 	push1.Initialize
-
 End Sub
 
 Private Sub UpdateOldStore
@@ -488,12 +490,16 @@ Private Sub LinkClickedShared (Link As PLMLink)
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
 	If Link.LINKTYPE = Constants.LINKTYPE_OTHER Then
+		#if B4i
+		ShowExternalLink(Link.URL)
+		#else
 		If wvdialog.IsInitialized = False Then
 			wvdialog.Initialize(CreatePanelForDialog)
 		End If
 		wvdialog.Show(Dialog, Link)
 		Wait For (ShowDialogWithoutButtons(wvdialog.mParent, False)) Complete (Result As Int)
 		wvdialog.Close
+		#End If
 	Else If Link.LINKTYPE = Constants.LINKTYPE_THREAD Then
 		ShowThreadInDialog(Link)
 	Else
@@ -502,6 +508,9 @@ Private Sub LinkClickedShared (Link As PLMLink)
 End Sub
 
 Private Sub ClosePrevDialog As ResumableSub
+	#if B4i
+	B4XPages.GetNativeParent(Me).ResignFocus
+	#End If
 	DialogIndex = DialogIndex + 1
 	Dim MyIndex As Int = DialogIndex
 	If Dialog.Visible Then
@@ -564,7 +573,14 @@ Public Sub ShowExternalLink (link As String)
 	Dim pi As PhoneIntents
 	StartActivity(pi.OpenBrowser(link))
 	#else if B4i
-	Main.App.OpenURL(link)
+	safari.Initialize("safari", link)
+	Dim no As NativeObject = safari
+	safari.TintColor = xui.Color_Red
+	no = no.GetField("safari")
+	
+	no.SetField("preferredBarTintColor", no.ColorToUIColor(Main.NavBarBarTintColor))
+	no.SetField("preferredControlTintColor", no.ColorToUIColor(Main.NavBarTintColor))
+	safari.Show(B4XPages.GetNativeParent(Me))
 	#end if
 End Sub
 
@@ -674,3 +690,5 @@ Public Sub UserDetailsChanged
 		DrawerManager1.UpdateAvatarAndDisplayName
 	End If
 End Sub
+
+

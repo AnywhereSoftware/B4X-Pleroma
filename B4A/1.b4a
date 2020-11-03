@@ -109,7 +109,7 @@ Version=10.2
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
 	#VersionCode: 1
-	#VersionName: Test
+	#VersionName: 1.22
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False

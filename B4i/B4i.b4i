@@ -1,4 +1,5 @@
 ﻿Build1=Default,b4i.pleroma,HU2_PUBLIC
+Build2=Simulator,b4i.pleroma,HU2_PUBLIC,SIMULATOR
 File1=AccountView.bil
 File10=MainPage.bil
 File11=MiniAccountView.bil
@@ -61,6 +62,7 @@ Library18=iphone
 Library19=ifirebasenotifications
 Library2=b4xpages
 Library20=ihttputils2
+Library21=iui9
 Library3=xui views
 Library4=bctextengine
 Library5=ijson
@@ -97,32 +99,37 @@ Module7=|relative|..\DrawerManager
 Module8=|relative|..\HtmlToRuns
 Module9=|relative|..\ImagesCache
 NumberOfFiles=24
-NumberOfLibraries=20
+NumberOfLibraries=21
 NumberOfModules=28
 Version=6.8
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.0.0 
+	#Version: 1.23.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
 	#Target: iPhone, iPad
 	#ATSEnabled: false
-	#MinVersion: 8
+	#MinVersion: 10
 	#PlistExtra: <key>UIViewControllerBasedStatusBarAppearance</key><false/>
 	#UrlScheme: b4i.pleroma
+	#if Not(SIMULATOR)
 	#AdditionalLib: KSCrash.framework.3
 	#AdditionalLib: MessageUI.framework
 	#AdditionalLib: SystemConfiguration.framework
 	#AdditionalLib: libc++.dylib
 	#AdditionalLib: libz.dylib
+	#End If
 	#PlistExtra:<key>NSPhotoLibraryUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSCameraUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSMicrophoneUsageDescription</key><string>Add videos as attachments.</string>
 	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
+	#if Not(SIMULATOR)
+'	#ProvisionFile: pleroma_store.mobileprovision
+	#End If
 #End Region
 
 Sub Process_Globals
@@ -134,28 +141,31 @@ Sub Process_Globals
 	Public fm As FirebaseMessaging
 	Private ForegroundFlag As Boolean 'https://www.b4x.com/android/forum/threads/re-how-detect-user-tap-on-notification.117548/#content
 	Private unc As UserNotificationCenter
+	Public Const NavBarBarTintColor As Int = 0xFF00BBFF
+	Public Const NavBarTintColor As Int = Colors.White
 End Sub
 
 Private Sub Application_Start (Nav As NavigationController)
+	SetDebugAutoFlushLogs(True)
 	NavControl = Nav
 	Analytics.Initialize 
 	Dim PagesManager As B4XPagesManager
 	PagesManager.Initialize(NavControl)
 	NavControl.NavigationBarVisible = True
 	Dim no As NativeObject = NavControl
-	no.GetField("navigationBar").RunMethod("setBarTintColor:", Array(no.ColorToUIColor(0xFF00BBFF)))
+	no.GetField("navigationBar").RunMethod("setBarTintColor:", Array(no.ColorToUIColor(NavBarBarTintColor)))
 	Dim no As NativeObject = App
 	no.RunMethod("setStatusBarStyle:", Array(1))
 	SetTitleColor(Nav, Colors.White)
 	Dim no As NativeObject = NavControl
-	no.GetField("navigationBar").RunMethod("setTintColor:", Array(no.ColorToUIColor(Colors.White)))
+	no.GetField("navigationBar").RunMethod("setTintColor:", Array(no.ColorToUIColor(NavBarTintColor)))
 	#if RELEASE
 	If App.IsSimulator = False Then
 		CreateReporter
 		SendReportsIfNeeded
 	End If
 	#end if
-	fm.Initialize("fm")
+	fm.Initialize("fm")	
 End Sub
 
 Private Sub fm_FCMConnected
@@ -219,6 +229,7 @@ Sub CreateReporter
 	reporter.RunMethod("install", Null)
 End Sub
 
+#if Not(SIMULATOR)
 #if OBJC
 #import <KSCrash/KSCrashFramework.h>
 
@@ -236,6 +247,7 @@ End Sub
      }];
 }
 #End If
+#End If
 
 Sub SetTitleColor(nav As NavigationController, clr As Int)
 	Dim attributes As NativeObject
@@ -246,6 +258,8 @@ Sub SetTitleColor(nav As NavigationController, clr As Int)
 End Sub
 
 Sub Application_OpenUrl (Url As String, Data As Object, SourceApplication As String) As Boolean
+
+	
 	B4XPages.MainPage.auth.CallFromOpenUrl(Url)
 	Return True
 End Sub

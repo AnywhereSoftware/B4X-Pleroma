@@ -140,6 +140,12 @@ Public Sub CallFromOpenUrl (url As String)
 	If url.StartsWith(packageName & ":/oath") Then
 		ParseBrowserUrl(url)
 	End If
+	Sleep(0)
+	Dim no As NativeObject = B4XPages.MainPage.safari
+	no = no.GetField("safari")
+	If no.IsInitialized Then
+		no.RunMethod("dismissViewControllerAnimated:completion:", Array(True, Null))
+	End If
 End Sub
 
 Private Sub GetPackageName As String

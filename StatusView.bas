@@ -36,6 +36,7 @@ Sub Class_Globals
 	Private Notif As PLMNotification
 	Private SensitiveOverlay As Boolean
 	Private pnlLine As B4XView
+	Private IconsFont As B4XFont
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -43,6 +44,7 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	mCallBack = Callback
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
 	TopFont = xui.CreateDefaultFont(12)
+	IconsFont = xui.CreateFontAwesome(18)
 	tu = B4XPages.MainPage.TextUtils1
 End Sub
 
@@ -153,11 +155,10 @@ Private Sub EmojiReactions (Runs As List)
 			action ="~emoji_put:"
 		End If
 		Dim r As BCTextRun = tu.CreateUrlRun(action & m.Get("name") , m.Get("name") & tu.NBSP, BBBottom.ParseData)
-		r.TextColor = GetIsUserColor(IsMe)
 		r.TextFont = fnt
 		Runs.Add(r)
 		r = tu.CreateRun("(" & m.Get("count") & ")", TopFont)
-		r.TextColor = xui.Color_Gray
+		r.TextColor = GetIsUserColor(IsMe)
 		Runs.Add(r)
 		Runs.Add(tu.TextEngine.CreateRun("  "))
 	Next
@@ -324,55 +325,57 @@ End Sub
 
 Private Sub SetBottomPanel
 	BBBottom.PrepareBeforeRuns
-	Dim fnt As B4XFont = xui.CreateFontAwesome(18)
 	Dim runs As List
 	runs.Initialize
 	If mStatus.EmojiReactions.IsInitialized And mStatus.EmojiReactions.Size > 0 Then
 		EmojiReactions(runs)
 	End If
-	Dim AfterEmojiIndex As Int = runs.Size
-	Dim r As BCTextRun
-	r = tu.CreateUrlRun("~replies",  "  " & Chr(0xF112) & CountToString(mStatus.RepliesCount) & " ", BBBottom.ParseData)
-	r.TextColor = GetIsUserColor(False)
-	runs.Add(r)
-	runs.Add(mTextEngine.CreateRun(TAB))
-	r = tu.CreateUrlRun("~favourites",  " " & Chr(0xF006) & CountToString(mStatus.FavouritesCount) & " ", BBBottom.ParseData)
-	r.TextColor = GetIsUserColor(mStatus.Favourited)
-	runs.Add(r)
-	runs.Add(mTextEngine.CreateRun(TAB))
-	r = tu.CreateUrlRun("~reblog", " " &  Chr(0xF079) & CountToString(mStatus.ReblogsCount) & " ", BBBottom.ParseData)
-	r.TextColor = GetIsUserColor(mStatus.Reblogged)
-	runs.Add(r)
+	Dim tb As String = "  "
+	
+	runs.Add(CreateIconRun("~replies", Chr(0xF112), False))
+	runs.Add(CreateCountRun(mStatus.RepliesCount))	
+	runs.Add(mTextEngine.CreateRun(tb))
+	
+	runs.Add(CreateIconRun("~favourites", Chr(0xF006), mStatus.Favourited))
+	runs.Add(CreateCountRun(mStatus.FavouritesCount))
+	runs.Add(mTextEngine.CreateRun(tb))
+	
+	runs.Add(CreateIconRun("~reblog", Chr(0xF079), mStatus.Reblogged))
+	runs.Add(CreateCountRun(mStatus.ReblogsCount))
 	
 	If B4XPages.MainPage.ServerSupportsEmojiReactions Then
-		runs.Add(mTextEngine.CreateRun(TAB))
-		r = tu.CreateUrlRun("~reactions", " " &  Chr(0xF118) & " ", BBBottom.ParseData)
-		r.TextColor = GetIsUserColor(False)
-		runs.Add(r)
+		runs.Add(mTextEngine.CreateRun(tb))
+		runs.Add(CreateIconRun("~reactions", Chr(0xF118), False))
 	End If
 	
-	runs.Add(mTextEngine.CreateRun(TAB))
-	r = tu.CreateUrlRun("~more", " " &  Chr(0xF141) & " ", BBBottom.ParseData)
-	r.TextColor = GetIsUserColor(False)
-	runs.Add(r)
+	runs.Add(mTextEngine.CreateRun(tb))
+	runs.Add(CreateIconRun("~more", Chr(0xF141), False))
 	
-	For i = AfterEmojiIndex To runs.Size - 1
-		Dim r As BCTextRun = runs.Get(i)
-		r.TextFont = fnt
-	Next
 	BBBottom.SetRuns(runs)
 	BBBottom.UpdateVisibleRegion(0, 300dip)
 	pnlBottom.Height = 5dip + BBBottom.mBase.Height
 	pnlLine.Top = pnlBottom.Height - 1dip
 End Sub
 
-Private Sub GetIsUserColor(b As Boolean) As Int
-	If b Then Return Constants.ColorAlreadyTookAction Else Return Constants.ColorDefaultText
+Private Sub CreateIconRun(URL As String, c As String, UserColorParameter As Boolean) As BCTextRun
+	Dim r As BCTextRun = tu.CreateUrlRun(URL,  "  " & c & " ", BBBottom.ParseData)
+	r.TextFont = IconsFont
+	r.TextColor = GetIsUserColor(UserColorParameter)
+	Return r
 End Sub
 
-Private Sub CountToString (c As Int) As String
-	If c > 0 Then Return " " & c
-	Return "  "
+Private Sub CreateCountRun (c As Int) As BCTextRun
+	Dim s As String = " "
+	If c > 0 Then 
+		s = "(" & c & ")"
+	End If
+	Dim r As BCTextRun = tu.CreateRun(s, TopFont)
+	r.VerticalOffset = -2dip
+	Return r
+End Sub
+
+Private Sub GetIsUserColor(b As Boolean) As Int
+	If b Then Return Constants.ColorAlreadyTookAction Else Return Constants.ColorDefaultText
 End Sub
 
 Private Sub HandleAttachments As Int
