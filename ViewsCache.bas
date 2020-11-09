@@ -15,21 +15,33 @@ Sub Class_Globals
 	#end if
 	Private ImageViews As Map
 	Private CardViews As Map
+	Private VideosToStatusViews As Map
 End Sub
 
 Public Sub Initialize
 	VideoPlayers.Initialize	
 	ImageViews.Initialize
 	CardViews.Initialize
+	VideosToStatusViews.Initialize
 End Sub
 
-Public Sub GetVideoPlayer As Object
-	Dim vp As Object = GetFromMap(VideoPlayers)
-	If vp = Null Then
-		Return CreateVideoPlayer
-	Else
-		Return vp
+Public Sub GetVideoPlayer (sv As StatusView, attachment As PLMMedia) As Object
+	Dim vp As B4XView = GetFromMap(VideoPlayers)
+	If vp.IsInitialized = False Then
+		vp = CreateVideoPlayer
 	End If
+	VideosToStatusViews.Put(GetVideoPlayerKey(vp), Array(sv, attachment))
+	Return vp
+End Sub
+
+'This should match the Sender value in VideoPlayer1_Ready event.
+Private Sub GetVideoPlayerKey (vp As B4XView) As Object
+	#if B4i
+	Dim no As NativeObject = vp.Tag
+	return no.GetField("controller") 'Internal controller field
+	#else if B4A
+	Return vp.Tag 'SimpleExoPlayerWrapper
+	#End If
 End Sub
 
 Public Sub GetImageView As B4XView
@@ -59,8 +71,9 @@ Public Sub ReleaseImageView(iv As B4XView)
 	iv.RemoveViewFromParent
 End Sub
 
-Public Sub ReturnVideoPlayer(vp As Object)
+Public Sub ReturnVideoPlayer(vp As B4XView)
 	VideoPlayers.Put(vp, False)
+	VideoPlayers.Remove(GetVideoPlayerKey(vp))	
 End Sub
 
 Private Sub CreateVideoPlayer As Object
@@ -70,7 +83,7 @@ Private Sub CreateVideoPlayer As Object
 	pnl.LoadLayout("VideoPlayer") 'ignore
 #if B4A
 	Dim player As SimpleExoPlayer
-	player.Initialize("ExoPlayer")
+	player.Initialize("VideoPlayer1")
 	SimpleExoPlayerView1.Player = player
 	SimpleExoPlayerView1.Tag = player
 	SimpleExoPlayerView1.RemoveView
@@ -81,14 +94,14 @@ Private Sub CreateVideoPlayer As Object
 	VideoPlayer1.BaseView.RemoveViewFromParent
 	VideoPlayer1.BaseView.Tag = VideoPlayer1
 	VideoPlayer1.ShowControls = False
-Dim no As NativeObject = VideoPlayer1
-no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorToUIColor(xui.Color_White))
-
+	Dim no As NativeObject = VideoPlayer1
+	no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorToUIColor(xui.Color_White))
 	Return VideoPlayer1.BaseView
 #else if B4J
 	Return Null
 #end if
 End Sub
+
 
 Public Sub GetFromMap (m As Map) As Object
 	For Each vp As Object In m.Keys
@@ -170,10 +183,27 @@ Public Sub CreateRichTextWithSize(s As String, size As Int) As Object
 	#End If
 End Sub
 
+
+#if B4A
+Private Sub VideoPlayer1_Ready
+	Dim Success As Boolean = True
+#Else if B4i
 Private Sub VideoPlayer1_Ready (Success As Boolean)
-	Log("VideoPlayer_ready: " & Success)
-	If Success = False Then
-		B4XPages.MainPage.ShowMessage("Debug: Failed to load video: " & LastException)
-		Log(LastException)
+#End If
+'	Log("VideoPlayer_ready: " & Success)
+	Dim key As Object
+	#if B4A
+	key = Sender
+	#else if B4I
+	Dim player As NativeObject = Sender 'AVPlayerViewController
+	Success = Success And (player.GetField("player").GetField("currentItem").GetField("status").AsNumber = 1) 'ignore
+	key = player
+	#End If
+	If VideosToStatusViews.ContainsKey(key) Then
+		Dim SVandAttachment() As Object = VideosToStatusViews.Get(key)
+		Dim sv As StatusView = SVandAttachment(0)
+		sv.VideoReady(Success, SVandAttachment(1))
+	Else
+		Log("Video player already removed")
 	End If
 End Sub
