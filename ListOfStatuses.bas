@@ -80,6 +80,7 @@ End Sub
 
 Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GoToItem As StackItem)
 	btnBack.Visible = False
+	B4XPages.MainPage.ResetProgress
 	RemoveInsertedItems
 	If AddCurrentToStack Then
 		If feed.mLink.IsInitialized And (GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title) Then
@@ -480,8 +481,18 @@ Private Sub btnShare_Click
 	StartActivity(in)
 	#Else if B4i
 	Dim avc As ActivityViewController
-	avc.Initialize("avc", Array(cb.Bmp))
-	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+	Try
+		If cb.IsGif Then
+			Dim no As NativeObject 'ignore
+			avc.Initialize("avc", Array(no.ArrayToNSData(File.ReadBytes(xui.DefaultFolder, cb.GifFile))))
+		Else
+			avc.Initialize("avc", Array(cb.Bmp))
+		End If
+		avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+	Catch
+		Log(LastException)
+		B4XPages.MainPage.ShowMessage("Error creating attachment: " & LastException)
+	End Try
 	#End If
 End Sub
 

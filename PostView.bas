@@ -219,7 +219,7 @@ Private Sub UploadMedia (pm As PostMedia)
 		Log("Failed to upload")
 		pm.Removed = True
 		ArrangeMedias
-		B4XPages.MainPage.ShowMessage("Error uploading attachment.")
+		B4XPages.MainPage.ShowMessage("Error uploading attachment: " & j.ErrorMessage)
 	End If
 	j.Release
 	B4XPages.MainPage.HideProgress

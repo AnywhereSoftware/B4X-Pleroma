@@ -4,7 +4,7 @@ ModulesStructureVersion=1
 Type=Class
 Version=8.5
 @EndOfDesignText@
-#Event: SignedIn (Success As Boolean)
+#Event: SignedIn (Result As PLMResult)
 Sub Class_Globals
 	Private su As StringUtils
 	#if B4A
@@ -32,7 +32,7 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	#End If
 End Sub
 
-Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
+Public Sub RegisterApp (Server As PLMServer) As ResumableSub
 	Dim j As HttpJob
 	j.Initialize("", Me)
 	Dim sb As StringBuilder
@@ -41,11 +41,12 @@ Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
 	sb.Append("&redirect_uris=").Append(su.EncodeUrl(GetRedirectUri, "UTF8"))
 	sb.Append("&scopes=read+write+follow+push")
 	sb.Append("&website=").Append("https://www.b4x.com")
+	Dim res As PLMResult
 	Try
 		j.PostString(Server.URL & "/api/v1/apps", sb.ToString)
 	Catch
 		Log(LastException)
-		Return False
+		Return B4XPages.MainPage.CreatePLMResult(False, LastException)
 	End Try
 	Wait For (j) JobDone (j As HttpJob)
 	If j.Success Then
@@ -56,13 +57,18 @@ Public Sub RegisterApp (Server As PLMServer)  As ResumableSub
 				Server.AppClientSecret = m.Get("client_secret")
 				Log("server client id and secret set.")
 				B4XPages.MainPage.PersistUserAndServers
+				res = B4XPages.MainPage.CreatePLMResult2(True, "")
 			End If
 		Catch
+			res = B4XPages.MainPage.CreatePLMResult(False, LastException)
 			Log(LastException)
 		End Try
+	Else
+		res = B4XPages.MainPage.CreatePLMResult2(False, j.ErrorMessage)
 	End If
 	j.Release
-	Return Server.AppClientSecret <> ""
+	If Server.AppClientSecret = "" Then res = B4XPages.MainPage.CreatePLMResult2(False, "client secret empty")
+	Return res
 End Sub
 
 Public Sub SignIn (User As PLMUser, Server As PLMServer)
@@ -164,7 +170,7 @@ Private Sub ParseBrowserUrl(Response As String)
 		GetTokenFromAuthorizationCode(code)
 	Else
 		Log("Error parsing server response: " & Response)
-		RaiseEvent(False)
+		RaiseEvent(B4XPages.MainPage.CreatePLMResult2(False, "Error parsing server response: " & Response))
 	End If
 End Sub
 
@@ -178,25 +184,26 @@ Private Sub GetTokenFromAuthorizationCode (Code As String)
 	Dim postString As String = $"code=${Code}&client_id=${server.AppClientId}&grant_type=authorization_code&redirect_uri=${su.EncodeUrl(GetRedirectUri, "UTF8")}"$
 	postString = postString & $"&client_secret=${server.AppClientSecret}&scope=read+write+follow+push"$
 	j.PostString(server.URL & "/oauth/token", postString)
-		
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
 		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
 		If m.IsInitialized Then
 			user.AccessToken = m.Get("access_token")
 			user.MeURL = m.Get("me")
-			Wait For (VerifyUser (CurrentlySignedInServer)) Complete (Success As Boolean)
+			Wait For (VerifyUser (CurrentlySignedInServer)) Complete (Result As PLMResult)
 			j.Release
-			RaiseEvent(m.IsInitialized)
-			Return
+			RaiseEvent(Result)
+		Else
+			RaiseEvent(B4XPages.MainPage.CreatePLMResult2(False, "Failed to parse server response: " & j.GetString))
 		End If
+	Else
+		RaiseEvent(B4XPages.MainPage.CreatePLMResult2(False, j.ErrorMessage))
 	End If
 	j.Release
-	RaiseEvent(False)
 End Sub
 
-Private Sub RaiseEvent(Success As Boolean)
-	CallSubDelayed2(mCallback, mEventName & "_SignedIn", Success)
+Private Sub RaiseEvent(Result As PLMResult)
+	CallSubDelayed2(mCallback, mEventName & "_SignedIn", Result)
 End Sub
 
 
@@ -214,6 +221,7 @@ Public Sub VerifyUser (Server As PLMServer) As ResumableSub
 	j.Initialize("", Me)
 	j.Download(Server.URL & "/api/v1/accounts/verify_credentials")
 	j.GetRequest.SetHeader("Authorization", "Bearer " & user.AccessToken)
+	Dim res As PLMResult
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
 		Dim m As Map = B4XPages.MainPage.TextUtils1.JsonParseMap(j.GetString)
@@ -224,14 +232,16 @@ Public Sub VerifyUser (Server As PLMServer) As ResumableSub
 			user.Id = m.Get("id")
 			user.Note = m.Get("note")
 			user.Acct = m.Get("acct")
+			res = B4XPages.MainPage.CreatePLMResult2(True, "")
 		Else
-			j.Success = False
+			res = B4XPages.MainPage.CreatePLMResult2(False, "Failed to parse server response: " & j.GetString)
 		End If
 	Else
+		res = B4XPages.MainPage.CreatePLMResult2(False, j.ErrorMessage)
 		Log(j.ErrorMessage)
 	End If
 	j.Release
-	Return j.Success
+	Return res
 End Sub
 
 Public Sub AddAuthorization (job As HttpJob)

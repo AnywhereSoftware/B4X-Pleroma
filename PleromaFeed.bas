@@ -96,7 +96,7 @@ Private Sub Timer1_Tick
 			settings.Put("max_id", sm.id)
 		Else
 			settings.Put("limit", 5)
-'			settings.Put("max_id", "105029421452390882")
+'			settings.Put("max_id", "A0zawCxrAV8t57UgFM")
 		End If
 		If mLink.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 			

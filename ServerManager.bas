@@ -155,7 +155,7 @@ Public Sub VerifyInstanceFeatures (server As PLMServer) As ResumableSub
 	j.Release
 	B4XPages.MainPage.HideProgress
 	If res = False Then
-		B4XPages.MainPage.ShowMessage("Failed to connect")
+		B4XPages.MainPage.ShowMessage("Failed to connect: " & j.ErrorMessage)
 	End If
 	Return res	
 End Sub

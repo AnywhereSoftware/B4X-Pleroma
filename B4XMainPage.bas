@@ -18,7 +18,7 @@ Sub Class_Globals
 	Type PLMUser (AccessToken As String, TypeVersion As Float, _
 		ServerName As String, MeURL As String, DisplayName As String, Avatar As String, _
 		SignedIn As Boolean, Id As String, Note As String, Acct As String, Verified As Boolean)
-	
+	Type PLMResult (Success As Boolean, ErrorMessage As String)
 	Public Root As B4XView 'ignore
 	Private xui As XUI 'ignore
 	Public TextUtils1 As TextUtils
@@ -153,6 +153,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Toast.Initialize(Root)
 	Toast.pnl.Color = xui.Color_Black
 	Toast.DefaultTextColor = xui.Color_White
+	Toast.DurationMs = Constants.ToastDurationMs
 	pnlListDefaultTop = pnlList.Top
 	Search.Initialize(Root.Width)
 	LoadSavedDataAndStart
@@ -311,7 +312,6 @@ End Sub
 Public Sub SignIn
 	SignInIndex = SignInIndex + 1
 	Dim MyIndex As Int = SignInIndex
-	
 	Dialog.ButtonsHeight = 40dip
 	Wait For (ServerManager1.RequestServerName(Dialog)) Complete (Server As PLMServer)
 	If SignInIndex <> MyIndex Or Server.IsInitialized = False Then Return
@@ -321,22 +321,22 @@ Public Sub SignIn
 	End If
 	User.ServerName = Server.Name
 	If Server.AppClientSecret = "" Then
-		Wait For (auth.RegisterApp (Server)) Complete (Success As Boolean)
+		Wait For (auth.RegisterApp (Server)) Complete (Result As PLMResult)
 		If SignInIndex <> MyIndex Then Return
-		If Success = False Then
-			ShowMessage("Error registering app.")
+		If Result.Success = False Then
+			ShowMessage("Error registering app: " & Result.ErrorMessage)
 			Return
 		Else
 			PersistUserAndServers
 		End If
 	End If
 	auth.SignIn(User, Server)
-	Wait For Auth_SignedIn (Success As Boolean)
+	Wait For Auth_SignedIn (Result As PLMResult)
 	If SignInIndex <> MyIndex Then Return
-	If Success Then
+	If Result.Success Then
 		AfterSignIn
 	Else
-		ShowMessage("Failed to sign in.")
+		ShowMessage("Failed to sign in: " & Result.ErrorMessage)
 		User.SignedIn = False
 		Server.AppClientSecret = ""
 		SignOut
@@ -377,12 +377,12 @@ Public Sub ConfirmMessage (Message As String) As ResumableSub
 End Sub
 
 Public Sub VerifyUser
-	Wait For (auth.VerifyUser (GetServer)) Complete (Success As Boolean)
-	If Success Then
+	Wait For (auth.VerifyUser (GetServer)) Complete (Result As PLMResult)
+	If Result.Success Then
 		User.Verified = True
 		AfterSignIn
 	Else
-		ShowMessage("Error logging in.")
+		ShowMessage("Error logging in: " & Result.ErrorMessage)
 	End If
 End Sub
 
@@ -606,10 +606,15 @@ Public Sub ShowProgress
 End Sub
 
 Public Sub HideProgress
-	ProgressCounter = ProgressCounter - 1
+	ProgressCounter = Max(0, ProgressCounter - 1)
 	If ProgressCounter = 0 Then
 		AnotherProgressBar1.Visible = False
 	End If
+End Sub
+
+Public Sub ResetProgress
+	ProgressCounter = 0
+	HideProgress
 End Sub
 
 Private Sub btnSearch_Click
@@ -684,11 +689,26 @@ Private Sub B4XPage_KeyboardStateChanged (Height As Float)
 End Sub
 
 Public Sub UserDetailsChanged
-	Wait For (auth.VerifyUser(GetServer)) Complete (Success As Boolean)
-	Log($"User verified: ${Success}"$)
-	If Success Then
+	Wait For (auth.VerifyUser(GetServer)) Complete (Result As PLMResult)
+	Log($"User verified: ${Result.Success}"$)
+	If Result.Success Then
 		DrawerManager1.UpdateAvatarAndDisplayName
 	End If
 End Sub
 
 
+Public Sub CreatePLMResult (Success As Boolean, Exception As Exception) As PLMResult
+	If Exception.IsInitialized Then
+		Return CreatePLMResult2(Success, Exception.Message)
+	Else
+		Return CreatePLMResult2(Success, "Unknown")
+	End If
+End Sub
+
+Public Sub CreatePLMResult2 (Success As Boolean, ErrorMessage As String) As PLMResult
+	Dim t1 As PLMResult
+	t1.Initialize
+	t1.Success = Success
+	t1.ErrorMessage = ErrorMessage
+	Return t1
+End Sub

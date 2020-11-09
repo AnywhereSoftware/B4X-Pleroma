@@ -37,6 +37,7 @@ Sub Class_Globals
 	Private SensitiveOverlay As Boolean
 	Private pnlLine As B4XView
 	Private IconsFont As B4XFont
+	Private VideoPlayersReady As B4XSet
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -46,6 +47,7 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	TopFont = xui.CreateDefaultFont(12)
 	IconsFont = xui.CreateFontAwesome(18)
 	tu = B4XPages.MainPage.TextUtils1
+	VideoPlayersReady.Initialize
 End Sub
 
 Public Sub Create (Base As B4XView)
@@ -83,6 +85,7 @@ End Sub
 
 Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	mStatus = Status
+	VideoPlayersReady.Clear
 	SensitiveOverlay = mStatus.Sensitive And B4XPages.MainPage.Settings.NSFW_Overlay
 	Dim Notif As PLMNotification 'this will set it to be uninitialized.
 	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyNotification) Then
@@ -441,14 +444,9 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	If xui.IsB4J Then Return
 	Dim iv As B4XView = B4XPages.MainPage.CreateImageView
 	Dim Parent As B4XView = CreateAttachmentPanel(attachment, h, MediaSize, 2dip, iv.Tag)
-	Dim playerview As B4XView = B4XPages.MainPage.ViewsCache1.GetVideoPlayer
+	Dim playerview As B4XView = B4XPages.MainPage.ViewsCache1.GetVideoPlayer (Me, attachment)
 	Parent.AddView(playerview, 0, 0, Parent.Width, Parent.Height)
 	Parent.AddView(iv, 0, 0, 0, 0)
-	If SensitiveOverlay Then
-		ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.NSFW_URL, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
-	Else
-		ShowPlayButton(iv)
-	End If
 	#if B4A
 	Dim player As SimpleExoPlayer = playerview.Tag
 	player.Prepare(player.CreateUriSource(attachment.Url))
@@ -456,6 +454,25 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	Dim player As VideoPlayer = playerview.Tag
 	player.LoadVideoUrl(attachment.Url)
 	#end if
+End Sub
+
+Public Sub VideoReady (Success As Boolean, attachment As PLMMedia)
+	For i = 0 To pnlMedia.NumberOfViews - 1
+		Dim parent As B4XView = pnlMedia.GetView(i)
+		If attachment = parent.Tag Then
+			Dim iv As B4XView = parent.GetView(1)
+			If Success = False Then
+				ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.MISSING_URL, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
+			Else
+				VideoPlayersReady.Add(attachment)
+				If SensitiveOverlay Then
+					ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.NSFW_URL, iv.Tag, ImagesCache1.RESIZE_FILLWIDTH)
+				Else
+					ShowPlayButton(iv)
+				End If
+			End If
+		End If
+	Next
 End Sub
 
 Private Sub ShowPlayButton (iv As B4XView)
@@ -478,8 +495,10 @@ Private Sub AttachmentParent_Click
 	If attachment.TType = "image" Then
 		CallSubDelayed3(mCallBack, mEventName & "_ShowLargeImage", attachment.Url, attachment.PreviewUrl)
 	Else If attachment.TType = "video" Then
-		Parent.GetView(1).Visible = False
-		ToggleVideo(Parent.GetView(0))
+		If VideoPlayersReady.Contains(attachment) Then
+			Parent.GetView(1).Visible = False
+			ToggleVideo(Parent.GetView(0))
+		End If
 	End If
 End Sub
 
@@ -501,6 +520,7 @@ End Sub
 
 Private Sub ToggleVideo (PlayerView As B4XView) 'ignore
 #if B4A or B4i
+	If PlayerView.Parent.Tag = False Then Return
 	#if B4A
 	Dim player As SimpleExoPlayer = PlayerView.Tag
 	Dim IsPlaying As Boolean =  player.IsPlaying
@@ -592,7 +612,7 @@ Private Sub DeleteStatus
 	If j.Success Then
 		CallSub(mCallBack, mEventName & "_StatusDeleted")
 	Else
-		B4XPages.MainPage.ShowMessage("Error deleting status.")
+		B4XPages.MainPage.ShowMessage("Error deleting status: " & j.ErrorMessage)
 	End If
 	j.Release
 	B4XPages.MainPage.HideProgress

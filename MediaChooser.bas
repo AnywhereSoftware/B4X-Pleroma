@@ -166,11 +166,16 @@ Public Sub AddImageFromGallery (btn As B4XView) As ResumableSub
 	Return pm
 	#Else If B4i
 	Camera.SelectFromPhotoLibrary(btn, Camera.TYPE_IMAGE)
-	Dim TopPage As String = B4XPages.GetManager.GetTopPage.Id
 	Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
-	B4XPages.GetManager.mStackOfPageIds.Add(TopPage)
 	If Success Then
-		Return CreatePostMedia(File.Combine(xui.DefaultFolder, CopyImageFromCamera(Image)), True, True)
+		Dim mediaUrl As String = Camera.GetPickedMediaInfo.GetDefault("UIImagePickerControllerImageURL", "")
+		If mediaUrl.EndsWith(".gif") Then
+			'note that edits to gif images are ignored.
+			If mediaUrl.StartsWith("file://") Then mediaUrl = mediaUrl.SubString(7)
+			Return CreatePostMedia(mediaUrl, False, True)
+		Else
+			Return CreatePostMedia(File.Combine(xui.DefaultFolder, CopyImageFromCamera(Image)), True, True)
+		End If
 	End If
 	Return NoResult
 	#End If

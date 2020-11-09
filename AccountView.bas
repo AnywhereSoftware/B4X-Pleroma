@@ -209,7 +209,7 @@ Private Sub UploadMedia (MediaKey As String)
 			AfterUserUpdate
 		Else
 			Log("Failed to upload")
-			B4XPages.MainPage.ShowMessage("Error uploading attachment.")
+			B4XPages.MainPage.ShowMessage("Error uploading attachment: " & j.ErrorMessage)
 		End If
 		j.Release
 		B4XPages.MainPage.HideProgress
@@ -238,7 +238,7 @@ Private Sub lblEdit_Click
 		If j.Success Then
 			AfterUserUpdate
 		Else
-			B4XPages.MainPage.ShowMessage("Error updating profile")
+			B4XPages.MainPage.ShowMessage("Error updating profile: " & j.ErrorMessage)
 		End If
 		j.Release
 		B4XPages.MainPage.HideProgress
