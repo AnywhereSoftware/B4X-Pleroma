@@ -32,6 +32,15 @@ Private Sub AfterSettingsChanged
 	NSFW_Overlay = settings.Get("nsfw_overlay")
 End Sub
 
+Public Sub GetUserAgreedToSafeContent As Boolean
+	Return settings.GetDefault("UserAgreedToSafeContent", False)
+End Sub
+
+Public Sub SetUserAgreed
+	settings.Put("UserAgreedToSafeContent", True)
+	SaveToStore
+End Sub
+
 Public Sub ShowSettings
 	If PrefDialog.IsInitialized = False Then
 		PrefDialog = B4XPages.MainPage.ViewsCache1.CreatePreferencesDialog("Settings.json")

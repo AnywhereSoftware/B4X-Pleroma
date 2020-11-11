@@ -1,29 +1,31 @@
 ﻿Build1=Default,b4i.pleroma,HU2_PUBLIC
 Build2=Simulator,b4i.pleroma,HU2_PUBLIC,SIMULATOR
 File1=AccountView.bil
-File10=MainPage.bil
-File11=MiniAccountView.bil
-File12=Missing-image-232x150.png
-File13=nsfw.74818f9.png
-File14=play.png
-File15=PostView.bil
-File16=PostView.json
-File17=PostViewMedia.bil
-File18=ReactionsView.bil
-File19=Search.bil
+File10=lstDrawerUser.bil
+File11=MainPage.bil
+File12=MiniAccountView.bil
+File13=Missing-image-232x150.png
+File14=nsfw.74818f9.png
+File15=play.png
+File16=PostView.bil
+File17=PostView.json
+File18=PostViewMedia.bil
+File19=ReactionsView.bil
 File2=AccountView.json
-File20=Settings.json
-File21=StatusList.bil
-File22=StatusViewImpl.bil
-File23=VideoPlayer.bil
-File24=WebViewDialog.bil
+File20=Report.json
+File21=Search.bil
+File22=Settings.json
+File23=StatusList.bil
+File24=StatusViewImpl.bil
+File25=VideoPlayer.bil
+File26=WebViewDialog.bil
 File3=CardView.bil
 File4=DialogContainer.bil
 File5=empty.png
 File6=GifView.bil
 File7=hamburger.png
-File8=LeftDrawer.bil
-File9=lstDrawerUser.bil
+File8=icon.png
+File9=LeftDrawer.bil
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -41,6 +43,8 @@ FileGroup21=Default Group
 FileGroup22=Default Group
 FileGroup23=Default Group
 FileGroup24=Default Group
+FileGroup25=Default Group
+FileGroup26=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -80,17 +84,18 @@ Module15=|relative|..\PLMSettings
 Module16=|relative|..\PostView
 Module17=|relative|..\Push
 Module18=|relative|..\ReactionsView
-Module19=|relative|..\RequestsManager
+Module19=|relative|..\ReportManager
 Module2=|relative|..\B4XLinksManager
-Module20=|relative|..\SearchManager
-Module21=|relative|..\ServerManager
-Module22=|relative|..\StackManager
-Module23=|relative|..\StatusView
-Module24=|relative|..\StubView
-Module25=|relative|..\TextUtils
-Module26=UserNotificationCenter
-Module27=|relative|..\ViewsCache
-Module28=|relative|..\WebViewDialog
+Module20=|relative|..\RequestsManager
+Module21=|relative|..\SearchManager
+Module22=|relative|..\ServerManager
+Module23=|relative|..\StackManager
+Module24=|relative|..\StatusView
+Module25=|relative|..\StubView
+Module26=|relative|..\TextUtils
+Module27=UserNotificationCenter
+Module28=|relative|..\ViewsCache
+Module29=|relative|..\WebViewDialog
 Module3=|relative|..\B4XMainPage
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
@@ -98,15 +103,15 @@ Module6=|relative|..\Constants
 Module7=|relative|..\DrawerManager
 Module8=|relative|..\HtmlToRuns
 Module9=|relative|..\ImagesCache
-NumberOfFiles=24
+NumberOfFiles=26
 NumberOfLibraries=21
-NumberOfModules=28
+NumberOfModules=29
 Version=6.8
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.23.0
+	#Version: 1.25.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait

@@ -1,0 +1,28 @@
+{
+    "Version": 1.66,
+    "Theme": "Light Theme",
+    "Items": [
+        {
+            "title": "Account",
+            "type": "Text",
+            "key": "account",
+            "required": false
+        },
+        {
+            "title": "Status",
+            "type": "Text",
+            "key": "status",
+            "required": false
+        },
+       
+        {
+            "options": [
+                "80"
+            ],
+            "title": "Comment",
+            "type": "Multiline Text",
+            "key": "comment",
+            "required": false
+        }
+    ]
+}

@@ -574,15 +574,18 @@ End Sub
 Private Sub ShowMoreOptions
 	Dim options As List
 	options.Initialize
-	options.Add(Chr(0xF1E0) & "  Share")
+	options.Add(tu.CreateMenuItem(0xF1E0, "Share"))
+	options.Add(tu.CreateMenuItem(0xF024, "Report"))
 	If B4XPages.MainPage.User.SignedIn And mStatus.StatusAuthor.Id = B4XPages.MainPage.User.Id Then
-		options.Add(Chr(0xF014) & "  Delete")
+		options.Add(tu.CreateMenuItem(0xF014, "Delete"))
 	End If
 	Wait For (B4XPages.MainPage.ShowListDialog(options, False)) Complete (Result As String)
 	Select options.IndexOf(Result)
 		Case 0
 			SharePost
 		Case 1
+			B4XPages.MainPage.Report.Show(mStatus.StatusAuthor, mStatus.id)
+		Case 2
 			DeleteStatus
 	End Select
 End Sub

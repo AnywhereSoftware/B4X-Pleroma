@@ -18,7 +18,8 @@ Sub Class_Globals
 	Private btnFollow As B4XView
 	Private tu As TextUtils
 	Private Notif As PLMNotification
-	Private btnMute As B4XView
+	Private btnMore As B4XView
+	Private AccountHolder(1) As PLMAccount
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -35,33 +36,22 @@ End Sub
 Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	Notif = Account.Notification
 	mAccount = Account.Account
+	AccountHolder(0) = mAccount
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)
 	consumer.IsVisible = True
 	Dim tu As TextUtils = B4XPages.MainPage.TextUtils1
 	ImagesCache1.SetImage(mAccount.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
-	bbTop.PrepareBeforeRuns
-	Dim runs As List
-	runs.Initialize
-	tu.TextWithEmojisToRuns(mAccount.DisplayName & " ", runs, mAccount.Emojis, bbTop.ParseData, xui.CreateDefaultBoldFont(14))
-	Dim r As BCTextRun = tu.CreateUrlRun("@", mAccount.Acct, bbTop.ParseData)
-	runs.Add(r)
-	If Notif.IsInitialized Then
-		runs.Add(tu.TextEngine.CreateRun(CRLF))
-		runs.Add(tu.CreateRun(Chr(0xF234) & " followed you", xui.CreateFontAwesome(14)))
-	End If
-	bbTop.SetRuns(runs)
-	bbTop.UpdateVisibleRegion(0, 200dip)
-	
-	tu.UpdateFollowButton(btnFollow, btnMute, mAccount, True)
+	tu.SetAccountTopText(bbTop, mAccount, Notif, True)
+	tu.UpdateFollowButton(btnFollow, mAccount, True)
 End Sub
 
 Private Sub btnFollow_Click
-	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "follow", True)
+	tu.FollowButtonClicked(btnFollow, AccountHolder, "follow", True)
 End Sub
 
-Private Sub btnMute_Click
-	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "mute", true)
+Private Sub btnMore_Click
+	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, True, bbTop, Notif)
 End Sub
 
 Public Sub RemoveFromParent

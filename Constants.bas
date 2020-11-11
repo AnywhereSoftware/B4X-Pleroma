@@ -34,7 +34,7 @@ Sub Process_Globals
 	Public AppName As String = "B4X Pleroma"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.24
+	Public Const Version As Float = 1.25
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
@@ -55,6 +55,8 @@ Sub Process_Globals
 	Public Const DefaultReactions As List = Array("👍", "😍", "❤", "🙏", "🤣", "😊", "🤔", "😞", "😡")
 	
 	Public ToastDurationMs As Int = 5000
+	Public UserContentAgreement As String = $"There is no tolerance for objectionable content or abusive behavior.
+Before you can post, you need to agree not to post objectional content."$
 End Sub
 
 Public Sub Initialize

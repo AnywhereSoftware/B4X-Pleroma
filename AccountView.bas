@@ -22,10 +22,11 @@ Sub Class_Globals
 	Private tu As TextUtils
 	Private lblLogOut As B4XView
 	Private btnMention As B4XView
-	Private btnMute As B4XView
 	Private pnlCurrentUser As B4XView
 	Private lblChangeAvatar As B4XView
 	Private PrefDialog As PreferencesDialog
+	Private btnMore As B4XView
+	Private AccountHolder(1) As PLMAccount
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -45,6 +46,7 @@ End Sub
 
 Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	mAccount = Account
+	AccountHolder(0) = mAccount
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)
 	consumer.IsVisible = True
@@ -55,17 +57,7 @@ Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	consumer.NoAnimation = True
 	consumer.PanelColor = xui.Color_Transparent
 	ImagesCache1.SetImage(Account.HeaderURL, ImageView1.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-	bbTop.PrepareBeforeRuns
-	Dim runs As List
-	runs.Initialize
-	tu.TextWithEmojisToRuns(Account.DisplayName & " ", runs, Account.Emojis, bbTop.ParseData, xui.CreateDefaultBoldFont(14))
-	Dim r As BCTextRun = tu.CreateUrlRun("@", Account.Acct, bbTop.ParseData)
-	runs.Add(r)
-	For Each run As BCTextRun In runs
-		run.TextColor = xui.Color_White
-	Next
-	bbTop.SetRuns(runs)
-	
+	tu.SetAccountTopText(bbTop, mAccount, Null, False)
 	Dim node As HtmlNode = mp.TextUtils1.HtmlParser.Parse(Account.Note)
 	Dim bbcode As String = $"[color=white]
 ${TableRow(WrapURL("statuses", "Statuses"), WrapURL("following", "Following"), WrapURL("followers", "Followers"))}
@@ -83,22 +75,26 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	BBListItem1.SetRuns(runs)
 	If node.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
 	mBase.Height = ImageView1.Parent.Height + BBListItem1.mBase.Height - 50dip
-	bbTop.UpdateVisibleRegion(0, bbTop.mBase.Height)
+	
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
-	tu.UpdateFollowButton(btnFollow, btnMute, mAccount, False)
+	
 	btnMention.Visible = True
-	btnMute.Visible = True
+	btnMore.Visible = True
 	pnlCurrentUser.Visible = False
 	lblChangeAvatar.Visible = False
 	If mAccount.Id = B4XPages.MainPage.User.Id Then CurrentUser
+	Wait For (tu.UpdateFollowButton(btnFollow, mAccount, False)) Complete (Success As Boolean)
+	If Success Then
+		tu.SetAccountTopText(bbTop, mAccount, Null, False)
+	End If
 End Sub
 
 Private Sub CurrentUser
 	pnlCurrentUser.Visible = True
 	btnMention.Visible = False
-	btnMute.Visible = False
+	btnMore.Visible = False
 	lblChangeAvatar.Visible = True
 End Sub
 
@@ -107,11 +103,11 @@ Private Sub WrapURL(method As String, text As String) As String
 End Sub
 
 Private Sub btnFollow_Click
-	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "follow", False)
+	tu.FollowButtonClicked(btnFollow, AccountHolder, "follow", False)
 End Sub
 
 Private Sub btnMute_Click
-	tu.FollowButtonClicked(btnFollow, btnMute, mAccount, "mute", False)
+	tu.FollowButtonClicked(btnFollow, AccountHolder, "mute", False)
 End Sub
 
 Private Sub TableRow(Field1 As String, Field2 As String, Field3 As String) As String
@@ -269,11 +265,19 @@ Private Sub btnMention_Click
 	B4XPages.MainPage.ShowCreatePostInDialog (mAccount.Acct)
 End Sub
 
+'current user more options
 Private Sub lblMore_Click
-	Dim options As List = Array("Mutes")
+	Dim options As List = Array("Mutes", "Blocks")
 	Wait For (B4XPages.MainPage.ShowListDialog(options, True)) Complete (Result As String)
 	Dim i As Int = options.IndexOf(Result)
-	If i = 0 Then
-		RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/mutes"))
-	End If
+	Select i
+		Case 0
+			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/mutes"))
+		Case 1
+			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/blocks"))
+	End Select
+End Sub
+
+Private Sub btnMore_Click
+	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, False, bbTop, Null)
 End Sub

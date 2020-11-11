@@ -8,7 +8,7 @@ Sub Class_Globals
 	Type PLMContent (RootHtmlNode As HtmlNode)
 	Type PLMAccount (Avatar As String, Id As String, Url As String, UserName As String, DisplayName As String, Acct As String, _
 		Note As String, FollowersCount As Int, FollowingCount As Int, StatusesCount As Int, HeaderURL As String, Emojis As List, _
-		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean, Muted As Boolean)
+		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean, Muted As Boolean, Blocked As Boolean)
 	Type PLMTag (Name As String, Url As String)
 	Type PLMNotification (NotificationType As String, Id As String, CreatedAt As Long, Account As PLMAccount)
 	Type PLMStatus (StatusAuthor As PLMAccount, Content As PLMContent, _

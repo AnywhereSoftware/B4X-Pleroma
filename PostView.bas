@@ -77,6 +77,15 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 		B4XFloatTextField1.mBase.SetColorAndBorder(xui.Color_Transparent, 1dip, xui.Color_LightGray, 2dip)
 	End If
 	ArrangeMedias
+	If B4XPages.MainPage.Settings.GetUserAgreedToSafeContent = False Then
+		Wait For (B4XPages.MainPage.ConfirmMessage2(Constants.UserContentAgreement, "Agree", "Cancel", "")) Complete (Result As Int)
+		If Result = xui.DialogResponse_Positive Then
+			B4XPages.MainPage.Settings.SetUserAgreed
+		Else
+			Sleep(0)
+			btnCancel_Click
+		End If
+	End If
 End Sub
 
 Public Sub SetVisibility (visible As Boolean)

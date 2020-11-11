@@ -35,10 +35,10 @@ Public Sub GetVideoPlayer (sv As StatusView, attachment As PLMMedia) As Object
 End Sub
 
 'This should match the Sender value in VideoPlayer1_Ready event.
-Private Sub GetVideoPlayerKey (vp As B4XView) As Object
+Private Sub GetVideoPlayerKey (vp As B4XView) As Object 'ignore
 	#if B4i
 	Dim no As NativeObject = vp.Tag
-	return no.GetField("controller") 'Internal controller field
+	Return no.GetField("controller") 'Internal controller field
 	#else if B4A
 	Return vp.Tag 'SimpleExoPlayerWrapper
 	#End If
@@ -157,7 +157,7 @@ Public Sub CreatePreferencesDialog (json As String) As PreferencesDialog
 	Dim views As ViewsCache = B4XPages.MainPage.ViewsCache1
 	B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
 	For Each pi As B4XPrefItem In PrefDialog.PrefItems
-		If pi.ItemType <> PrefDialog.TYPE_SEPARATOR Then
+		If pi.ItemType <> PrefDialog.TYPE_SEPARATOR And pi.ItemType <> PrefDialog.TYPE_TEXT And pi.ItemType <> PrefDialog.TYPE_MULTILINETEXT Then
 			pi.Title = views.CreateRichTextWithSize(pi.Title, 14)
 		End If
 	Next
@@ -183,7 +183,7 @@ Public Sub CreateRichTextWithSize(s As String, size As Int) As Object
 	#End If
 End Sub
 
-
+#if B4A or B4I
 #if B4A
 Private Sub VideoPlayer1_Ready
 	Dim Success As Boolean = True
@@ -207,3 +207,4 @@ Private Sub VideoPlayer1_Ready (Success As Boolean)
 		Log("Video player already removed")
 	End If
 End Sub
+#end if

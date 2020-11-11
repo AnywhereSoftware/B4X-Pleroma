@@ -349,6 +349,7 @@ Public Sub GetRelationshipFromRelationshipObject (Account As PLMAccount, m As Ma
 	Account.Following = m.GetDefault("following", False)
 	Account.FollowRequested = m.GetDefault("requested", False)
 	Account.Muted = m.GetDefault("muting", False)
+	Account.Blocked = m.GetDefault("blocking", False)
 End Sub
 
 Private Sub VerbOrUnverb (Account As PLMAccount, Verb As String) As ResumableSub
@@ -361,6 +362,10 @@ Private Sub VerbOrUnverb (Account As PLMAccount, Verb As String) As ResumableSub
 		Case "mute"
 			If Account.Muted Then
 				Verb = "unmute"
+			End If
+		Case "block"
+			If Account.Blocked Then
+				Verb = "unblock"
 			End If
 	End Select
 	B4XPages.MainPage.ShowProgress
@@ -381,15 +386,14 @@ Private Sub VerbOrUnverb (Account As PLMAccount, Verb As String) As ResumableSub
 	Return False
 End Sub
 
-Public Sub UpdateFollowButton (btnFollow As B4XView, btnMute As B4XView, mAccount As PLMAccount, Mini As Boolean)
+Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount, Mini As Boolean) As ResumableSub
 	btnFollow.Tag = mAccount
 	btnFollow.Visible = False
-	btnMute.Visible = False
-	If mAccount.Id = B4XPages.MainPage.User.Id Then Return
+	If mAccount.Id = B4XPages.MainPage.User.Id Then Return False
 	If mAccount.RelationshipAdded = False Then
 		B4XPages.MainPage.ShowProgress
 		Wait For (B4XPages.MainPage.TextUtils1.AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (Unused As Boolean)
-		If btnFollow.Tag <> mAccount Then Return
+		If btnFollow.Tag <> mAccount Then Return False
 		B4XPages.MainPage.HideProgress
 	End If
 	If mAccount.Following Then
@@ -399,26 +403,81 @@ Public Sub UpdateFollowButton (btnFollow As B4XView, btnMute As B4XView, mAccoun
 	Else
 		btnFollow.Text = "Follow"
 	End If
-	If mAccount.Muted Then
-		If Mini Then btnMute.Text = Chr(0xF026) Else btnMute.Text = "Unmute"
-	Else
-		If Mini Then btnMute.Text = Chr(0xF028) Else btnMute.Text = "Mute"
-	End If
 	btnFollow.Visible = True
-	btnMute.Visible = True
+	Return True
 End Sub
 
-Public Sub FollowButtonClicked (btnFollow As B4XView, btnMute As B4XView, mAccount As PLMAccount, Verb As String, Mini As Boolean)
-	Dim a As PLMAccount = mAccount
-	Wait For (VerbOrUnverb(mAccount, Verb)) Complete (unused As Boolean)
-	If a <> mAccount Then Return
-	UpdateFollowButton(btnFollow, btnMute, mAccount, Mini)
-	If mAccount.Following = False And mAccount.FollowRequested Then
-		Sleep(1000)
-		Wait For (AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (unused As Boolean)
-		If a <> mAccount Then Return
-		UpdateFollowButton(btnFollow, btnMute, mAccount, Mini)
+Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif As PLMNotification, Mini As Boolean)
+	bbTop.PrepareBeforeRuns
+	Dim runs As List
+	runs.Initialize
+	Dim displayname As String = Account.DisplayName & " "
+	If Account.RelationshipAdded Then
+		If Account.Blocked Then 
+			displayname = displayname & "(blocked) "
+		Else If Account.Muted Then
+			displayname = displayname & "(muted) "
+		End If
 	End If
+	TextWithEmojisToRuns(displayname, runs, Account.Emojis, bbTop.ParseData, xui.CreateDefaultBoldFont(14))
+	Dim r As BCTextRun = CreateUrlRun("@", Account.Acct, bbTop.ParseData)
+	runs.Add(r)
+	If Notif <> Null And Notif.IsInitialized Then
+		runs.Add(TextEngine.CreateRun(CRLF))
+		runs.Add(CreateRun(Chr(0xF234) & " followed you", xui.CreateFontAwesome(14)))
+	End If
+	If Mini = False Then
+		For Each run As BCTextRun In runs
+			run.TextColor = xui.Color_White
+		Next
+	End If
+	bbTop.SetRuns(runs)
+	bbTop.UpdateVisibleRegion(0, 200dip)
+End Sub
+
+Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Mini As Boolean, bbtob As BBListItem, notif As PLMNotification) 
+	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
+	Dim Account As PLMAccount = AccountHolder(0)
+	Dim items As List
+	items.Initialize
+	Dim text As String
+	If Account.Muted Then text = "Unmute" Else text = "Mute"
+	items.Add(CreateMenuItem(0xF028, text))
+	If Account.Blocked Then text = "Unblock" Else text = "Block"
+	items.Add(CreateMenuItem(0xF235, text))
+	items.Add(CreateMenuItem(0xF024, "Report"))
+	Wait For (B4XPages.MainPage.ShowListDialog(items, Not(Mini))) Complete (result As String)
+	If Account <> AccountHolder(0) Then Return 
+	Dim i As Int = items.IndexOf(result)
+	Dim verb As String
+	Select i
+		Case 0
+			verb = "mute"
+		Case 1
+			verb = "block"
+		Case 2
+			B4XPages.MainPage.Report.Show(Account, "")
+			Return
+		Case Else
+			Return
+	End Select
+	Wait For (VerbOrUnverb(Account, verb)) Complete (unused As Boolean)
+	If Account <> AccountHolder(0) Then Return
+	SetAccountTopText(bbtob, Account, notif, Mini)
+End Sub
+
+Public Sub FollowButtonClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Verb As String, Mini As Boolean) As ResumableSub
+	Dim Account As PLMAccount = AccountHolder(0)
+	Wait For (VerbOrUnverb(Account, Verb)) Complete (unused As Boolean)
+	If Account <> AccountHolder(0) Then Return False
+	UpdateFollowButton(btnFollow, Account, Mini)
+	If Account.Following = False And Account.FollowRequested Then
+		Sleep(1000)
+		Wait For (AddRelationship(CreateMap(Account.Id: Account))) Complete (unused As Boolean)
+		If Account <> AccountHolder(0) Then Return False
+		UpdateFollowButton(btnFollow, Account, Mini)
+	End If
+	Return True
 End Sub
 
 Public Sub CreateHttpJob (target As Object, HapticView As B4XView, UserRequired As Boolean) As HttpJob
@@ -497,6 +556,10 @@ Public Sub CheckPostMediaSize (pm As PostMedia) As Boolean
 		Return False
 	End If
 	Return True
+End Sub
+
+Public Sub CreateMenuItem(IconCodePoint As Int, Text As String) As String
+	Return Chr(IconCodePoint) & "  " & Text
 End Sub
 
 

@@ -64,6 +64,7 @@ Sub Class_Globals
 	#if B4i
 	Public safari As SafariController
 	#End If
+	Public Report As ReportManager
 End Sub
 
 Public Sub Initialize
@@ -91,6 +92,7 @@ Public Sub Initialize
 	#End If
 	Constants.Initialize
 	push1.Initialize
+	Report.Initialize
 End Sub
 
 Private Sub UpdateOldStore
@@ -368,11 +370,17 @@ Public Sub ShowMessage(str As String)
 	Else
 		Toast.VerticalCenterPercentage = 85
 	End If
-	Toast.Show(str)
+	Toast.Show($"[plain]${str}[/plain]"$)
+	Log("ShowMessage: " & str)
 End Sub
 
 Public Sub ConfirmMessage (Message As String) As ResumableSub
 	Wait For (xui.Msgbox2Async(Message, Constants.AppName, "Yes", "Cancel", "", Null)) Msgbox_Result (Result As Int)
+	Return Result
+End Sub
+
+Public Sub ConfirmMessage2 (Message As String, Yes As String, Cancel As String, No As String) As ResumableSub
+	Wait For (xui.Msgbox2Async(Message, Constants.AppName, Yes, Cancel, No, Null)) Msgbox_Result (Result As Int)
 	Return Result
 End Sub
 
