@@ -122,8 +122,9 @@ Public Sub PrepareBeforeRuns
 	ParseData.Text = mText
 	ParseData.URLs.Clear
 	ParseData.Width = (mBase.Width - Padding.Left - Padding.Right)
-	ParseData.DefaultColor = Constants.ColorDefaultText
-	ParseData.UrlColor = B4XPages.MainPage.TextUtils1.UrlColor
+	Dim theme As ThemeManager = B4XPages.MainPage.Theme
+	ParseData.DefaultColor = theme.DefaultText
+	ParseData.UrlColor = theme.Link
 	URLToLines.Clear
 	mBase.RemoveAllViews
 	If TouchPanel.IsInitialized Then

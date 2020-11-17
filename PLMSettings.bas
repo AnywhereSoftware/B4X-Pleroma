@@ -9,10 +9,19 @@ Sub Class_Globals
 	Private PrefDialog As PreferencesDialog
 	Private xui As XUI
 	Public NSFW_Overlay As Boolean
+	Private mTheme As ThemeManager
+	Public Dark As Boolean
 End Sub
 
 Public Sub Initialize
 	settings.Initialize
+	mTheme = B4XPages.MainPage.Theme
+	
+End Sub
+
+
+Private Sub Theme_Changed
+	PrefDialog = B4XPages.MainPage.ViewsCache1.EmptyPrefDialog
 End Sub
 
 Public Sub LoadFromStore (store As KeyValueStore, StoreVersion As Float)
@@ -21,6 +30,12 @@ Public Sub LoadFromStore (store As KeyValueStore, StoreVersion As Float)
 	Else
 		settings.Put("nsfw_overlay", True)
 	End If
+	If settings.ContainsKey("dark_mode") = False Then
+		settings.Put("dark_mode", False)
+	End If
+	#if B4i
+	settings.Put("dark_mode", Main.IsDark)
+	#End If
 	AfterSettingsChanged
 End Sub
 
@@ -30,6 +45,10 @@ End Sub
 
 Private Sub AfterSettingsChanged
 	NSFW_Overlay = settings.Get("nsfw_overlay")
+	Dark = settings.Get("dark_mode")
+	If mTheme.IsInitialized And Dark <> mTheme.IsDark Then
+		mTheme.SetDark(Dark)
+	End If
 End Sub
 
 Public Sub GetUserAgreedToSafeContent As Boolean
@@ -44,6 +63,10 @@ End Sub
 Public Sub ShowSettings
 	If PrefDialog.IsInitialized = False Then
 		PrefDialog = B4XPages.MainPage.ViewsCache1.CreatePreferencesDialog("Settings.json")
+		If xui.IsB4i Then
+			Dim i As Int = PrefDialog.PrefItems.IndexOf(PrefDialog.GetPrefItem("dark_mode"))
+			PrefDialog.PrefItems.RemoveAt(i)
+		End If
 	End If
 	Dim views As ViewsCache = B4XPages.MainPage.ViewsCache1
 	PrefDialog.CustomListView1.Clear 'as we update the titles, we need to clear the existing items.

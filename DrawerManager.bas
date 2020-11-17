@@ -13,6 +13,8 @@ Sub Class_Globals
 	Private UserItem As B4XView
 	Private Divider As B4XView
 	Private LinksManager As B4XLinksManager
+	Private mTheme As ThemeManager
+	Private lblSettings As B4XView
 End Sub
 
 Public Sub Initialize (Drawer As B4XDrawer)
@@ -23,11 +25,14 @@ Public Sub Initialize (Drawer As B4XDrawer)
 	'create user item
 	Divider = xui.CreatePanel("")
 	Divider.SetLayoutAnimated(0, 0, 0, lstDrawer.AsView.Width, 4dip)
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
 	Dim p As B4XView = xui.CreatePanel("")
-	Divider.AddView(p, 5dip, 0, lstDrawer.AsView.Width - 10dip, Divider.Height)
-	p.Color = xui.Color_Black
+	Divider.AddView(p, 0, 0, lstDrawer.AsView.Width, Divider.Height)
 	LinksManager = B4XPages.MainPage.LinksManager
+	Theme_Changed
 End Sub
+
 
 Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 	mDrawer.LeftOpen = False
@@ -57,19 +62,20 @@ Public Sub UpdateLeftDrawerList
 		lstDrawer.AddTextItem($"${"" & Chr(0xF090)}${spaces}Sign in"$, "sign in")
 	Else
 		UserItem.RemoveViewFromParent
+		UserItem.Color = mTheme.SecondBackground
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
 	End If
 	If weHaveAUser Then
 		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, LinksManager.LINK_HOME)
-		lstDrawer.AddTextItem($"${"" & Chr(0xF0A2)}${spaces}Notifications"$, LinksManager.LINK_NOTIFICATIONS)
+		lstDrawer.AddTextItem($"${"" & Chr(0xF0F3)}${spaces}Notifications"$, LinksManager.LINK_NOTIFICATIONS)
 	End If
 	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
 		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}${spaces}${Link.Title}"$, Link)
 	Next
 	
 	Divider.RemoveViewFromParent
-	Divider.GetView(0).Width = lstDrawer.AsView.Width - 10dip
 	lstDrawer.Add(Divider, "")
+	If mp.Statuses.IsInitialized = False Then Return
 	Dim Links As List = mp.Statuses.Stack.GetLinks
 	For i = Links.Size - 1 To 0 Step - 1
 		Dim Link As PLMLink = Links.Get(i)
@@ -93,7 +99,7 @@ Private Sub CreateXLabel As B4XView
 	xlbl.Text = "" & Chr(0xF00D)
 	xlbl.Font = xui.CreateFontAwesome(16)
 	xlbl.SetTextAlignment("CENTER", "CENTER")
-	xlbl.TextColor = Constants.ColorDefaultText
+	xlbl.TextColor = mTheme.DefaultText
 	Return xlbl
 End Sub
 
@@ -108,6 +114,7 @@ Public Sub SignIn
 		Dim consumer As ImageConsumer = iv.Tag
 		consumer.IsVisible = True
 		consumer.NoAnimation = True
+		Theme_Changed
 	End If
 	UpdateAvatarAndDisplayName
 End Sub
@@ -117,6 +124,18 @@ Public Sub UpdateAvatarAndDisplayName
 	Dim iv As B4XView = UserItem.Tag
 	mp.ImagesCache1.ReleaseImage(iv.Tag)
 	mp.ImagesCache1.SetImage(mp.User.Avatar, iv.Tag, mp.ImagesCache1.RESIZE_NONE)
+End Sub
+
+Sub Theme_Changed
+	Divider.GetView(0).Color = mTheme.Divider
+	root.Color = mTheme.Background
+	B4XPages.MainPage.ViewsCache1.SetCLVBackground(lstDrawer, True)
+	If UserItem.IsInitialized Then
+		UserItem.GetView(1).TextColor = mTheme.DefaultText
+		UserItem.GetView(2).TextColor = mTheme.DefaultText
+		UserItem.GetView(0).Color = mTheme.AttachmentPanelBackground
+	End If
+	UpdateLeftDrawerList
 End Sub
 
 
@@ -142,3 +161,7 @@ Private Sub Delete(index As Int)
 	lstDrawer.RemoveAt(index)
 End Sub
 
+Private Sub lblSettings_Click
+	mDrawer.LeftOpen = False
+	B4XPages.MainPage.Settings.ShowSettings
+End Sub

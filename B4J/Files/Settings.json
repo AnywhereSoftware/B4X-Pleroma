@@ -15,6 +15,12 @@
             "required": false
         },
         {
+            "title": "Dark Mode",
+            "type": "Boolean",
+            "key": "dark_mode",
+            "required": false
+        },
+        {
             "title": "NSFW overlay",
             "type": "Boolean",
             "key": "nsfw_overlay",

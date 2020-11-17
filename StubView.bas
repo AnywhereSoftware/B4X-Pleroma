@@ -7,12 +7,14 @@ Version=8.5
 Sub Class_Globals
 	Public mBase As B4XView
 	Private xui As XUI
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated(0, 0, 0, width, 300dip)
-	mBase.SetColorAndBorder(xui.Color_White, 0, 0, 1dip)
+	mTheme = B4XPages.MainPage.Theme
+	mBase.SetColorAndBorder(mTheme.Background, 0, 0, 1dip)
 	Dim lbl As Label
 	lbl.Initialize("")
 	Dim xlbl As B4XView = lbl
@@ -21,7 +23,7 @@ Public Sub Initialize (width As Int)
 	xlbl.Text = "No more items"
 	xlbl.TextColor = xui.Color_White
 	xlbl.Font = xui.CreateDefaultFont(16)
-	xlbl.Color = Constants.NoMoreItemsBackground
+	xlbl.Color = mTheme.NoMoreItemsBackground
 End Sub
 
 Public Sub SetContent(Content As Object, ListItem As PLMCLVItem)

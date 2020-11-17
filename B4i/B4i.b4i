@@ -17,8 +17,9 @@ File21=Search.bil
 File22=Settings.json
 File23=StatusList.bil
 File24=StatusViewImpl.bil
-File25=VideoPlayer.bil
-File26=WebViewDialog.bil
+File25=theme.json
+File26=VideoPlayer.bil
+File27=WebViewDialog.bil
 File3=CardView.bil
 File4=DialogContainer.bil
 File5=empty.png
@@ -45,6 +46,7 @@ FileGroup23=Default Group
 FileGroup24=Default Group
 FileGroup25=Default Group
 FileGroup26=Default Group
+FileGroup27=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -93,25 +95,26 @@ Module23=|relative|..\StackManager
 Module24=|relative|..\StatusView
 Module25=|relative|..\StubView
 Module26=|relative|..\TextUtils
-Module27=UserNotificationCenter
-Module28=|relative|..\ViewsCache
-Module29=|relative|..\WebViewDialog
+Module27=|relative|..\ThemeManager
+Module28=UserNotificationCenter
+Module29=|relative|..\ViewsCache
 Module3=|relative|..\B4XMainPage
+Module30=|relative|..\WebViewDialog
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
 Module6=|relative|..\Constants
 Module7=|relative|..\DrawerManager
 Module8=|relative|..\HtmlToRuns
 Module9=|relative|..\ImagesCache
-NumberOfFiles=26
+NumberOfFiles=27
 NumberOfLibraries=21
-NumberOfModules=29
+NumberOfModules=30
 Version=6.8
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.25.0
+	#Version: 1.26.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -133,8 +136,10 @@ Version=6.8
 	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
 	#if Not(SIMULATOR)
-'	#ProvisionFile: pleroma_store.mobileprovision
+	#ProvisionFile: pleroma_store.mobileprovision
 	#End If
+	'This enables the system dark mode feature.
+	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->
 #End Region
 
 Sub Process_Globals
@@ -146,8 +151,9 @@ Sub Process_Globals
 	Public fm As FirebaseMessaging
 	Private ForegroundFlag As Boolean 'https://www.b4x.com/android/forum/threads/re-how-detect-user-tap-on-notification.117548/#content
 	Private unc As UserNotificationCenter
-	Public Const NavBarBarTintColor As Int = 0xFF00BBFF
+	Public Const NavBarBarTintColor As Int = 0xFF006FA6
 	Public Const NavBarTintColor As Int = Colors.White
+	Private BackgroundTime As Long 'this is used to ignore the dark state event that occurs immediately after moving to the background
 End Sub
 
 Private Sub Application_Start (Nav As NavigationController)
@@ -171,6 +177,7 @@ Private Sub Application_Start (Nav As NavigationController)
 	End If
 	#end if
 	fm.Initialize("fm")	
+	
 End Sub
 
 Private Sub fm_FCMConnected
@@ -188,6 +195,23 @@ Private Sub Application_RemoteNotification (Message As Map, CompletionHandler As
 	CompletionHandler.Complete
 End Sub
 
+Private Sub TraitCollection_Changed
+	Dim delta As Long = DateTime.Now - BackgroundTime
+	Log("TraitCollection_Changed: " & delta)
+	If delta < 1000 Then Return
+	If B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized And B4XPages.MainPage.Theme.IsInitialized Then
+		B4XPages.MainPage.Theme.SetDark(IsDark)
+	End If
+End Sub
+
+Public Sub IsDark As Boolean
+	Dim App As Application
+	If App.OSVersion >= 13 Then
+		Dim no As NativeObject = App.KeyController
+		Return 2 = no.GetField("traitCollection").GetField("userInterfaceStyle").AsNumber
+	End If
+	Return False
+End Sub
 
 Private Sub Application_Active
 	fm.FCMConnect 'should be called from Application_Active
@@ -275,6 +299,7 @@ Private Sub Application_Background
 	B4XPages.Delegate.Activity_Pause
 	fm.FCMDisconnect
 	ForegroundFlag = False
+	BackgroundTime = DateTime.Now
 End Sub
 
 Private Sub Application_Foreground
@@ -295,5 +320,17 @@ End Sub
             CGPoint p = [u locationInView:self];
             [bi raiseEvent:self event:eventName params:@[@4, @(p.x), @(p.y)]];
         }
+}
+#End If
+
+'dark mode event
+#if OBJC
+@end
+@interface UIWindow (DarkMode)
+@end
+@implementation UIWindow (DarkMode)
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+	if (self.class == NSClassFromString(@"UIWindow"))
+		[[b4i_main new].bi raiseEvent:nil event:@"traitcollection_changed" params:nil];
 }
 #End If

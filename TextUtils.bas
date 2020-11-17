@@ -13,6 +13,7 @@ Sub Class_Globals
 	Public NBSP As String
 	Private JParser As JSONParser
 	Public Const MultipartBoundary As String = "---------------------------14623423412"
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize
@@ -22,14 +23,15 @@ Public Sub Initialize
 	HtmlParser.Initialize
 	HtmlConverter.Initialize(TextEngine, HtmlParser)
 	NBSP = Chr(0x202F)
+	mTheme = B4XPages.MainPage.Theme
 End Sub
 
 Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String, Text As String) As PLMLink
 	If URL.StartsWith("~@") Then
 		Dim c As Int = URL.IndexOf(":")
-		Dim method As String = URL.SubString2(2, c)
+		Dim Method As String = URL.SubString2(2, c)
 		Dim id As String = URL.SubString(c + 1)
-		Return CreateUserLink(id, Text, method)
+		Return CreateUserLink(id, Text, Method)
 	End If
 	If Status <> Null Then
 		If URL = Constants.TextRunThreadLink Then
@@ -67,14 +69,19 @@ Public Sub CreateSpecialUrl(Method As String, Id As String) As String
 End Sub
 
 
-Public Sub CreateUserLink (id As String, name As String, method As String) As PLMLink
+Public Sub CreateUserLink (id As String, name As String, Method As String) As PLMLink
 	Dim u As String = Constants.URL_USER.Replace(":id", id)
-	Return CreatePLMLink2(u & "/" & method, Constants.LINKTYPE_USER, "@" & name, u)
+	Return CreatePLMLink2(u & "/" & Method, Constants.LINKTYPE_USER, "@" & name & MethodToTitle (Method), u)
 End Sub
 
-Public Sub CreateUserLinkWithMutedOrSimilar (id As String, name As String, link As String) As PLMLink
+Private Sub MethodToTitle (method As String) As String
+	If method = "" Then Return method
+	Return " (" & method.SubString2(0, 1).ToUpperCase & method.SubString(1) & ")"
+End Sub
+
+Public Sub CreateUserLinkWithMutedOrSimilar (id As String, name As String, link As String, method As String) As PLMLink
 	Dim u As String = Constants.URL_USER.Replace(":id", id)
-	Return CreatePLMLink2(link, Constants.LINKTYPE_USER, "@" & name, u)
+	Return CreatePLMLink2(link, Constants.LINKTYPE_USER, "@" & name & MethodToTitle(method), u)
 End Sub
 
 
@@ -126,6 +133,7 @@ End Sub
 Public Sub CreateRun(Text As String, Fnt As B4XFont) As BCTextRun
 	Dim r As BCTextRun = TextEngine.CreateRun(Text)
 	r.TextFont = Fnt
+	r.TextColor = mTheme.DefaultText
 	Return r
 End Sub
 
@@ -428,7 +436,7 @@ Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif 
 	End If
 	If Mini = False Then
 		For Each run As BCTextRun In runs
-			run.TextColor = xui.Color_White
+			run.TextColor = mTheme.DefaultText
 		Next
 	End If
 	bbTop.SetRuns(runs)

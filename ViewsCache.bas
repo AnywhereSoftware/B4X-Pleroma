@@ -16,6 +16,8 @@ Sub Class_Globals
 	Private ImageViews As Map
 	Private CardViews As Map
 	Private VideosToStatusViews As Map
+	Private mTheme As ThemeManager
+	Public Const EmptyPrefDialog As PreferencesDialog
 End Sub
 
 Public Sub Initialize
@@ -23,6 +25,7 @@ Public Sub Initialize
 	ImageViews.Initialize
 	CardViews.Initialize
 	VideosToStatusViews.Initialize
+	mTheme = B4XPages.MainPage.Theme
 End Sub
 
 Public Sub GetVideoPlayer (sv As StatusView, attachment As PLMMedia) As Object
@@ -154,8 +157,12 @@ Public Sub CreatePreferencesDialog (json As String) As PreferencesDialog
 	Dim PrefDialog As PreferencesDialog
 	PrefDialog.Initialize(B4XPages.MainPage.Root, "", Constants.DialogWidth, Constants.DialogHeight)
 	PrefDialog.LoadFromJson(File.ReadString(File.DirAssets, json))
+	If mTheme.IsDark Then PrefDialog.Theme = PrefDialog.THEME_DARK
 	Dim views As ViewsCache = B4XPages.MainPage.ViewsCache1
-	B4XPages.MainPage.DialogSetLightTheme(PrefDialog.Dialog)
+	B4XPages.MainPage.DialogSetTheme(PrefDialog.Dialog)
+	SetCLVBackground(PrefDialog.CustomListView1, False)
+	PrefDialog.TextColor = mTheme.DefaultText
+	PrefDialog.ItemsBackgroundColor = mTheme.Background
 	For Each pi As B4XPrefItem In PrefDialog.PrefItems
 		If pi.ItemType <> PrefDialog.TYPE_SEPARATOR And pi.ItemType <> PrefDialog.TYPE_TEXT And pi.ItemType <> PrefDialog.TYPE_MULTILINETEXT Then
 			pi.Title = views.CreateRichTextWithSize(pi.Title, 14)
@@ -208,3 +215,15 @@ Private Sub VideoPlayer1_Ready (Success As Boolean)
 	End If
 End Sub
 #end if
+
+Public Sub SetCLVBackground (clv As CustomListView, SecondaryBackground As Boolean)
+	clv.sv.ScrollViewInnerPanel.Color = mTheme.Divider
+	If SecondaryBackground Then
+		clv.DefaultTextBackgroundColor = mTheme.SecondBackground
+		clv.AsView.Color = mTheme.SecondBackground
+	Else
+		clv.DefaultTextBackgroundColor = mTheme.Background
+		clv.AsView.Color = mTheme.Background
+	End If
+	clv.DefaultTextColor = mTheme.DefaultText
+End Sub

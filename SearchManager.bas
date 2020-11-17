@@ -8,13 +8,15 @@ Sub Class_Globals
 	Public mBase As B4XView
 	Private xui As XUI
 	Private B4XFloatTextField1 As B4XFloatTextField
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated(0, 0, 0, width, 50dip)
 	mBase.LoadLayout("Search")
-	mBase.Color = xui.Color_White
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
 	B4XFloatTextField1.HintFont = xui.CreateFontAwesome(14)
 	B4XFloatTextField1.HintText = Constants.SearchIconChar
 	B4XFloatTextField1.Update
@@ -25,6 +27,12 @@ Public Sub Initialize (width As Int)
 	Dim tf As TextField = B4XFloatTextField1.TextField
 	tf.ReturnKey = tf.RETURN_SEARCH
 	#End If 
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	mBase.Color = mTheme.Background
+	mTheme.SetFloatTextFieldColor(B4XFloatTextField1)
 End Sub
 
 Private Sub B4XFloatTextField1_EnterPressed

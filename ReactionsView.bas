@@ -17,7 +17,7 @@ Public Sub Initialize (width As Int)
 	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated(0, 0, 0, width, 60dip)
 	mBase.LoadLayout("ReactionsView")
-	mBase.SetColorAndBorder(xui.Color_White, 0, 0, 1dip)
+
 	tu = B4XPages.MainPage.TextUtils1
 	BBListItem1.TextEngine = tu.TextEngine
 End Sub
@@ -25,6 +25,7 @@ End Sub
 Public Sub SetContent(Content As Object, ListItem As PLMCLVItem)
 	mStatusView = Content
 	mStatus = mStatusView.mStatus
+	mBase.SetColorAndBorder(B4XPages.MainPage.Theme.Background, 0, 0, 1dip)
 	Dim reactions As List = B4XPages.MainPage.Settings.GetReactions
 	Dim runs As List
 	runs.Initialize

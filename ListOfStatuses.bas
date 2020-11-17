@@ -32,13 +32,17 @@ Sub Class_Globals
 	Private InsertedItems As Map
 	Private PostView1 As PostView
 	Private ReactionsView1 As ReactionsView
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
 	mEventName = EventName
 	mCallBack = Callback
 	mBase = Root1
+	mTheme = B4XPages.MainPage.Theme
 	mBase.LoadLayout("StatusList")
+	mTheme.RegisterForEvents(Me)
+	Theme_Changed
 	StatusesViewsManager = CreateStatusesListUsedManager
 	MiniAccountsManager = CreateStatusesListUsedManager
 	ViewsManagers = Array(StatusesViewsManager, MiniAccountsManager)
@@ -47,6 +51,16 @@ Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView
 	InsertedItems.Initialize
 	AddMoreItems
 End Sub
+
+Private Sub Theme_Changed
+	B4XPages.MainPage.ViewsCache1.SetCLVBackground(CLV, False)
+	mBase.Color = mTheme.Background
+	CLV.AsView.Color = mTheme.Background
+	If CLV.Size > 0 Then
+		Refresh
+	End If
+End Sub
+
 
 Public Sub ResizeVisibleList
 	
@@ -570,7 +584,10 @@ Private Sub StatusView1_HeightChanged
 End Sub
 
 Private Sub StatusView1_Reply
-	InsertReactOrPost(Sender, feed.NewPostId)
+	Dim sv As StatusView = Sender
+	Wait For (B4XPages.MainPage.ShowAgreeToSafeContent) Complete (Agree As Boolean)
+	If Agree = False Then Return
+	InsertReactOrPost(sv, feed.NewPostId)
 End Sub
 
 Private Sub StatusView1_AddReaction
@@ -615,7 +632,7 @@ Private Sub InsertPostView (ParentIndex As Int, Status As PLMStatus)
 	If PostView1.IsInitialized = False Then
 		PostView1.Initialize(Me, "PostView1", mBase.Width)
 	End If
-	Dim content As PLMPost = feed.CreatePLMPost(Status.id)
+	Dim content As PLMPost = feed.CreatePLMPost(Status.id, Status.Visibility)
 	content.Mentions.Add(Status.StatusAuthor.Acct)
 	If Status.Mentions.IsInitialized Then
 		For Each m As Map In Status.Mentions

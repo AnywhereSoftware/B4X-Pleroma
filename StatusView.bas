@@ -38,6 +38,7 @@ Sub Class_Globals
 	Private pnlLine As B4XView
 	Private IconsFont As B4XFont
 	Private VideoPlayersReady As B4XSet
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -48,6 +49,8 @@ Public Sub Initialize (Callback As Object, EventName As String)
 	IconsFont = xui.CreateFontAwesome(18)
 	tu = B4XPages.MainPage.TextUtils1
 	VideoPlayersReady.Initialize
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
 End Sub
 
 Public Sub Create (Base As B4XView)
@@ -74,12 +77,21 @@ Public Sub Create (Base As B4XView)
 	lbl.Initialize("lblReadMore")
 	Dim xlbl As B4XView = lbl
 	xlbl.Text = "Read more"
-	xlbl.TextColor = xui.Color_Black
 	xlbl.SetTextAlignment("CENTER", "CENTER")
 	xlbl.Font = xui.CreateDefaultBoldFont(16)
 	imgReadMore.mBase.AddView(xlbl, 0, 20dip, mBase.Width, 30dip)
-	imgReadMore.mBase.Color = xui.Color_Red
 	BBListItem1.ClickHighlight = lblTime
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	Dim imgReadMoreLabel As B4XView = imgReadMore.mBase.GetView(imgReadMore.mBase.NumberOfViews - 1)
+	imgReadMoreLabel.TextColor = mTheme.DefaultText
+	mBase.Color = mTheme.Background
+	BBListItem1.ParseData.DefaultColor = mTheme.DefaultText
+	pnlLine.Color = mTheme.Divider
+	imgAvatar.Parent.Color = mTheme.AttachmentPanelBackground
+	lblTime.TextColor = mTheme.NoMoreItemsBackground
 End Sub
 
 
@@ -99,7 +111,7 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	If BBListItem1.mBase.Height > Constants.MaxTextHeight + 20dip And ListItem.Expanded = False Then
 		BBListItem1FullHeight = BBListItem1.mBase.Height
 		BBListItem1.mBase.Height = Constants.MaxTextHeight
-		imgReadMore.Bitmap = Constants.ReadMoreGradient
+		imgReadMore.Bitmap = mTheme.ReadMoreGradient
 		imgReadMore.mBase.Visible = True
 		imgReadMore.mBase.Top =  BBListItem1.mBase.Top + BBListItem1.mBase.Height - imgReadMore.mBase.Height + 5dip
 		imgReadMore.mbase.BringToFront
@@ -277,7 +289,7 @@ Private Sub SetTopText
 		runs.Add(mTextEngine.CreateRun(CRLF))
 		For i = 0 To runs.Size - 1
 			Dim r As BCTextRun = runs.Get(i)
-			r.TextColor = Constants.ColorDefaultText
+			r.TextColor = mTheme.DefaultText
 			If i > 0 Then r.TextFont = TopFont
 		Next
 	End If
@@ -294,12 +306,12 @@ Private Sub SetTopText
 			runs.Add(mTextEngine.CreateRun(CRLF))
 			Dim r As BCTextRun = tu.CreateUrlRun(Constants.TextRunThreadLink, "" & Chr(0xF064) & " Reply to", bbTop.ParseData)
 			r.TextFont = xui.CreateFontAwesome(12)
-			r.TextColor = Constants.ColorDefaultText
+			r.TextColor = mTheme.DefaultText
 			runs.Add(r)
 			runs.Add(mTextEngine.CreateRun(" "))
 			r = tu.CreateUrlRun(tu.CreateSpecialUrl("statuses", mStatus.InReplyToAccountId) , mStatus.InReplyToAccountAcct, bbTop.ParseData)
 			r.TextFont = TopFont
-			r.TextColor = Constants.ColorDefaultText
+			r.TextColor = mTheme.DefaultText
 			runs.Add(r)
 		End If
 	End If
@@ -378,7 +390,7 @@ Private Sub CreateCountRun (c As Int) As BCTextRun
 End Sub
 
 Private Sub GetIsUserColor(b As Boolean) As Int
-	If b Then Return Constants.ColorAlreadyTookAction Else Return Constants.ColorDefaultText
+	If b Then Return mTheme.AlreadyTookAction Else Return mTheme.DefaultText
 End Sub
 
 Private Sub HandleAttachments As Int
@@ -428,11 +440,10 @@ End Sub
 
 Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
 	Dim Parent As B4XView = xui.CreatePanel("AttachmentParent")
-	Parent.Color = 0xFFF5F5F5
 	If Consumer <> Null Then
-		Consumer.PanelColor = xui.Color_White
+		Consumer.PanelColor = mTheme.Background
 	End If
-	Parent.SetColorAndBorder(Constants.ImageParentColor, 0, 0, 5dip)
+	Parent.SetColorAndBorder(mTheme.AttachmentPanelBackground, 0, 0, 5dip)
 	B4XPages.MainPage.ViewsCache1.SetClipToOutline(Parent)
 	Parent.Tag = att
 	pnlMedia.AddView(Parent, SideGap, h(0) + 10dip, pnlMedia.Width - 2 * SideGap, Height)

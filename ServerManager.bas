@@ -12,19 +12,16 @@ Sub Class_Globals
 	Type PLMInstanceFeatures (URI As String, Title As String, Version As String, IsPleroma As Boolean, Features As B4XSet)
 	Private InstanceFeatures As Map '<string, PLMInstanceFeatures>
 	Private tu As TextUtils
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize
 	tu = B4XPages.MainPage.TextUtils1
+	
 	lstTemplate.Initialize
 	BaseServers.Initialize
 	InstanceFeatures.Initialize
-	Dim TextColor As Int = Constants.ColorDefaultText
-	lstTemplate.CustomListView1.DefaultTextBackgroundColor = xui.Color_White
-	lstTemplate.CustomListView1.DefaultTextColor = TextColor
-	lstTemplate.CustomListView1.AsView.Color = xui.Color_White
-	lstTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = 0xFFC3C3C3
-	lstTemplate.SearchField.TextField.TextColor = TextColor
+	
 	#if B4A
 	Dim et As EditText = lstTemplate.SearchField.TextField
 	et.InputType = 208 'TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS
@@ -36,6 +33,21 @@ Public Sub Initialize
 	lstTemplate.SearchField.HintText = ""
 	lstTemplate.SearchField.Update
 	lstTemplate.AllowUnlistedText = True
+End Sub
+
+Public Sub AfterThemeCreated
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	Dim TextColor As Int = mTheme.DefaultText
+	lstTemplate.CustomListView1.DefaultTextBackgroundColor = mTheme.Background
+	lstTemplate.CustomListView1.DefaultTextColor = TextColor
+	lstTemplate.CustomListView1.AsView.Color = mTheme.Background
+	lstTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = mTheme.AttachmentPanelBackground
+	mTheme.SetFloatTextFieldColor(lstTemplate.SearchField)
 End Sub
 
 Public Sub LoadFromStore (store As KeyValueStore)

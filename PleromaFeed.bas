@@ -19,7 +19,7 @@ Sub Class_Globals
 	Type PLMMedia (Id As String, TType As String, Url As String, PreviewUrl As String)
 	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
-	Type PLMPost (ReplyToStatusId As String, Mentions As B4XSet)
+	Type PLMPost (ReplyToStatusId As String, Mentions As B4XSet, Visibility As String)
 	Type PLMMiniAccount (Account As PLMAccount, Notification As PLMNotification)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
@@ -331,11 +331,12 @@ Private Sub FillStatuses (res As B4XOrderedMap, RawItems As List)
 End Sub
 
 
-Public Sub CreatePLMPost (ReplyId As String) As PLMPost
+Public Sub CreatePLMPost (ReplyId As String, Visibility As String) As PLMPost
 	Dim t1 As PLMPost
 	t1.Initialize
 	t1.ReplyToStatusId = ReplyId
 	t1.Mentions.Initialize
+	t1.Visibility = Visibility
 	Return t1
 End Sub
 

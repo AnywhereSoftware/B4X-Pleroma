@@ -29,6 +29,7 @@ Sub Class_Globals
 	Private PostOptions As Map
 	Private MediaChooser1 As MediaChooser
 	Private Pane1 As B4XView
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
@@ -40,11 +41,22 @@ Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
 	mEventName = EventName
 	Medias.Initialize
 	MediaChooser1 = B4XPages.MainPage.MediaChooser1
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	mTheme.SetFloatTextFieldColor(B4XFloatTextField1)
+	If xui.IsB4i Then
+		B4XFloatTextField1.mBase.SetColorAndBorder(xui.Color_Transparent, 1dip, xui.Color_LightGray, 2dip)
+	End If
 End Sub
 
 Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
-	PostOptions = CreateMap("nsfw": False, "visibility": "Public")
+	PostOptions = CreateMap("nsfw": False, "visibility": Constants.VisibilityKeyToUserValue.GetDefault(Content.Visibility, "Public"))
 	mReplyToId = Content.ReplyToStatusId
+	mBase.Color = mTheme.Background
 	For Each pm As PostMedia In Medias
 		pm.Pnl.RemoveViewFromParent
 	Next
@@ -72,20 +84,8 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	et.SelectionStart = et.Text.Length
 	et.SetSelection(B4XFloatTextField1.Text.Length, 0)
 	#End If
-	
-	If xui.IsB4i Then
-		B4XFloatTextField1.mBase.SetColorAndBorder(xui.Color_Transparent, 1dip, xui.Color_LightGray, 2dip)
-	End If
 	ArrangeMedias
-	If B4XPages.MainPage.Settings.GetUserAgreedToSafeContent = False Then
-		Wait For (B4XPages.MainPage.ConfirmMessage2(Constants.UserContentAgreement, "Agree", "Cancel", "")) Complete (Result As Int)
-		If Result = xui.DialogResponse_Positive Then
-			B4XPages.MainPage.Settings.SetUserAgreed
-		Else
-			Sleep(0)
-			btnCancel_Click
-		End If
-	End If
+	
 End Sub
 
 Public Sub SetVisibility (visible As Boolean)
@@ -171,6 +171,7 @@ Private Sub AttachMediaFile (pm As PostMedia)
 	pm.Pnl = xui.CreatePanel("")
 	pm.Pnl.SetLayoutAnimated(0, 0, 0, MediaSize + 10dip , MediaSize + 10dip)
 	pm.Pnl.LoadLayout("PostViewMedia")
+	pm.Pnl.GetView(2).TextColor = mTheme.DefaultText
 	pm.Pnl.Tag = pm
 	If pm.IsImage Then
 		Try

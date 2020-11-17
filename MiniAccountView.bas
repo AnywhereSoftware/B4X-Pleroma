@@ -20,6 +20,7 @@ Sub Class_Globals
 	Private Notif As PLMNotification
 	Private btnMore As B4XView
 	Private AccountHolder(1) As PLMAccount
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -31,6 +32,15 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	mEventName = EventName
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
 	tu = B4XPages.MainPage.TextUtils1
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	mBase.Color = mTheme.Background
+	pnlLine.Color = mTheme.Divider
+	imgAvatar.Parent.Color = mTheme.AttachmentPanelBackground
 End Sub
 
 Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)

@@ -27,6 +27,7 @@ Sub Class_Globals
 	Private PrefDialog As PreferencesDialog
 	Private btnMore As B4XView
 	Private AccountHolder(1) As PLMAccount
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
@@ -34,14 +35,29 @@ Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As Strin
 	mBase.LoadLayout("AccountView")
 	bbTop.TextEngine = B4XPages.MainPage.TextUtils1.TextEngine
 	BBListItem1.TextEngine = bbTop.TextEngine
-	
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
 	mCallBack = Callback
 	mEventName = EventName
-	B4XPages.MainPage.ViewsCache1.SetAlpha(ImageView1, 0.7)
+	B4XPages.MainPage.ViewsCache1.SetAlpha(ImageView1, 0.3)
 	
 	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
 	tu = B4XPages.MainPage.TextUtils1
+	mTheme = B4XPages.MainPage.Theme
+	mTheme.RegisterForEvents(Me)
+	Theme_Changed
+End Sub
+
+Private Sub Theme_Changed
+	mBase.Color = mTheme.Background
+	BBListItem1.ParseData.DefaultColor = mTheme.DefaultText
+	bbTop.ParseData.DefaultColor = mTheme.DefaultText
+	pnlLine.Color = mTheme.Divider
+	imgAvatar.Parent.Color = mTheme.AttachmentPanelBackground
+	ImageView1.Parent.Color = mTheme.AttachmentPanelBackground
+	For Each v As B4XView In pnlCurrentUser.GetAllViewsRecursive
+		v.TextColor = mTheme.DefaultText
+	Next
+	lblChangeAvatar.TextColor = mTheme.DefaultText
 End Sub
 
 Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
@@ -59,8 +75,9 @@ Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	ImagesCache1.SetImage(Account.HeaderURL, ImageView1.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
 	tu.SetAccountTopText(bbTop, mAccount, Null, False)
 	Dim node As HtmlNode = mp.TextUtils1.HtmlParser.Parse(Account.Note)
-	Dim bbcode As String = $"[color=white]
-${TableRow(WrapURL("statuses", "Statuses"), WrapURL("following", "Following"), WrapURL("followers", "Followers"))}
+	Dim clr As String = mTheme.ColorToHex(mTheme.DefaultText)
+	Dim bbcode As String = $"[color=${clr}]
+${TableRow(WrapURL("statuses", "Statuses", clr), WrapURL("following", "Following", clr), WrapURL("followers", "Followers", clr))}
 ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount)}
 [/color]
 "$
@@ -98,8 +115,8 @@ Private Sub CurrentUser
 	lblChangeAvatar.Visible = True
 End Sub
 
-Private Sub WrapURL(method As String, text As String) As String
-	Return $"[url=~@${method}:${mAccount.Id}][color=white]${text}[/color][/url]"$
+Private Sub WrapURL(method As String, text As String, clr As String) As String
+	Return $"[url=~@${method}:${mAccount.Id}][color=${clr}]${text}[/color][/url]"$
 End Sub
 
 Private Sub btnFollow_Click
@@ -272,9 +289,9 @@ Private Sub lblMore_Click
 	Dim i As Int = options.IndexOf(Result)
 	Select i
 		Case 0
-			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/mutes"))
+			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/mutes", "mutes"))
 		Case 1
-			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/blocks"))
+			RaiseLinkClicked(tu.CreateUserLinkWithMutedOrSimilar(mAccount.Id, mAccount.UserName, "/api/v1/blocks", "blocks"))
 	End Select
 End Sub
 

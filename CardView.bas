@@ -15,17 +15,19 @@ Sub Class_Globals
 	Private pnlImageView As B4XView
 	Private url As String
 	Private pnlTouch As B4XView
+	Private mTheme As ThemeManager
 End Sub
 
 Public Sub Initialize
 	base = xui.CreatePanel("")
 	base.SetLayoutAnimated(0, 0, 0, 100dip, 80dip)
 	base.LoadLayout("CardView")
+	mTheme = B4XPages.MainPage.Theme
 	B4XPages.MainPage.SetImageViewTag(ImageView1)
 	BBListItem1.TextEngine = B4XPages.MainPage.TextUtils1.TextEngine
 	BBListItem1.LineSpacingFactor = 0.2
 	base.Tag = Me
-	base.SetColorAndBorder(0, 1dip, 0xFFCDCDCD, 5dip)
+	
 	#if B4A
 	Dim jo As JavaObject = base
 	jo.RunMethod("setClipToOutline", Array(True))
@@ -36,7 +38,8 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attach
 	mCallback = Callback
 	mEventName = EventName
 	pnlImageView.Color = 0
-	base.Parent.Color = xui.Color_White
+	base.SetColorAndBorder(0, 1dip, mTheme.Background, 5dip)
+	base.Parent.Color = mTheme.Background
 	url = card.Get("url")
 	base.Width = base.Parent.Width
 	Dim imageurl As String
@@ -64,7 +67,7 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attach
 	runs.Initialize
 	Dim tu As TextUtils = B4XPages.MainPage.TextUtils1
 	Dim r As BCTextRun = tu.CreateRun(card.Get("provider_name") & CRLF, xui.CreateDefaultFont(9))
-	r.TextColor = Constants.ColorDefaultText
+	r.TextColor = mTheme.DefaultText
 	runs.Add(r)
 	runs.Add(tu.CreateRun(card.Get("title") & CRLF, xui.CreateDefaultBoldFont(12)))
 	runs.Add(tu.CreateRun(card.Get("description"), xui.CreateDefaultFont(11)))

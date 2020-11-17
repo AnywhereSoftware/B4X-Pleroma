@@ -3,28 +3,23 @@
     "Theme": "Light Theme",
     "Items": [
         {
-            "title": "Account Id",
+            "title": "Account",
             "type": "Text",
             "key": "account",
             "required": false
         },
         {
-            "title": "Status Id",
+            "title": "Status",
             "type": "Text",
             "key": "status",
             "required": false
         },
-        {
-            "title": "Comment",
-            "type": "Separator",
-            "key": "",
-            "required": false
-        },
+       
         {
             "options": [
-                "100"
+                "80"
             ],
-            "title": "",
+            "title": "Comment",
             "type": "Multiline Text",
             "key": "comment",
             "required": false

@@ -12,6 +12,11 @@ End Sub
 
 Public Sub Initialize
 	tu = B4XPages.MainPage.TextUtils1
+	B4XPages.MainPage.Theme.RegisterForEvents(Me)
+End Sub
+
+Private Sub Theme_Changed
+	PrefDialog = B4XPages.MainPage.ViewsCache1.EmptyPrefDialog
 End Sub
 
 Public Sub Show(Account As PLMAccount, StatusId As String)
@@ -52,4 +57,13 @@ Public Sub Show(Account As PLMAccount, StatusId As String)
 		j.Release
 		B4XPages.MainPage.HideProgress
 	End If
+End Sub
+
+'returns True if the dialog was closed
+Public Sub BackKeyPressed As Boolean
+	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
+		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		Return True
+	End If
+	Return False
 End Sub

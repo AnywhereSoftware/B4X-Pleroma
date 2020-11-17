@@ -65,16 +65,17 @@ Sub Class_Globals
 	Public safari As SafariController
 	#End If
 	Public Report As ReportManager
+	Public Theme As ThemeManager
 End Sub
 
 Public Sub Initialize
 	Log($"Version:${NumberFormat2(Constants.Version, 0, 2, 2, False)}"$)
 	xui.SetDataFolder("b4x_pleroma")
+	Settings.Initialize
 	TextUtils1.Initialize
 	LinksManager.Initialize
 	Constants.Initialize
 	ServerManager1.Initialize
-	Settings.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
@@ -83,6 +84,8 @@ Public Sub Initialize
 	End If
 	store.Put("version", Constants.VERSION)
 	Settings.LoadFromStore(store, StoreVersion)
+	Theme.Initialize(File.ReadString(File.DirAssets, "theme.json"))
+	ServerManager1.AfterThemeCreated
 	ImagesCache1.Initialize
 	ViewsCache1.Initialize
 	auth.Initialize(Me, "auth")
@@ -93,6 +96,7 @@ Public Sub Initialize
 	Constants.Initialize
 	push1.Initialize
 	Report.Initialize
+	Theme.RegisterForEvents(Me)
 End Sub
 
 Private Sub UpdateOldStore
@@ -101,6 +105,15 @@ Private Sub UpdateOldStore
 	End If
 End Sub
 
+Private Sub Theme_Changed
+	DialogSetTheme(Dialog2)
+	SetListTemplateTheme
+	DialogSetTheme (Dialog)
+	Toast.pnl.Color = Theme.DefaultText
+	Toast.DefaultTextColor = Theme.Background
+	DialogContainer.Color = 0
+	
+End Sub
 
 
 Private Sub LoadSavedDataAndStart
@@ -139,7 +152,8 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 		Statuses.Stack.SetDataFromStore(store.Get("stack"))
 	End If
 	DrawerManager1.UpdateLeftDrawerList
-	DialogSetLightTheme (Dialog)
+	Dialog2.Initialize(Root)
+	Dialog2ListTemplate.Initialize
 	If Root.Width = 0 Then
 		Wait For B4XPage_Resize (Width As Int, Height As Int)
 		Drawer.Resize(Width, Height)
@@ -153,16 +167,26 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	InnerPanel.SetLayoutAnimated(0, 0, 0, DialogContainer.Width, DialogContainer.Height)
 	#End If
 	Toast.Initialize(Root)
-	Toast.pnl.Color = xui.Color_Black
-	Toast.DefaultTextColor = xui.Color_White
 	Toast.DurationMs = Constants.ToastDurationMs
 	pnlListDefaultTop = pnlList.Top
 	Search.Initialize(Root.Width)
 	LoadSavedDataAndStart
-	
+	Theme_Changed
+	ShowMadeWithLove
+End Sub
+
+Private Sub ShowMadeWithLove
+	MadeWithLove1.mBase.Color = Theme.OverlayColorMadeWithLove
+	Dim xlbl As B4XView = MadeWithLove1.mBase.GetView(0)
+	xlbl.TextColor = Theme.DefaultText
+	#if B4I
+	'changing the text color resets the CSBuilder colors, we need to set it again.
+	Dim cs As CSBuilder
+	cs.Initialize.Append("Made with ").Font(Font.CreateFontAwesome(xlbl.TextSize)).Color(xui.Color_Red).Append(Chr(0xF004)).Pop.Pop.Append(" in B4X").PopAll
+	XUIViewsUtils.SetTextOrCSBuilderToLabel(xlbl, cs)
+	#End If
 	Sleep(4000)
 	MadeWithLove1.mBase.SetVisibleAnimated(300, False)
-	
 End Sub
 
 Private Sub CreateMenu
@@ -201,13 +225,14 @@ End Sub
 
 #if B4J
 Private Sub imgHamburger_MouseClicked (EventData As MouseEvent)
-	Drawer.LeftOpen = True
+	OpenDrawer
 End Sub
 #else
 
 Private Sub B4XPage_MenuClick (Tag As String)
 	If Tag = "hamburger" Then
-		Drawer.LeftOpen = Not(Drawer.LeftOpen)
+		
+		ToggleDrawer
 	Else If Tag = "refresh" Then
 		btnRefresh_Click
 	Else If Tag = "search" Then
@@ -217,6 +242,17 @@ Private Sub B4XPage_MenuClick (Tag As String)
 	End If
 End Sub
 #end if
+
+Private Sub ToggleDrawer
+	If Drawer.LeftOpen Then
+		Drawer.LeftOpen = False
+	Else if Dialog.Visible Or Dialog2.Visible Then
+		CloseDialogAndDrawer
+	Else
+		Drawer.LeftOpen = True
+	End If
+	
+End Sub
 
 Private Sub CreateNewUser As PLMUser
 	Dim u As PLMUser
@@ -257,9 +293,10 @@ Private Sub B4XPage_CloseRequest As ResumableSub
 	If Settings.BackKeyPressed Then
 		Return False	
 	End If
+	If Report.BackKeyPressed Then Return False
 	'home button
 	If Main.ActionBarHomeClicked Then
-		Drawer.LeftOpen = Not(Drawer.LeftOpen)
+		ToggleDrawer
 		Return False	
 	End If
 	'back key
@@ -270,7 +307,7 @@ Private Sub B4XPage_CloseRequest As ResumableSub
 	If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
 		Return False
 	End If
-	If Dialog2.IsInitialized And Dialog2.Visible Then
+	If Dialog2.Visible Then
 		Dialog2.Close(xui.DialogResponse_Cancel)
 		Return False
 	End If
@@ -314,7 +351,6 @@ End Sub
 Public Sub SignIn
 	SignInIndex = SignInIndex + 1
 	Dim MyIndex As Int = SignInIndex
-	Dialog.ButtonsHeight = 40dip
 	Wait For (ServerManager1.RequestServerName(Dialog)) Complete (Server As PLMServer)
 	If SignInIndex <> MyIndex Or Server.IsInitialized = False Then Return
 	Wait For (ServerManager1.VerifyInstanceFeatures(Server)) Complete (Success As Boolean)
@@ -352,7 +388,7 @@ Public Sub SignOut
 	User.AccessToken = ""
 	PersistUserAndServers
 	Statuses.Stack.Clear
-	Statuses.Refresh2(User, LinksManager.LINK_PUBLIC, False, False)
+	Statuses.Refresh2(User, LinksManager.LINK_LOCAL, False, False)
 	DrawerManager1.UpdateLeftDrawerList
 End Sub
 
@@ -375,12 +411,15 @@ Public Sub ShowMessage(str As String)
 End Sub
 
 Public Sub ConfirmMessage (Message As String) As ResumableSub
-	Wait For (xui.Msgbox2Async(Message, Constants.AppName, "Yes", "Cancel", "", Null)) Msgbox_Result (Result As Int)
+	Wait For (Dialog2.Show(Message, "Yes", "", "Cancel")) Complete (Result As Int)
 	Return Result
 End Sub
 
 Public Sub ConfirmMessage2 (Message As String, Yes As String, Cancel As String, No As String) As ResumableSub
-	Wait For (xui.Msgbox2Async(Message, Constants.AppName, Yes, Cancel, No, Null)) Msgbox_Result (Result As Int)
+	#if B4i
+	B4XPages.GetNativeParent(Me).ResignFocus
+	#End If
+	Wait For (Dialog2.Show(Message, Yes, No, Cancel)) Complete (Result As Int)
 	Return Result
 End Sub
 
@@ -418,23 +457,22 @@ Private Sub btnRefresh_Click
 End Sub
 
 Private Sub CloseDialogAndDrawer
-	If Dialog2.IsInitialized And Dialog2.Visible Then Dialog2.Close(xui.DialogResponse_Cancel)
+	If Dialog2.Visible Then Dialog2.Close(xui.DialogResponse_Cancel)
 	ClosePrevDialog
 	Drawer.LeftOpen = False
 End Sub
 
 
-Public Sub DialogSetLightTheme (diag As B4XDialog)
-	diag.BackgroundColor = xui.Color_White
-	diag.ButtonsColor = xui.Color_White
-	diag.TitleBarColor = 0xFF007EA9
-	diag.ButtonsTextColor = diag.TitleBarColor
+Public Sub DialogSetTheme (diag As B4XDialog)
+	diag.BackgroundColor = Theme.Background
+	diag.ButtonsColor = Theme.Background
+	diag.TitleBarColor = Theme.PrefSeparatorColor
+	diag.ButtonsTextColor = Theme.Link
 	diag.BorderColor = xui.Color_Transparent
 	diag.BorderWidth = 0dip
-	diag.OverlayColor = Constants.OverlayColor
-	diag.TitleBarColor = 0xFFD0D0D0
-	diag.TitleBarTextColor = 0xFF4E4F50
-	diag.BackgroundColor = Constants.DefaultTextBackground
+	diag.BodyTextColor = Theme.DefaultText
+	diag.OverlayColor = Theme.OverlayColor
+	diag.TitleBarTextColor = xui.Color_Black
 	diag.BorderCornersRadius = Constants.DialogCornerRadius
 End Sub
 
@@ -473,10 +511,12 @@ Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	If MakeSureThatUserSignedIn = False Then Return
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
+	Wait For (ShowAgreeToSafeContent) Complete (Agree As Boolean)
+	if Agree = False Then Return
 	If PostView1.IsInitialized = False Then
-		PostView1.Initialize(Me, "PostView1", Root.Width * 0.9)
+		PostView1.Initialize(Me, "PostView1", Root.Width * 0.95)
 	End If
-	Dim post As PLMPost = Statuses.feed.CreatePLMPost("")
+	Dim post As PLMPost = Statuses.feed.CreatePLMPost("", "public")
 	If MentionAcct <> "" Then post.Mentions.Add(MentionAcct)
 	PostView1.SetContent(post, Null)
 	Dim rs As Object = ShowDialogWithoutButtons(PostView1.mBase, False)
@@ -484,6 +524,19 @@ Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	PostView1.B4XFloatTextField1.RequestFocusAndShowKeyboard
 	Wait For (rs) Complete (Result As Int)
 	PostView1.RemoveFromParent
+End Sub
+
+Public Sub ShowAgreeToSafeContent As ResumableSub
+	If Settings.GetUserAgreedToSafeContent = False Then
+		Wait For (B4XPages.MainPage.ConfirmMessage2(Constants.UserContentAgreement, "Agree", "Cancel", "")) Complete (Result As Int)
+		If Result = xui.DialogResponse_Positive Then
+			B4XPages.MainPage.Settings.SetUserAgreed
+			Return True
+		Else
+			Return False
+		End If
+	End If
+	Return True
 End Sub
 
 Private Sub Statuses_LinkClicked (Link As PLMLink)
@@ -548,7 +601,7 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 		sv.ScrollViewOffsetY = 0
 	Else
 		DialogContainer.SetLayoutAnimated(0, 0, 0, pnl.Width, pnl.Height)
-		DialogContainer.AddView(pnl, 0, 0, DialogContainer.Width, DialogContainer.Height)
+		DialogContainer.AddView(pnl, 0, 0, DialogContainer.Width, pnl.Height)
 		DialogBtnExit.BringToFront
 	End If
 	DialogBtnExit.Top = DialogContainer.Height - DialogBtnExit.Height - 4dip
@@ -569,7 +622,7 @@ End Sub
 
 Private Sub CreatePanelForDialog As B4XView
 	Dim pnl As B4XView = xui.CreatePanel("")
-	pnl.SetLayoutAnimated(0, 0, 0, Root.Width * 0.9, Root.Height * 0.9)
+	pnl.SetLayoutAnimated(0, 0, 0, Root.Width * 0.95, Root.Height * 0.95)
 	Return pnl
 End Sub
 
@@ -659,21 +712,6 @@ Private Sub PostView1_NewPost (Status As PLMStatus)
 End Sub
 
 Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
-	If Dialog2.IsInitialized = False Then
-		Dialog2.Initialize(Root)
-		Dialog2ListTemplate.Initialize
-		DialogSetLightTheme(Dialog2)
-		Dialog2ListTemplate.CustomListView1.DefaultTextBackgroundColor = Constants.DefaultTextBackground
-		Dialog2ListTemplate.CustomListView1.DefaultTextColor = Constants.ColorDefaultText
-		Dialog2.BackgroundColor = Constants.DefaultTextBackground
-		Dialog2.BorderColor = Constants.ColorDefaultText
-		Dialog2.BorderCornersRadius = 10dip
-		Dialog2ListTemplate.CustomListView1.sv.Color = Constants.DefaultTextBackground
-		Dialog2ListTemplate.CustomListView1.sv.ScrollViewInnerPanel.Color = 0xFFDFDFDF
-		Dim lbl As B4XView = Dialog2ListTemplate.CustomListView1.DesignerLabel
-		lbl.Font = xui.CreateFontAwesome(15)
-		lbl.SetTextAlignment("CENTER", "LEFT")
-	End If
 	Dialog2ListTemplate.Options = Options
 	Dialog2ListTemplate.Resize(200dip, Min(70dip * Options.Size, 250dip))
 	Dialog2ListTemplate.CustomListView1.AsView.Height = Dialog2ListTemplate.mBase.Height
@@ -691,6 +729,16 @@ Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
 		Return ""
 	End If
 End Sub
+
+Private Sub SetListTemplateTheme
+	If Dialog2ListTemplate.IsInitialized = False Then Return
+	ViewsCache1.SetCLVBackground(Dialog2ListTemplate.CustomListView1, False)
+	Dim lbl As B4XView = Dialog2ListTemplate.CustomListView1.DesignerLabel
+	lbl.Font = xui.CreateFontAwesome(15)
+	lbl.SetTextAlignment("CENTER", "LEFT")
+End Sub
+
+
 
 Private Sub B4XPage_KeyboardStateChanged (Height As Float)
 	B4iKeyboardHeight = Height
