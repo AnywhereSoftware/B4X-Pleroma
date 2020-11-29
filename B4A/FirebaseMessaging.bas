@@ -34,7 +34,7 @@ Sub fm_MessageArrived (Message As RemoteMessage)
 	n.Initialize2(n.IMPORTANCE_HIGH)
 	n.Icon = "icon"
 	n.AutoCancel = True
-	n.SetInfo(Message.GetData.Get("title"), Message.GetData.Get("body"), Main)
+	n.SetInfo2(Message.GetData.Get("title"), Message.GetData.Get("body"), "message", Main)
 	n.Notify(Rnd(1, 10000))
 End Sub
 

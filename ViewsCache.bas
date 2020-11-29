@@ -227,3 +227,10 @@ Public Sub SetCLVBackground (clv As CustomListView, SecondaryBackground As Boole
 	End If
 	clv.DefaultTextColor = mTheme.DefaultText
 End Sub
+
+Public Sub CreateNotificationPanel As B4XView
+	Dim p As B4XView = xui.CreatePanel("")
+	p.SetLayoutAnimated(0, 0, 0, 10dip, 10dip)
+	p.SetColorAndBorder(xui.Color_Red, 0, 0, 5dip)
+	Return p	
+End Sub

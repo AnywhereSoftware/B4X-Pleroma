@@ -9,15 +9,17 @@ Sub Class_Globals
 	Public LINK_HOME As PLMLink
 	Private DefaultLinks As List
 	Private DefaultLinksTitles As B4XSet
+	Public LinksWithStreamerEvents As B4XSet
 End Sub
 
 Public Sub Initialize
 	CreateInitialLinks
 	DefaultLinks = Array(LINK_HOME, LINK_NOTIFICATIONS, LINK_LOCAL, LINK_PUBLIC)
 	DefaultLinksTitles.Initialize
-	For Each LINK As PLMLink In DefaultLinks
-		DefaultLinksTitles.Add(LINK.Title)
+	For Each Link As PLMLink In DefaultLinks
+		DefaultLinksTitles.Add(Link.Title)
 	Next
+	LinksWithStreamerEvents.Initialize
 End Sub
 
 Private Sub CreateInitialLinks
@@ -29,14 +31,14 @@ Private Sub CreateInitialLinks
 	LINK_NOTIFICATIONS = tu.CreatePLMLink(Constants.URL_NOTIFICATIONS, Constants.LINKTYPE_NOTIFICATIONS, "Notifications")
 End Sub
 
-Public Sub IsRecentLink (LINK As PLMLink) As Boolean
-	If LINK.IsInitialized = False Then Return False
-	If LINK.LinkType = Constants.LINKTYPE_USER And B4XPages.MainPage.User.SignedIn Then
-		If LINK.URL.Contains(B4XPages.MainPage.User.Id) Then
+Public Sub IsRecentLink (Link As PLMLink) As Boolean
+	If Link.IsInitialized = False Then Return False
+	If Link.LinkType = Constants.LINKTYPE_USER And B4XPages.MainPage.User.SignedIn Then
+		If Link.URL.Contains(B4XPages.MainPage.User.Id) Then
 			Return False
 		End If
 	End If
-	Return DefaultLinksTitles.Contains(LINK.Title) = False
+	Return DefaultLinksTitles.Contains(Link.Title) = False
 End Sub
 
 Public Sub GetDefaultLinksWithoutHome As List

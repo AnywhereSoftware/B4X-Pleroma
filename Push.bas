@@ -90,6 +90,7 @@ Private Sub B4iSubscribe (auth As String)
 	Main.App.RegisterForRemoteNotifications
 	Main.App.RegisterUserNotifications(True, True, True)
 	Main.fm.SubscribeToTopic(auth)
+	
 End Sub
 #End If
 

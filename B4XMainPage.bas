@@ -30,7 +30,7 @@ Sub Class_Globals
 	Public User As PLMUser
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
-	Private HamburgerIcon As B4XBitmap
+	Private HamburgerIcon, HamburgerIconWithNotification As B4XBitmap
 	
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
@@ -40,7 +40,7 @@ Sub Class_Globals
 	Private DialogListOfStatuses As ListOfStatuses
 	Private DialogBtnExit As B4XView
 	Private DialogIndex As Int
-	Private DrawerManager1 As DrawerManager
+	Public DrawerManager1 As DrawerManager
 	Public Toast As BCToast
 	Private AnotherProgressBar1 As AnotherProgressBar
 	Private ProgressCounter As Int
@@ -66,6 +66,11 @@ Sub Class_Globals
 	#End If
 	Public Report As ReportManager
 	Public Theme As ThemeManager
+	Public Stream As Streamer
+	Private StreamerNotificationsLinkSize As Int = -1
+	#if B4J
+	Private ivHamburger As ImageView
+	#End If
 End Sub
 
 Public Sub Initialize
@@ -97,6 +102,7 @@ Public Sub Initialize
 	push1.Initialize
 	Report.Initialize
 	Theme.RegisterForEvents(Me)
+	Stream.Initialize
 End Sub
 
 Private Sub UpdateOldStore
@@ -144,6 +150,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	#end if
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcon = xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True)
+	HamburgerIconWithNotification = xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True)
 	B4XPages.SetTitle(Me, Constants.AppName)
 	MediaChooser1.Initialize
 	CreateMenu
@@ -202,11 +209,8 @@ Private Sub CreateMenu
 	mi = B4XPages.AddMenuItem(Me, cs.Initialize.Typeface(Typeface.FONTAWESOME).Size(20).Append(Constants.SearchIconChar).PopAll)
 	mi.AddToBar = True
 	mi.Tag = "search"
-	
 	#Else if B4i
 	Dim bb As BarButton
-	bb.InitializeBitmap(HamburgerIcon, "hamburger")
-	B4XPages.GetNativeParent(Me).TopLeftButtons = Array(bb)
 	bb.InitializeSystem(bb.ITEM_REFRESH, "refresh")
 	Dim bb2 As BarButton
 	bb2.InitializeSystem(bb.ITEM_SEARCH, "search")
@@ -214,18 +218,17 @@ Private Sub CreateMenu
 	bb3.InitializeSystem(bb.ITEM_ADD, "new post")
 	B4XPages.GetNativeParent(Me).TopRightButtons = Array(bb2, bb, bb3)
 	#Else If B4J
-	Dim iv As ImageView
-	iv.Initialize("imgHamburger")
-	iv.SetImage(HamburgerIcon)
-	Drawer.CenterPanel.AddView(iv, 2dip, 2dip, 32dip, 32dip)
-	iv.PickOnBounds = True
+	ivHamburger.Initialize("imgHamburger")
+	Drawer.CenterPanel.AddView(ivHamburger, 2dip, 2dip, 32dip, 32dip)
+	ivHamburger.PickOnBounds = True
 	#end if
+	UpdateHamburgerIcon (False)
 End Sub
 
 
 #if B4J
 Private Sub imgHamburger_MouseClicked (EventData As MouseEvent)
-	OpenDrawer
+	ToggleDrawer
 End Sub
 #else
 
@@ -327,14 +330,52 @@ End Sub
 Private Sub B4XPage_Appear
 	#if B4A
 	Sleep(0)
+	StreamerNotificationsLinkSize = -1
 	B4XPages.GetManager.ActionBar.RunMethod("setDisplayHomeAsUpEnabled", Array(True))
-	Dim bd As BitmapDrawable
-	bd.Initialize(HamburgerIcon)
-	B4XPages.GetManager.ActionBar.RunMethod("setHomeAsUpIndicator", Array(bd))
+	UpdateHamburgerIcon (False)
 	auth.CallFromResume(B4XPages.GetNativeParent(Me).GetStartingIntent)
 	#End If
 	Drawer.LeftOpen = False
 End Sub
+
+Public Sub UpdateHamburgerIcon (blink As Boolean)
+	If blink = False And StreamerNotificationsLinkSize >= 0 And ((StreamerNotificationsLinkSize > 0) = (LinksManager.LinksWithStreamerEvents.Size > 0)) Then
+		Return
+	End If
+	If StreamerNotificationsLinkSize > 0 And blink Then
+		SetHamburgerIcon(HamburgerIcon)
+		Sleep(500)
+	End If
+	StreamerNotificationsLinkSize = LinksManager.LinksWithStreamerEvents.Size
+	Dim icon As B4XBitmap
+	If LinksManager.LinksWithStreamerEvents.Size > 0 Then
+		icon = HamburgerIconWithNotification
+	Else
+		icon = HamburgerIcon
+	End If
+	SetHamburgerIcon(icon)
+End Sub
+
+Private Sub SetHamburgerIcon (icon As B4XBitmap)
+	#if B4A
+	Dim bd As BitmapDrawable
+	bd.Initialize(icon)
+	B4XPages.GetManager.ActionBar.RunMethod("setHomeAsUpIndicator", Array(bd))
+	#else if B4i
+	Dim bb As BarButton
+	bb.InitializeBitmap(KeepOriginalColors(icon), "hamburger")
+	B4XPages.GetNativeParent(Me).TopLeftButtons = Array(bb)
+	#Else if B4J
+	ivHamburger.SetImage(icon)
+	#End If
+End Sub
+
+#if B4i
+Sub KeepOriginalColors(bmp As Bitmap) As Bitmap
+	Dim no As NativeObject = bmp
+	Return no.RunMethod("imageWithRenderingMode:", Array(1))
+End Sub
+#End If
 
 Private Sub B4XPage_Disappear
 	#if B4A
@@ -442,6 +483,7 @@ Private Sub AfterSignIn
 	DrawerManager1.SignIn
 	DrawerManager1.UpdateLeftDrawerList
 	push1.Subscribe
+	Stream.UserChanged
 End Sub
 
 Public Sub GetServer As PLMServer
@@ -512,7 +554,7 @@ Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
 	Wait For (ShowAgreeToSafeContent) Complete (Agree As Boolean)
-	if Agree = False Then Return
+	If Agree = False Then Return
 	If PostView1.IsInitialized = False Then
 		PostView1.Initialize(Me, "PostView1", Root.Width * 0.95)
 	End If
@@ -647,11 +689,13 @@ End Sub
 
 
 
-Private Sub Statuses_TitleChanged (Title As String)
+Private Sub Statuses_LinkUpdated (Link As PLMLink)
 	Dim st As ListOfStatuses = Sender
 	If st = DialogListOfStatuses Then Return
-	B4XPages.SetTitle(Me, Title)
+	LinksManager.LinksWithStreamerEvents.Remove(Link.URL)
+	B4XPages.SetTitle(Me, Link.Title)
 	DrawerManager1.StackChanged
+	UpdateHamburgerIcon (False)
 End Sub
 
 
@@ -767,4 +811,14 @@ Public Sub CreatePLMResult2 (Success As Boolean, ErrorMessage As String) As PLMR
 	t1.Success = Success
 	t1.ErrorMessage = ErrorMessage
 	Return t1
+End Sub
+
+Public Sub NotificationClicked
+	If User.SignedIn = False Then
+		Sleep(3000)
+	End If
+	If User.SignedIn Then
+		Sleep(1000)
+		Statuses.Refresh2(User, LinksManager.LINK_NOTIFICATIONS, True, False)
+	End If
 End Sub

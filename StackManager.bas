@@ -30,7 +30,7 @@ Public Sub PushToStack (Feed As PleromaFeed, CLV As CustomListView)
 			Exit
 		End If
 	Next
-	If NewItem.Link.LinkType = Constants.LINKTYPE_NOTIFICATIONS Then
+	If NewItem.Link.LinkType = Constants.LINKTYPE_NOTIFICATIONS Or NewItem.Link.URL = B4XPages.MainPage.LinksManager.LINK_HOME.URL Then
 		NewItem.Time = 0 'always reload
 	End If
 	Items.Put(NewItem.Link, NewItem)

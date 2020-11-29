@@ -55,22 +55,22 @@ End Sub
 #end if
 
 Public Sub UpdateLeftDrawerList
-	Dim spaces As String = "   "
 	lstDrawer.Clear
 	Dim weHaveAUser As Boolean = Not(mp.User.SignedIn = False Or UserItem.IsInitialized = False)
 	If weHaveAUser = False Then
-		lstDrawer.AddTextItem($"${"" & Chr(0xF090)}${spaces}Sign in"$, "sign in")
+		AddDrawerItem(0xF090, "Sign in", Null)
+		lstDrawer.GetRawListItem(lstDrawer.Size - 1).Value = "sign in"
 	Else
 		UserItem.RemoveViewFromParent
 		UserItem.Color = mTheme.SecondBackground
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
 	End If
 	If weHaveAUser Then
-		lstDrawer.AddTextItem($"${"" & Chr(0xF015)}${spaces}Home"$, LinksManager.LINK_HOME)
-		lstDrawer.AddTextItem($"${"" & Chr(0xF0F3)}${spaces}Notifications"$, LinksManager.LINK_NOTIFICATIONS)
+		AddDrawerItem(0xF015, "Home", LinksManager.LINK_HOME)
+		AddDrawerItem(0xF0F3, "Notifications", LinksManager.LINK_NOTIFICATIONS)
 	End If
 	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
-		lstDrawer.AddTextItem($"${"" & Chr(0xF1D7)}${spaces}${Link.Title}"$, Link)
+		AddDrawerItem(0xF1D7, Link.Title, Link)
 	Next
 	
 	Divider.RemoveViewFromParent
@@ -80,15 +80,28 @@ Public Sub UpdateLeftDrawerList
 	For i = Links.Size - 1 To 0 Step - 1
 		Dim Link As PLMLink = Links.Get(i)
 		If LinksManager.IsRecentLink(Link) = False Then Continue
-		Dim Title As String = Link.Title
+		Dim icon As Int = 0
 		If Link.LINKTYPE = Constants.LINKTYPE_SEARCH Then
-			Title = Constants.SearchIconChar & spaces & Title
+			icon = 0xF002
 		End If
-		lstDrawer.AddTextItem(Title, Link)
+		AddDrawerItem(icon, Link.Title, Link)
 		Dim lbl As B4XView = CreateXLabel
 		Dim p As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
 		p.AddView(lbl, lstDrawer.AsView.Width - 2dip - lbl.Width, p.Height / 2 - lbl.Height / 2, lbl.Width, lbl.Height)
 	Next
+End Sub
+
+Private Sub AddDrawerItem (icon As Int, Title As String, link As PLMLink)
+	Dim s As String
+	If icon > 0 Then
+		s = $"${"" & Chr(icon)}   "$
+	End If
+	lstDrawer.AddTextItem($"${s}${Title}"$, link)
+	If link <> Null And LinksManager.LinksWithStreamerEvents.Contains(link.URL) Then
+		Dim circle As B4XView = B4XPages.MainPage.ViewsCache1.CreateNotificationPanel
+		Dim p As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
+		p.AddView(circle, p.Width - 20dip, p.Height / 2 - circle.Height / 2, circle.Width, circle.Height)
+	End If
 End Sub
 
 Private Sub CreateXLabel As B4XView

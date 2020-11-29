@@ -1,31 +1,32 @@
 ﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
 File1=AccountView.bal
-File10=lstDrawerUser.bal
-File11=MainPage.bal
-File12=MiniAccountView.bal
-File13=Missing-image-232x150.png
-File14=nsfw.74818f9.png
-File15=play.png
-File16=PostView.bal
-File17=PostView.json
-File18=PostViewMedia.bal
-File19=ReactionsView.bal
+File10=LeftDrawer.bal
+File11=lstDrawerUser.bal
+File12=MainPage.bal
+File13=MiniAccountView.bal
+File14=Missing-image-232x150.png
+File15=nsfw.74818f9.png
+File16=play.png
+File17=PostView.bal
+File18=PostView.json
+File19=PostViewMedia.bal
 File2=AccountView.json
-File20=Report.json
-File21=Search.bal
-File22=Settings.json
-File23=StatusList.bal
-File24=StatusViewImpl.bal
-File25=theme.json
-File26=VideoPlayer.bal
-File27=WebViewDialog.bal
+File20=ReactionsView.bal
+File21=Report.json
+File22=Search.bal
+File23=Settings.json
+File24=StatusList.bal
+File25=StatusViewImpl.bal
+File26=theme.json
+File27=VideoPlayer.bal
+File28=WebViewDialog.bal
 File3=CardView.bal
 File4=DialogContainer.bal
 File5=empty.png
 File6=GifView.bal
 File7=hamburger.png
-File8=icon.png
-File9=LeftDrawer.bal
+File8=hamburger_notif.png
+File9=icon.png
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -46,6 +47,7 @@ FileGroup24=Default Group
 FileGroup25=Default Group
 FileGroup26=Default Group
 FileGroup27=Default Group
+FileGroup28=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -71,6 +73,7 @@ Library21=fileprovider
 Library22=audio
 Library23=firebasenotifications
 Library24=byteconverter
+Library25=websocket
 Library3=bctextengine
 Library4=json
 Library5=xui views
@@ -98,21 +101,22 @@ Module23=|relative|..\ServerManager
 Module24=|relative|..\StackManager
 Module25=Starter
 Module26=|relative|..\StatusView
-Module27=|relative|..\StubView
-Module28=|relative|..\TextUtils
-Module29=|relative|..\ThemeManager
+Module27=|relative|..\Streamer
+Module28=|relative|..\StubView
+Module29=|relative|..\TextUtils
 Module3=|relative|..\B4XMainPage
-Module30=|relative|..\ViewsCache
-Module31=|relative|..\WebViewDialog
+Module30=|relative|..\ThemeManager
+Module31=|relative|..\ViewsCache
+Module32=|relative|..\WebViewDialog
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
 Module6=|relative|..\Constants
 Module7=|relative|..\DrawerManager
 Module8=FirebaseMessaging
 Module9=|relative|..\HtmlToRuns
-NumberOfFiles=27
-NumberOfLibraries=24
-NumberOfModules=31
+NumberOfFiles=28
+NumberOfLibraries=25
+NumberOfModules=32
 Version=10.2
 @EndOfDesignText@
 #Region  Project Attributes 
@@ -133,7 +137,7 @@ Version=10.2
 #AdditionalRes: ../icon
 Sub Process_Globals
 	Public ActionBarHomeClicked As Boolean
-	
+	Private LastIntent As Intent
 End Sub
 
 Sub Globals
@@ -167,6 +171,12 @@ Sub Activity_KeyPress (KeyCode As Int) As Boolean
 End Sub
 
 Sub Activity_Resume
+	Dim in As Intent = Activity.GetStartingIntent
+	If in.IsInitialized And in.HasExtra("Notification_Tag") Then
+		If LastIntent.IsInitialized = False Or LastIntent <> in Then
+			If B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized Then B4XPages.MainPage.NotificationClicked			
+		End If
+	End If
 	B4XPages.Delegate.Activity_Resume
 End Sub
 

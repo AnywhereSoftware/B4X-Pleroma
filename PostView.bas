@@ -55,6 +55,7 @@ End Sub
 
 Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	PostOptions = CreateMap("nsfw": False, "visibility": Constants.VisibilityKeyToUserValue.GetDefault(Content.Visibility, "Public"))
+	Dim IsSameReplyAsPreviousOne As Boolean = mReplyToId <> "" And mReplyToId = Content.ReplyToStatusId
 	mReplyToId = Content.ReplyToStatusId
 	mBase.Color = mTheme.Background
 	For Each pm As PostMedia In Medias
@@ -71,7 +72,9 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 		If acct = B4XPages.MainPage.User.Acct Then Continue
 		mentions.Append("@").Append(acct).Append(" ")
 	Next
-	B4XFloatTextField1.Text = mentions.ToString
+	If IsSameReplyAsPreviousOne = False Then
+		B4XFloatTextField1.Text = mentions.ToString
+	End If
 	B4XFloatTextField1.RequestFocusAndShowKeyboard
 	#if B4J
 	Dim ta As TextArea = B4XFloatTextField1.TextField

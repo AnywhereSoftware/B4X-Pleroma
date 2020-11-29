@@ -122,5 +122,5 @@ End Sub
 Public Sub SetFloatTextFieldColor (ft As B4XFloatTextField)
 	ft.TextField.TextColor = DefaultText
 	If ft.lblClear.IsInitialized Then ft.lblClear.TextColor = DefaultText
-	if ft.lblV.IsInitialized Then ft.lblV.TextColor = DefaultText
+	If ft.lblV.IsInitialized Then ft.lblV.TextColor = DefaultText
 End Sub

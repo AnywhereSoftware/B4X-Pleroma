@@ -18,10 +18,10 @@ Public Sub SendMessage(Message As NotificationMessage)
 	Dim m As Map = CreateMap("to": $"/topics/${Message.Topic}"$)
 	Dim data As Map = CreateMap("title": Message.Title, "body": Message.Body)
 	If Message.B4i Then
-		Dim iosalert As Map =  CreateMap("title": Message.Title, "body": Message.Body, "sound": "default")
-		m.Put("notification", iosalert)
+		Dim iosalert As Map =  CreateMap("title": Message.Title, "body": Message.Body, "sound": "default", "badge": 1)
 		m.Put("notification", iosalert)
 		m.Put("priority", 10)
+		
 	End If
 	m.Put("data", data)
 	Dim jg As JSONGenerator

@@ -6,7 +6,7 @@ Version=8.3
 @EndOfDesignText@
 #Event: AvatarClicked (Account As PLMAccount)
 #Event: LinkClicked (URL As PLMLink)
-#Event: TitleChanged (Title As String)
+#Event: LinkUpdated (Link As PLMLink)
 Sub Class_Globals
 	Private CLV As CustomListView
 	Type StatusesListUsedManager (UsedStatusViews As Map, UnusedStatusViews As B4XSet)
@@ -124,7 +124,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 		End If
 	End If
 	feed.Start (KeepOldStatuses)
-	CallSub2(mCallBack, mEventName & "_TitleChanged", NewLink.Title)
+	CallSub2(mCallBack, mEventName & "_LinkUpdated", NewLink)
 	If CLV.Size = 0 Then
 		AddMoreItems
 	End If
