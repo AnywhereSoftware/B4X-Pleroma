@@ -26,14 +26,12 @@ Public Sub SendMessage(Message As NotificationMessage)
 	m.Put("data", data)
 	Dim jg As JSONGenerator
 	jg.Initialize(m)
-	Log(jg.ToPrettyString(4))
 	Job.PostString("https://fcm.googleapis.com/fcm/send", jg.ToString)
 	Job.GetRequest.SetContentType("application/json;charset=UTF-8")
 	Job.GetRequest.SetHeader("Authorization", "key=" & API_KEY)
 	Wait For (Job) JobDone(Job As HttpJob)
-	Log(Job)
 	If Job.Success Then
-		Log(Job.GetString)
+		Log("Push sent")
 	End If
 	Job.Release
 End Sub

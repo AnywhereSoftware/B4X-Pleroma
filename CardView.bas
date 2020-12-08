@@ -27,11 +27,7 @@ Public Sub Initialize
 	BBListItem1.TextEngine = B4XPages.MainPage.TextUtils1.TextEngine
 	BBListItem1.LineSpacingFactor = 0.2
 	base.Tag = Me
-	
-	#if B4A
-	Dim jo As JavaObject = base
-	jo.RunMethod("setClipToOutline", Array(True))
-	#end if
+	B4XPages.MainPage.ViewsCache1.SetClipToOutline(base)
 End Sub
 
 Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attachments As List)

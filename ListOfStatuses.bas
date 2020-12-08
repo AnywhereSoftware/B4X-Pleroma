@@ -70,6 +70,7 @@ Private Sub RemoveInsertedItems
 	For Each key As String In InsertedItems.Keys
 		RemoveInsertedView(key, False)
 	Next
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 Public Sub Refresh
@@ -195,6 +196,7 @@ End Sub
 Private Sub PostView1_NewPost (Status As PLMStatus)
 	Dim ReplyId As String = PostView1.mReplyToId
 	RemoveInsertedItems
+	PostView1.mReplyToId = ""
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	Dim index As Int = feed.InsertItem(ReplyId, Status, Status.id)
 	If Success = False Then Return
@@ -321,7 +323,7 @@ Private Sub RemoveInvisibleItems (FirstIndex As Int, LastIndex As Int, All As Bo
 		Dim ItemsToRemove As List
 		For Each sv As Object In manager.UsedStatusViews.Keys
 			Dim ListIndex As Int = GetUsedItemIndex(manager, sv)
-			If All Or IsVisible(ListIndex, FirstIndex, LastIndex + 10) = False Then
+			If All Or IsVisible(ListIndex, FirstIndex - 1, LastIndex + 10) = False Then
 				If ItemsToRemove.IsInitialized = False Then ItemsToRemove.Initialize
 				ItemsToRemove.Add(sv)
 			Else
@@ -355,9 +357,9 @@ End Sub
 
 Sub CLV_VisibleRangeChanged (FirstIndex As Int, LastIndex As Int)
 	If LastIndex >= CLV.Size Then Return
-	FirstIndex = Max(0, FirstIndex - 2)
+	RemoveInvisibleItems(FirstIndex, LastIndex, False) 'reactions and post views can be removed in this call.
+	FirstIndex = Max(0, FirstIndex - 1)
 	LastIndex = Min(CLV.Size - 1, LastIndex + 2)
-	RemoveInvisibleItems(FirstIndex, LastIndex, False)
 	For i = FirstIndex To LastIndex
 		Dim value As PLMCLVItem = CLV.GetValue(i)
 		If value.Empty Then
@@ -462,7 +464,7 @@ Private Sub StatusView1_ShowLargeImage (URL As String, PreviewUrl As String)
 		ic.SetPermImageImmediately(ic.EMPTY, ZoomImageView1.Tag, ic.RESIZE_NONE)
 		ic.SetImage(URL, ZoomImageView1.Tag, ic.RESIZE_NONE)
 	End If
-
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 
@@ -530,6 +532,7 @@ Private Sub CloseLargeImage
 	If pnlLargeImage.Visible Then
 		B4XPages.MainPage.Drawer.GestureEnabled = True
 		pnlLargeImage.SetVisibleAnimated(100, False)
+		B4XPages.MainPage.UpdateHamburgerIcon
 	End If
 End Sub
 
@@ -537,23 +540,23 @@ Private Sub btnLargeImageClose_Click
 	CloseLargeImage
 End Sub
 
-Public Sub BackKeyPressedShouldClose As Boolean
+Public Sub BackKeyPressedShouldClose (OnlyTesting As Boolean, BackButton As Boolean) As Boolean
 	If pnlLargeImage.Visible Then
-		CloseLargeImage
-		Return False
+		If OnlyTesting = False Then CloseLargeImage
+		Return True
 	Else if InsertedItems.Size > 0 Then
 		For Each iv As PLMInsertedCLVItem In InsertedItems.Values
-			If CallSub(iv.Item, "BackKeyPressed") = True Then Return False
-			RemoveInsertedView(iv.Key, False)
-			Return False
+			If CallSub2(iv.Item, "BackKeyPressed", OnlyTesting) = True Then Return True
+			If OnlyTesting = False Then RemoveInsertedView(iv.Key, False)
+			Return True
 		Next
-	Else If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
-		Return False
-	Else If btnBack.Visible Then
-		GoBack
-		Return False
+	Else If AccountView1.IsInitialized And AccountView1.BackKeyPressed (OnlyTesting) Then
+		Return True
+	Else If BackButton And btnBack.Visible Then
+		If OnlyTesting = False Then GoBack
+		Return True
 	End If
-	Return True
+	Return False
 End Sub
 
 Sub ZoomImageView1_Click
@@ -609,7 +612,7 @@ Private Sub InsertReactOrPost(sv As StatusView, key As String)
 	Else
 		InsertPostView(ListIndex, sv.mStatus)
 	End If
-	
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 Private Sub AreWeTogglingInsertedView(Key As String, Status As PLMStatus) As Boolean
@@ -716,4 +719,5 @@ End Sub
 
 Private Sub PostView1_Close
 	RemoveInsertedView(feed.NewPostId, True)
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub

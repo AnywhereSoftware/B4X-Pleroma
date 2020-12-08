@@ -2,28 +2,31 @@
 Build1=Default,b4j.example
 Build2=Online,b4j.example,ONLINE
 Group=Default Group
-Library1=jcore
-Library2=jserver
-Library3=byteconverter
-Library4=javaobject
-Library5=jstringutils
-Library6=b4xcollections
-Library7=jokhttputils2
-Library8=json
+Library1=b4xcollections
+Library2=byteconverter
+Library3=javaobject
+Library4=jcore
+Library5=jokhttputils2
+Library6=jserver
+Library7=json
+Library8=jstringutils
+Library9=jnet
 Module1=AesGCM
 Module2=Config
-Module3=Push
-Module4=PushFCM
+Module3=CrashReport
+Module4=Push
+Module5=PushFCM
 NumberOfFiles=0
-NumberOfLibraries=8
-NumberOfModules=4
-Version=8.5
+NumberOfLibraries=9
+NumberOfModules=5
+Version=8.75
 @EndOfDesignText@
 #Region Project Attributes 
 	#CommandLineArgs:
 	#MergeLibraries: False 
 #End Region
 #AdditionalJar: bcprov-jdk15on-154
+#JavaCompilerPath: 8, C:\Program Files\Java\jdk1.8.0_211\bin\javac.exe
 Sub Process_Globals
 	Private srvr As Server
 	Public Config1 As Config
@@ -44,6 +47,7 @@ Sub AppStart (Args() As String)
 	srvr.Port = 51050
 	srvr.StaticFilesFolder = File.Combine(File.DirApp, "www")
 	srvr.AddHandler("/push/*", "push", True)
+	srvr.AddHandler("/report", "CrashReport", False)
 	#if ONLINE
 	ConfigureSSL(srvr.Port + 1)
 	#End If

@@ -36,8 +36,9 @@ Public Sub Show(Account As PLMAccount, StatusId As String)
 		fl.Update
 	Next
 	PrefDialog.CustomListView1.ScrollToItem(0)
-	B4XPages.MainPage.ViewsCache1.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	B4XPages.MainPage.ViewsCache1.AfterShowDialog(PrefDialog.Dialog)
 	Wait For (rs) Complete (Result As Int)
+	B4XPages.MainPage.UpdateHamburgerIcon
 	If Result = xui.DialogResponse_Positive Then
 		Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root, True)
 		If j = Null Then Return
@@ -60,9 +61,9 @@ Public Sub Show(Account As PLMAccount, StatusId As String)
 End Sub
 
 'returns True if the dialog was closed
-Public Sub BackKeyPressed As Boolean
+Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
-		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		If OnlyTesting = False Then PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
 		Return True
 	End If
 	Return False

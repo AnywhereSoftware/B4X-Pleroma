@@ -80,7 +80,7 @@ Private Sub Client_TextMessage (Message As String)
 				links.LinksWithStreamerEvents.Add(links.LINK_NOTIFICATIONS.URL)
 		End Select
 		B4XPages.MainPage.DrawerManager1.UpdateLeftDrawerList
-		B4XPages.MainPage.UpdateHamburgerIcon (True)
+		B4XPages.MainPage.UpdateHamburgerIcon
 	End If
 End Sub
 
@@ -100,6 +100,6 @@ Private Sub IsClientConnected As Boolean
 	#if B4i
 	Return client.IsInitialized And client.Connected
 	#else
-	return client.Connected
+	Return client.Connected
 	#End If
 End Sub

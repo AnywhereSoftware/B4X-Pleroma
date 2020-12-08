@@ -135,7 +135,8 @@ Private Sub Post (status As String)
 			If AttachmentIds.Size > 0 Then
 				Sleep(1000) 'give the server some time to process the attachments.
 			End If
-			CallSub2(mCallback, mEventName & "_NewPost", st)
+			CallSub2(mCallback, mEventName & "_NewPost", st) 'ReplyToId is reset after this call.
+			
 		End If
 		
 	End If
@@ -290,14 +291,15 @@ Private Sub btnOptions_Click
 		PrefDialog = B4XPages.MainPage.ViewsCache1.CreatePreferencesDialog("PostView.json")
 	End If
 	Dim rs As Object = PrefDialog.ShowDialog(PostOptions, "Ok", "Cancel")
-	B4XPages.MainPage.ViewsCache1.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	B4XPages.MainPage.ViewsCache1.AfterShowDialog(PrefDialog.Dialog)
 	Wait For (rs) Complete (Success As Int)
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 'returns True if the dialog was closed
-Public Sub BackKeyPressed As Boolean
+Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
-		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		If OnlyTesting = False Then PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
 		Return True
 	End If
 	Return False

@@ -37,6 +37,25 @@ Public Sub GetVideoPlayer (sv As StatusView, attachment As PLMMedia) As Object
 	Return vp
 End Sub
 
+Public Sub StopVideoPlayback (playerview As B4XView)
+	#if B4A
+	Dim player As SimpleExoPlayer = playerview.Tag
+	player.Pause
+	#Else If B4i
+	Dim player As VideoPlayer = playerview.Tag
+	player.Pause
+	#End If
+End Sub
+
+Public Sub StopPlaybackOfOtherVideos (playerview As B4XView)
+	For Each vp As B4XView In VideoPlayers.Keys
+		Dim used As Boolean = VideoPlayers.Get(vp)
+		If used And vp <> playerview Then
+			StopVideoPlayback(vp)
+		End If
+	Next
+End Sub
+
 'This should match the Sender value in VideoPlayer1_Ready event.
 Private Sub GetVideoPlayerKey (vp As B4XView) As Object 'ignore
 	#if B4i
@@ -76,7 +95,7 @@ End Sub
 
 Public Sub ReturnVideoPlayer(vp As B4XView)
 	VideoPlayers.Put(vp, False)
-	VideoPlayers.Remove(GetVideoPlayerKey(vp))	
+	VideosToStatusViews.Remove(GetVideoPlayerKey(vp))
 End Sub
 
 Private Sub CreateVideoPlayer As Object
@@ -98,7 +117,7 @@ Private Sub CreateVideoPlayer As Object
 	VideoPlayer1.BaseView.Tag = VideoPlayer1
 	VideoPlayer1.ShowControls = False
 	Dim no As NativeObject = VideoPlayer1
-	no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorToUIColor(xui.Color_White))
+	no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorToUIColor(B4XPages.MainPage.Theme.Background))
 	Return VideoPlayer1.BaseView
 #else if B4J
 	Return Null
@@ -129,6 +148,11 @@ Public Sub SetCircleClip (pnl As B4XView)
 #else 
 	SetClipToOutline(pnl)
 #End If
+End Sub
+
+Public Sub AfterShowDialog (Dialog As B4XDialog)
+	SetClipToOutline(Dialog.Base)
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 Public Sub SetClipToOutline (pnl As B4XView)

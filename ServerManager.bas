@@ -103,8 +103,9 @@ Public Sub RequestServerName (Dialog As B4XDialog) As ResumableSub
 	lstTemplate.SetItems(keys)
 	lstTemplate.Resize(Constants.DialogWidth, Constants.DialogHeight)
 	Dim rs As Object = Dialog.ShowTemplate(lstTemplate, "", "", "Cancel")
-	B4XPages.MainPage.ViewsCache1.SetClipToOutline(Dialog.Base)
+	B4XPages.MainPage.ViewsCache1.AfterShowDialog(Dialog)
 	Wait For (rs) Complete (Result As Int)
+	B4XPages.MainPage.UpdateHamburgerIcon
 	If Result = xui.DialogResponse_Positive Then
 		Dim name As String = lstTemplate.SelectedItem.Trim
 		If name <> "" Then

@@ -1,32 +1,33 @@
 ﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
 File1=AccountView.bal
-File10=LeftDrawer.bal
-File11=lstDrawerUser.bal
-File12=MainPage.bal
-File13=MiniAccountView.bal
-File14=Missing-image-232x150.png
-File15=nsfw.74818f9.png
-File16=play.png
-File17=PostView.bal
-File18=PostView.json
-File19=PostViewMedia.bal
+File10=icon.png
+File11=LeftDrawer.bal
+File12=lstDrawerUser.bal
+File13=MainPage.bal
+File14=MiniAccountView.bal
+File15=Missing-image-232x150.png
+File16=nsfw.74818f9.png
+File17=play.png
+File18=PostView.bal
+File19=PostView.json
 File2=AccountView.json
-File20=ReactionsView.bal
-File21=Report.json
-File22=Search.bal
-File23=Settings.json
-File24=StatusList.bal
-File25=StatusViewImpl.bal
-File26=theme.json
-File27=VideoPlayer.bal
-File28=WebViewDialog.bal
+File20=PostViewMedia.bal
+File21=ReactionsView.bal
+File22=Report.json
+File23=Search.bal
+File24=Settings.json
+File25=StatusList.bal
+File26=StatusViewImpl.bal
+File27=theme.json
+File28=VideoPlayer.bal
+File29=WebViewDialog.bal
 File3=CardView.bal
-File4=DialogContainer.bal
-File5=empty.png
-File6=GifView.bal
-File7=hamburger.png
-File8=hamburger_notif.png
-File9=icon.png
+File4=close_icon.png
+File5=DialogContainer.bal
+File6=empty.png
+File7=GifView.bal
+File8=hamburger.png
+File9=hamburger_notif.png
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -48,6 +49,7 @@ FileGroup25=Default Group
 FileGroup26=Default Group
 FileGroup27=Default Group
 FileGroup28=Default Group
+FileGroup29=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -81,7 +83,7 @@ Library6=exoplayer
 Library7=b4xgifview
 Library8=minihtmlparser
 Library9=bitmapsasync
-ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   SetActivityAttribute(main, android:windowSoftInputMode, adjustResize|stateHidden)~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)~\n~CreateResourceFromFile(Macro, FirebaseNotifications.FirebaseNotifications)~\n~~\n~AddApplicationText(~\n~  <provider~\n~  android:name="android.support.v4.content.FileProvider"~\n~  android:authorities="$PACKAGE$.provider"~\n~  android:exported="false"~\n~  android:grantUriPermissions="true">~\n~  <meta-data~\n~  android:name="android.support.FILE_PROVIDER_PATHS"~\n~  android:resource="@xml/provider_paths"/>~\n~  </provider>~\n~)~\n~CreateResource(xml, provider_paths,~\n~   <files-path name="name" path="shared" />~\n~)~\n~SetApplicationAttribute(android:allowBackup, "false")~\n~SetApplicationAttribute(android:icon, "@mipmap/ic_launcher")~\n~CreateResource(mipmap-anydpi-v26, ic_launcher.xml,~\n~<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">~\n~    <background android:drawable="@mipmap/background"/>~\n~    <foreground android:drawable="@mipmap/foreground"/>~\n~</adaptive-icon>~\n~)~\n~~\n~SetApplicationAttribute(android:theme, "@style/LightTheme")~\n~CreateResource(values, theme.xml,~\n~<resources>~\n~    <style~\n~        name="LightTheme" parent="@android:style/Theme.Material.Light">~\n~	   <item name="android:actionMenuTextAppearance">@style/LowerCaseMenu</item>~\n~	    <item name="android:colorPrimary">@color/actionbar</item>~\n~        <item name="android:colorPrimaryDark">@color/statusbar</item>~\n~        <item name="android:textColorPrimary">@color/textColorPrimary</item>~\n~       ~\n~    </style>~\n~	 <style name="LowerCaseMenu" parent="android:TextAppearance.Material.Widget.ActionBar.Menu">~\n~        <item name="android:textAllCaps">false</item>~\n~    </style>~\n~</resources>~\n~)~\n~CreateResource(values, colors.xml,~\n~<resources>~\n~    <color name="actionbar">#FF006FA6</color>~\n~   <color name="statusbar">#FF00496D</color>~\n~   <color name="textColorPrimary">#ffffffff</color>~\n~   <color name="navigationBar">#ff006db3</color>~\n~</resources>~\n~)~\n~~\n~
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~SetApplicationAttribute(android:largeHeap, "true")~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   SetActivityAttribute(main, android:windowSoftInputMode, adjustResize|stateHidden)~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)~\n~CreateResourceFromFile(Macro, FirebaseNotifications.FirebaseNotifications)~\n~~\n~AddApplicationText(~\n~  <provider~\n~  android:name="android.support.v4.content.FileProvider"~\n~  android:authorities="$PACKAGE$.provider"~\n~  android:exported="false"~\n~  android:grantUriPermissions="true">~\n~  <meta-data~\n~  android:name="android.support.FILE_PROVIDER_PATHS"~\n~  android:resource="@xml/provider_paths"/>~\n~  </provider>~\n~)~\n~CreateResource(xml, provider_paths,~\n~   <files-path name="name" path="shared" />~\n~)~\n~SetApplicationAttribute(android:allowBackup, "false")~\n~SetApplicationAttribute(android:icon, "@mipmap/ic_launcher")~\n~CreateResource(mipmap-anydpi-v26, ic_launcher.xml,~\n~<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">~\n~    <background android:drawable="@mipmap/background"/>~\n~    <foreground android:drawable="@mipmap/foreground"/>~\n~</adaptive-icon>~\n~)~\n~~\n~SetApplicationAttribute(android:theme, "@style/LightTheme")~\n~CreateResource(values, theme.xml,~\n~<resources>~\n~    <style~\n~        name="LightTheme" parent="@android:style/Theme.Material.Light">~\n~	   <item name="android:actionMenuTextAppearance">@style/LowerCaseMenu</item>~\n~	    <item name="android:colorPrimary">@color/actionbar</item>~\n~        <item name="android:colorPrimaryDark">@color/statusbar</item>~\n~        <item name="android:textColorPrimary">@color/textColorPrimary</item>~\n~       ~\n~    </style>~\n~	 <style name="LowerCaseMenu" parent="android:TextAppearance.Material.Widget.ActionBar.Menu">~\n~        <item name="android:textAllCaps">false</item>~\n~    </style>~\n~</resources>~\n~)~\n~CreateResource(values, colors.xml,~\n~<resources>~\n~    <color name="actionbar">#FF006FA6</color>~\n~   <color name="statusbar">#FF00496D</color>~\n~   <color name="textColorPrimary">#ffffffff</color>~\n~   <color name="navigationBar">#ff006db3</color>~\n~</resources>~\n~)~\n~~\n~
 Module1=|relative|..\AccountView
 Module10=|relative|..\ImagesCache
 Module11=|relative|..\ListOfStatuses
@@ -114,15 +116,15 @@ Module6=|relative|..\Constants
 Module7=|relative|..\DrawerManager
 Module8=FirebaseMessaging
 Module9=|relative|..\HtmlToRuns
-NumberOfFiles=28
+NumberOfFiles=29
 NumberOfLibraries=25
 NumberOfModules=32
 Version=10.2
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 4
-	#VersionName: 1.26
+	#VersionCode: 6
+	#VersionName: 1.28
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False

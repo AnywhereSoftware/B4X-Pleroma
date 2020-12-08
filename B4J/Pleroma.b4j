@@ -110,7 +110,7 @@ Module9=|relative|..\ImagesCache
 NumberOfFiles=27
 NumberOfLibraries=22
 NumberOfModules=30
-Version=8.5
+Version=8.75
 @EndOfDesignText@
 #Region Project Attributes 
 	#MainFormWidth: 600

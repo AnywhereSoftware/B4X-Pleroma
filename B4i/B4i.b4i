@@ -1,33 +1,34 @@
 ﻿Build1=Default,b4i.pleroma,HU2_PUBLIC
 Build2=Simulator,b4i.pleroma,HU2_PUBLIC,SIMULATOR
 File1=AccountView.bil
-File10=LeftDrawer.bil
-File11=lstDrawerUser.bil
-File12=MainPage.bil
-File13=MiniAccountView.bil
-File14=Missing-image-232x150.png
-File15=nsfw.74818f9.png
-File16=play.png
-File17=PostView.bil
-File18=PostView.json
-File19=PostViewMedia.bil
+File10=icon.png
+File11=LeftDrawer.bil
+File12=lstDrawerUser.bil
+File13=MainPage.bil
+File14=MiniAccountView.bil
+File15=Missing-image-232x150.png
+File16=nsfw.74818f9.png
+File17=play.png
+File18=PostView.bil
+File19=PostView.json
 File2=AccountView.json
-File20=ReactionsView.bil
-File21=Report.json
-File22=Search.bil
-File23=Settings.json
-File24=StatusList.bil
-File25=StatusViewImpl.bil
-File26=theme.json
-File27=VideoPlayer.bil
-File28=WebViewDialog.bil
+File20=PostViewMedia.bil
+File21=ReactionsView.bil
+File22=Report.json
+File23=Search.bil
+File24=Settings.json
+File25=StatusList.bil
+File26=StatusViewImpl.bil
+File27=theme.json
+File28=VideoPlayer.bil
+File29=WebViewDialog.bil
 File3=CardView.bil
-File4=DialogContainer.bil
-File5=empty.png
-File6=GifView.bil
-File7=hamburger.png
-File8=hamburger_notif.png
-File9=icon.png
+File4=close_icon.png
+File5=DialogContainer.bil
+File6=empty.png
+File7=GifView.bil
+File8=hamburger.png
+File9=hamburger_notif.png
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -49,6 +50,7 @@ FileGroup25=Default Group
 FileGroup26=Default Group
 FileGroup27=Default Group
 FileGroup28=Default Group
+FileGroup29=Default Group
 FileGroup3=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
@@ -110,7 +112,7 @@ Module6=|relative|..\Constants
 Module7=|relative|..\DrawerManager
 Module8=|relative|..\HtmlToRuns
 Module9=|relative|..\ImagesCache
-NumberOfFiles=28
+NumberOfFiles=29
 NumberOfLibraries=22
 NumberOfModules=31
 Version=6.8
@@ -181,7 +183,6 @@ Private Sub Application_Start (Nav As NavigationController)
 	End If
 	#end if
 	fm.Initialize("fm")	
-	
 End Sub
 
 Private Sub fm_FCMConnected
@@ -247,27 +248,17 @@ Sub SendReportsIfNeeded As ResumableSub
 	'Page1.Title = reports
 	If reports > 0 Then
 		Sleep(0)
-		Dim sf As Object = xui.Msgbox2Async("The app crashed last time it was launched. Please help us improve and send a crash report?", _
-			"", "Yes", "No", "", Null)
-		Wait For (sf) Msgbox_Result (Result As Int)
-		If Result = xui.DialogResponse_Positive Then
-			Dim nme As NativeObject = Me
-			nme.RunMethod("sendReports:", Array(reporter))
-		Else
-			no.RunMethod("deleteAllReports", Null)
-		End If
+		Dim nme As NativeObject = Me
+		nme.RunMethod("sendReports:", Array(reporter))
 	End If
 	Return True
 End Sub
 
 Sub CreateReporter
-	reporter = reporter.Initialize("KSCrashInstallationEmail").RunMethod("sharedInstance", Null)
-	Dim recipients As List = Array("support@basic4ppc.com") '<------ change address
-	reporter.SetField("recipients", recipients)
-	reporter.SetField("reportStyle", 1) 'KSCrashEmailReportStyleApple
-	reporter.SetField("subject", "Crash Report")
-	reporter.SetField("message", "This Is a crash report")
-	reporter.SetField("filenameFmt", "crash-report-%d.txt.gz")
+	reporter = reporter.Initialize("KSCrashInstallationStandard").RunMethod("sharedInstance", Null)
+	Dim url As NativeObject
+	url = url.Initialize("NSURL").RunMethod("URLWithString:", Array(Constants.CrashReportsServer)) '"Array("https://b4x.com:51051/report"))
+	reporter.SetField("url", url)
 	reporter.RunMethod("install", Null)
 End Sub
 

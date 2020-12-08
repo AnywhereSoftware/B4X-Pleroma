@@ -86,8 +86,9 @@ Public Sub ShowSettings
 		m.Put("push_" & k, PushSettings.KeysValues.Get(k))
 	Next
 	Dim rs As Object = PrefDialog.ShowDialog(m, "Ok", "Cancel")
-	views.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	views.AfterShowDialog(PrefDialog.Dialog)
 	Wait For (rs) Complete (Result As Int)
+	B4XPages.MainPage.UpdateHamburgerIcon
 	If Result = xui.DialogResponse_Positive Then
 		Dim NeedToUpdatePush As Boolean
 		For Each k As String In PushKeys
@@ -126,9 +127,9 @@ End Sub
 
 
 'returns True if the dialog was closed
-Public Sub BackKeyPressed As Boolean
+Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
-		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		if OnlyTesting = False Then PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
 		Return True
 	End If
 	Return False

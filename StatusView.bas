@@ -272,6 +272,15 @@ Public Sub SetVisibility (visible As Boolean)
 		Else If x.Tag Is CardView Then
 			Dim cv As CardView = x.Tag
 			cv.SetVisibility(visible)
+		Else If visible = False Then
+			#if B4A
+			If x.Tag Is SimpleExoPlayer Then
+				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
+			#else if B4i
+			If x.Tag Is VideoPlayer Then
+				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
+			#End If
+			End If
 		End If
 	Next
 	BBListItem1.ChangeVisibility(visible)
@@ -547,6 +556,7 @@ Private Sub ToggleVideo (PlayerView As B4XView) 'ignore
 			player.Position = 0
 		End If
 		player.Play
+		B4XPages.MainPage.ViewsCache1.StopPlaybackOfOtherVideos(PlayerView)
 	End If
 #end if
 End Sub
@@ -639,20 +649,15 @@ End Sub
 Public Sub RemoveFromParent
 	B4XPages.MainPage.ImagesCache1.ReleaseImage(imgAvatar.Tag)
 	B4XPages.MainPage.ImagesCache1.RemovePanelChildImageViews(pnlMedia)
+	Dim vc As ViewsCache = B4XPages.MainPage.ViewsCache1
 	For i = 0 To pnlMedia.NumberOfViews - 1
 		Dim parent As B4XView = pnlMedia.GetView(i)
 		Dim attachment As PLMMedia = parent.Tag
 		If attachment.TType = "video" Then
 			Dim playerview As B4XView = parent.GetView(0)
-				#if B4A
-				Dim player As SimpleExoPlayer = playerview.Tag
-				player.Pause
-				#Else If B4i
-				Dim player As VideoPlayer = playerview.Tag
-				player.Pause
-				#End If
+			vc.StopVideoPlayback (playerview)
 			playerview.RemoveViewFromParent
-			B4XPages.MainPage.ViewsCache1.ReturnVideoPlayer(playerview)
+			vc.ReturnVideoPlayer(playerview)
 		Else If attachment.TType = "card" Then
 			Dim cv As CardView = parent.GetView(0).Tag
 			cv.Release

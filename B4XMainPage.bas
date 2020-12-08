@@ -30,8 +30,7 @@ Sub Class_Globals
 	Public User As PLMUser
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
-	Private HamburgerIcon, HamburgerIconWithNotification As B4XBitmap
-	
+	Private HamburgerIcons As Map
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
 	Private AccountView1 As AccountView
@@ -67,10 +66,12 @@ Sub Class_Globals
 	Public Report As ReportManager
 	Public Theme As ThemeManager
 	Public Stream As Streamer
-	Private StreamerNotificationsLinkSize As Int = -1
+	Private Const HamburgerState_Close = 1, HamburgerState_Default = 2, HamburgerState_Notification = 3, HamburgerState_Invalid = 4 As Int
 	#if B4J
 	Private ivHamburger As ImageView
 	#End If
+	Private UpdateHamburgerIconIndex As Int
+	Private HamburgerState As Int = HamburgerState_Invalid
 End Sub
 
 Public Sub Initialize
@@ -81,6 +82,7 @@ Public Sub Initialize
 	LinksManager.Initialize
 	Constants.Initialize
 	ServerManager1.Initialize
+	HamburgerIcons.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
@@ -149,8 +151,9 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Drawer.ExtraWidth = 30dip
 	#end if
 	Statuses.Initialize(Me, "Statuses", pnlList)
-	HamburgerIcon = xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True)
-	HamburgerIconWithNotification = xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True)
+	HamburgerIcons.Put(HamburgerState_Default, xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True))
+	HamburgerIcons.Put(HamburgerState_Notification, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True))
+	HamburgerIcons.Put(HamburgerState_Close, xui.LoadBitmapResize(File.DirAssets, "close_icon.png", 32dip, 32dip, True))
 	B4XPages.SetTitle(Me, Constants.AppName)
 	MediaChooser1.Initialize
 	CreateMenu
@@ -222,7 +225,7 @@ Private Sub CreateMenu
 	Drawer.CenterPanel.AddView(ivHamburger, 2dip, 2dip, 32dip, 32dip)
 	ivHamburger.PickOnBounds = True
 	#end if
-	UpdateHamburgerIcon (False)
+	UpdateHamburgerIcon
 End Sub
 
 
@@ -234,7 +237,6 @@ End Sub
 
 Private Sub B4XPage_MenuClick (Tag As String)
 	If Tag = "hamburger" Then
-		
 		ToggleDrawer
 	Else If Tag = "refresh" Then
 		btnRefresh_Click
@@ -249,12 +251,11 @@ End Sub
 Private Sub ToggleDrawer
 	If Drawer.LeftOpen Then
 		Drawer.LeftOpen = False
-	Else if Dialog.Visible Or Dialog2.Visible Then
-		CloseDialogAndDrawer
+	Else if CheckAllClosableInterfaces(False, False) Then
 	Else
 		Drawer.LeftOpen = True
 	End If
-	
+	UpdateHamburgerIcon
 End Sub
 
 Private Sub CreateNewUser As PLMUser
@@ -293,77 +294,94 @@ End Sub
 
 Private Sub B4XPage_CloseRequest As ResumableSub
 	#if B4A
-	If Settings.BackKeyPressed Then
-		Return False	
-	End If
-	If Report.BackKeyPressed Then Return False
 	'home button
 	If Main.ActionBarHomeClicked Then
 		ToggleDrawer
-		Return False	
-	End If
-	'back key
-	If Drawer.LeftOpen Then
-		Drawer.LeftOpen = False
 		Return False
 	End If
-	If AccountView1.IsInitialized And AccountView1.BackKeyPressed Then
-		Return False
-	End If
-	If Dialog2.Visible Then
-		Dialog2.Close(xui.DialogResponse_Cancel)
-		Return False
-	End If
-	If Dialog.Visible Then
-		Dialog.Close(xui.DialogResponse_Cancel)
-		Return False
-	End If
-	If Search.mBase.Parent.IsInitialized Then
-		btnSearch_Click
-		Return False
-	End If
-	Return Statuses.BackKeyPressedShouldClose
+	If CheckAllClosableInterfaces(False, True) Then Return False
 	#end if
 	Return True 'ignore
 End Sub
 
+'Returns true if there is a dialog that can be closed
+Private Sub CheckAllClosableInterfaces (OnlyTesting As Boolean, BackButton As Boolean) As Boolean
+	If Settings.BackKeyPressed (OnlyTesting) Then
+		Return True
+	End If
+	If Report.BackKeyPressed (OnlyTesting) Then Return True
+	'back key
+	If Drawer.LeftOpen Then
+		If OnlyTesting = False Then Drawer.LeftOpen = False
+		Return True
+	End If
+	If AccountView1.IsInitialized And AccountView1.BackKeyPressed(OnlyTesting) Then
+		Return True
+	End If
+	If PostView1.IsInitialized And PostView1.BackKeyPressed(OnlyTesting) Then
+		Return True
+	End If
+	If Dialog2.IsInitialized And Dialog2.Visible Then
+		If OnlyTesting = False Then Dialog2.Close(xui.DialogResponse_Cancel)
+		Return True
+	End If
+	If Dialog.IsInitialized And Dialog.Visible Then
+		If OnlyTesting = False Then Dialog.Close(xui.DialogResponse_Cancel)
+		Return True
+	End If
+	If Search.IsInitialized And Search.mBase.Parent.IsInitialized Then
+		If OnlyTesting = False Then HideSearch
+		Return True
+	End If
+	
+	Return Statuses.IsInitialized And Statuses.BackKeyPressedShouldClose(OnlyTesting, BackButton)
+End Sub
+
+
 Private Sub B4XPage_Appear
 	#if B4A
 	Sleep(0)
-	StreamerNotificationsLinkSize = -1
 	B4XPages.GetManager.ActionBar.RunMethod("setDisplayHomeAsUpEnabled", Array(True))
-	UpdateHamburgerIcon (False)
+	HamburgerState = HamburgerState_Invalid
+	UpdateHamburgerIcon
 	auth.CallFromResume(B4XPages.GetNativeParent(Me).GetStartingIntent)
 	#End If
 	Drawer.LeftOpen = False
 End Sub
 
-Public Sub UpdateHamburgerIcon (blink As Boolean)
-	If blink = False And StreamerNotificationsLinkSize >= 0 And ((StreamerNotificationsLinkSize > 0) = (LinksManager.LinksWithStreamerEvents.Size > 0)) Then
-		Return
+Public Sub UpdateHamburgerIcon
+	UpdateHamburgerIconIndex = UpdateHamburgerIconIndex + 1
+	Dim MyIndex As Int = UpdateHamburgerIconIndex
+	If HamburgerState <> HamburgerState_Invalid Then
+		Sleep(50)
 	End If
-	If StreamerNotificationsLinkSize > 0 And blink Then
-		SetHamburgerIcon(HamburgerIcon)
-		Sleep(500)
-	End If
-	StreamerNotificationsLinkSize = LinksManager.LinksWithStreamerEvents.Size
-	Dim icon As B4XBitmap
-	If LinksManager.LinksWithStreamerEvents.Size > 0 Then
-		icon = HamburgerIconWithNotification
+	If MyIndex <> UpdateHamburgerIconIndex Then Return
+	Dim NewState As Int
+	If CheckAllClosableInterfaces(True, False) Then
+		NewState = HamburgerState_Close
+	Else If LinksManager.LinksWithStreamerEvents.Size > 0 Then
+		NewState = HamburgerState_Notification
 	Else
-		icon = HamburgerIcon
+		NewState = HamburgerState_Default
 	End If
-	SetHamburgerIcon(icon)
+	If NewState = HamburgerState Then Return
+	HamburgerState = NewState
+	SetHamburgerIcon
 End Sub
 
-Private Sub SetHamburgerIcon (icon As B4XBitmap)
+Private Sub SetHamburgerIcon
+	Dim icon As B4XBitmap = HamburgerIcons.Get(HamburgerState)
 	#if B4A
 	Dim bd As BitmapDrawable
 	bd.Initialize(icon)
 	B4XPages.GetManager.ActionBar.RunMethod("setHomeAsUpIndicator", Array(bd))
 	#else if B4i
 	Dim bb As BarButton
-	bb.InitializeBitmap(KeepOriginalColors(icon), "hamburger")
+	If HamburgerState = HamburgerState_Close Then
+		bb.InitializeSystem(bb.ITEM_STOP, "hamburger")
+	Else
+		bb.InitializeBitmap(KeepOriginalColors(icon), "hamburger")
+	End If
 	B4XPages.GetNativeParent(Me).TopLeftButtons = Array(bb)
 	#Else if B4J
 	ivHamburger.SetImage(icon)
@@ -502,6 +520,7 @@ Private Sub CloseDialogAndDrawer
 	If Dialog2.Visible Then Dialog2.Close(xui.DialogResponse_Cancel)
 	ClosePrevDialog
 	Drawer.LeftOpen = False
+	UpdateHamburgerIcon
 End Sub
 
 
@@ -655,9 +674,11 @@ Private Sub ShowDialogWithoutButtons (pnl As B4XView, WithSV As Boolean) As Resu
 	#if B4i
 	Statuses.RemoveClickRecognizer(Dialog.Base)
 	#End If
+	UpdateHamburgerIcon
 	Wait For (rs) Complete (Result As Int)
 	pnl.RemoveViewFromParent
 	If xui.IsB4J Then Statuses.mBase.RequestFocus
+	UpdateHamburgerIcon
 	Return Result
 End Sub
 
@@ -695,7 +716,7 @@ Private Sub Statuses_LinkUpdated (Link As PLMLink)
 	LinksManager.LinksWithStreamerEvents.Remove(Link.URL)
 	B4XPages.SetTitle(Me, Link.Title)
 	DrawerManager1.StackChanged
-	UpdateHamburgerIcon (False)
+	UpdateHamburgerIcon
 End Sub
 
 
@@ -732,6 +753,7 @@ Private Sub btnSearch_Click
 		Search.mBase.SetLayoutAnimated(100, 0, Search.mBase.Top + h, Search.mBase.Width, h)
 		Search.Focus
 	End If
+	UpdateHamburgerIcon
 End Sub
 
 Public Sub HideSearch
@@ -743,6 +765,8 @@ End Sub
 Private Sub B4XPage_Background
 	If store.IsInitialized = False Then Return 
 	store.Put("stack", Statuses.Stack.GetDataForStore)
+	If ViewsCache1.IsInitialized = False Then Return
+	ViewsCache1.StopPlaybackOfOtherVideos(Null)
 End Sub
 
 Private Sub PostView1_Close
@@ -766,7 +790,9 @@ Public Sub ShowListDialog (Options As List, PutAtTop As Boolean) As ResumableSub
 	Sleep(10)
 	#End If
 	Dialog2ListTemplate.CustomListView1.AsView.Top = -2dip
+	UpdateHamburgerIcon
 	Wait For (rs) Complete (Result As Int)
+	UpdateHamburgerIcon
 	If Result = xui.DialogResponse_Positive Then
 		Return Dialog2ListTemplate.SelectedItem
 	Else
@@ -821,4 +847,8 @@ Public Sub NotificationClicked
 		Sleep(1000)
 		Statuses.Refresh2(User, LinksManager.LINK_NOTIFICATIONS, True, False)
 	End If
+End Sub
+
+Private Sub Drawer_StateChanged (Open As Boolean)
+	UpdateHamburgerIcon
 End Sub

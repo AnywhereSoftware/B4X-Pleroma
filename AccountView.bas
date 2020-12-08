@@ -236,8 +236,10 @@ Private Sub lblEdit_Click
 	Dim user As PLMUser = B4XPages.MainPage.user
 	Dim m As Map = CreateMap("display_name": user.DisplayName, "note": user.Note)
 	Dim rs As Object = PrefDialog.ShowDialog(m, "Ok", "Cancel")
-	B4XPages.MainPage.ViewsCache1.SetClipToOutline(PrefDialog.Dialog.Base) 'apply the round corners to the content
+	
+	B4XPages.MainPage.ViewsCache1.AfterShowDialog(PrefDialog.Dialog) 'apply the round corners to the content
 	Wait For (rs) Complete (Result As Int)
+	B4XPages.MainPage.UpdateHamburgerIcon
 	If Result = xui.DialogResponse_Positive Then
 		Dim note As String = m.Get("note")
 		If note = user.Note Then m.Remove("note")
@@ -266,9 +268,11 @@ End Sub
 
 
 'returns True if the dialog was closed
-Public Sub BackKeyPressed As Boolean
+Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
-		PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		If OnlyTesting = False Then
+			PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		End If
 		Return True
 	End If
 	Return False

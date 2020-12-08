@@ -50,7 +50,7 @@ Public Sub GetBase As B4XView
 	Return mBase
 End Sub
 
-Public Sub BackKeyPressed As Boolean
+Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	Return False
 End Sub
 
