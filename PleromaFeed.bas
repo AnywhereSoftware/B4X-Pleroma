@@ -164,19 +164,17 @@ Private Sub Download (Params As Map)
 					SetNextLink(j)
 					Wait For (ParseFollowersOrFollowing(tu.JsonParseList(str))) Complete (res2 As B4XOrderedMap)
 					res = res2
-					If MyIndex <> DownloadIndex Then
-						j.Release
-						Return
-					End If
 				End If
 		End Select
-		If res.IsInitialized Then
-			For Each id As String In res.Keys
-				Statuses.Put(id, res.Get(id))
-			Next
-		End If
-		If Statuses.Size = CurrentSize Then
-			Statuses.Put(LastPostId, NoMoreItems)
+		If MyIndex = DownloadIndex Then
+			If res.IsInitialized Then
+				For Each id As String In res.Keys
+					Statuses.Put(id, res.Get(id))
+				Next
+			End If
+			If Statuses.Size = CurrentSize Then
+				Statuses.Put(LastPostId, NoMoreItems)
+			End If
 		End If
 	End If
 	If MyIndex = DownloadIndex Then

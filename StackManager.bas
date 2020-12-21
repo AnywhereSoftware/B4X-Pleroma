@@ -10,32 +10,40 @@ Sub Class_Globals
 		CurrentScrollOffset As Int, Time As Long)
 	
 	Private mList As ListOfStatuses
+	Public BookmarkedTitles As B4XSet
 End Sub
 
 Public Sub Initialize (list As ListOfStatuses)
 	Items.Initialize
 	mList = list
+	BookmarkedTitles.Initialize
 End Sub
 
-Public Sub PushToStack (Feed As PleromaFeed, CLV As CustomListView)
+Public Sub PushToStack (Feed As PleromaFeed, CLV As CustomListView, AddToBottom As Boolean)
 	Dim clvitems As List
 	clvitems.Initialize
 	For i = 0 To CLV.Size - 1
 		clvitems.Add(CLV.GetValue(i))
 	Next
 	Dim NewItem As StackItem = CreateStackItem(Feed.user, Feed.server, Feed.mLink, Feed.Statuses, clvitems, CLV.sv.ScrollViewOffsetY, DateTime.Now)
-	For Each link As PLMLink In Items.Keys
-		If link.Title = NewItem.Link.Title Then
-			Items.Remove(link)
-			Exit
-		End If
-	Next
 	If NewItem.Link.LinkType = Constants.LINKTYPE_NOTIFICATIONS Or NewItem.Link.URL = B4XPages.MainPage.LinksManager.LINK_HOME.URL Then
 		NewItem.Time = 0 'always reload
 	End If
+	Items.Remove(NewItem.Link)
+	RemoveTitle(NewItem.Link.Title)
 	Items.Put(NewItem.Link, NewItem)
-	If Items.Size > Constants.StackMaximumNumberOfItems Then
-		Items.Remove(Items.Keys.Get(0))
+	If AddToBottom Then
+		Items.Keys.InsertAt(0, NewItem.Link)
+		Items.Keys.RemoveAt(Items.Keys.Size - 1)
+	End If
+	If Items.Size > Constants.StackMaximumNumberOfItems + BookmarkedTitles.Size Then
+		For i = 0 To Items.Size - 1
+			Dim it As PLMLink = Items.Keys.Get(i)
+			If BookmarkedTitles.Contains(it.Title) = False Then
+				Items.Remove(it)
+				Exit
+			End If
+		Next
 	End If
 End Sub
 
@@ -75,14 +83,23 @@ End Sub
 
 Public Sub RemoveTitle (Title As String)
 	Dim item As StackItem = GetFromTitle(Title)
-	If Items <> Null Then
+	If item <> Null Then
 		Items.Remove(item.Link)
 	End If
 End Sub
 
 Public Sub Delete (link As PLMLink)
 	Items.Remove(link)
+	BookmarkedTitles.Remove(link.Title)
 	mList.UpdateBackKey
+End Sub
+
+Public Sub ToggleBookmark (link As PLMLink)
+	If BookmarkedTitles.Contains(link.Title) Then
+		BookmarkedTitles.Remove(link.Title)
+	Else
+		BookmarkedTitles.Add(link.Title)
+	End If
 End Sub
 
 'Returns a list of PLMLinks
@@ -97,26 +114,36 @@ Public Sub Pop As StackItem
 End Sub
 
 Public Sub GetDataForStore As Object
-	Dim links As List
-	links.Initialize
+	Dim TitlesAndLinks As B4XOrderedMap
+	TitlesAndLinks.Initialize
 	Dim linksmanager As B4XLinksManager =  B4XPages.MainPage.LinksManager
 	For Each item As StackItem In Items.Values
 		Dim link As PLMLink = item.Link
-		If linksmanager.IsRecentLink(link) Then links.Add(link)	
+		If linksmanager.IsRecentLink(link) Then TitlesAndLinks.Put(link.Title, link)
 	Next
-	If linksmanager.IsRecentLink(mList.feed.mLink) Then links.Add(mList.feed.mLink)
+	If linksmanager.IsRecentLink(mList.feed.mLink) Then TitlesAndLinks.put(mList.feed.mLink.Title, mList.feed.mLink)
+	Dim links As List = TitlesAndLinks.Values
 	For Each link As PLMLink In links
 		If link.Extra.IsInitialized = False Then link.Extra.Initialize 'required for serialization
 	Next
-	Return links
+	Return CreateMap("links": links, "bookmarks": BookmarkedTitles.AsList)
 End Sub
 
 Public Sub SetDataFromStore(o As Object)
-	Dim links As List = o
+	Dim m As Map = o
+	Dim links As List = m.Get("links")
 	Dim server As PLMServer = B4XPages.MainPage.GetServer
 	For Each link As PLMLink In links
 		Items.Put(link, CreateStackItem(B4XPages.MainPage.User, server, link, B4XCollections.CreateOrderedMap, _
 			Constants.EmptyList, 0, 0))
 	Next
+	Dim bookmarks As List = m.Get("bookmarks")
+	For Each title As String In bookmarks
+		If GetFromTitle(title) <> Null Then
+			BookmarkedTitles.Add(title)
+		End If
+	Next
 End Sub
+
+
 

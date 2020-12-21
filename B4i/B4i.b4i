@@ -120,7 +120,7 @@ Version=6.8
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.27.0
+	#Version: 1.29.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait

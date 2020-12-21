@@ -108,9 +108,7 @@ Public Sub Initialize
 End Sub
 
 Private Sub UpdateOldStore
-	If StoreVersion < 1.16 Then
-		store.Remove("stack")
-	End If
+	If StoreVersion < 1.30 Then store.Remove("stack")
 End Sub
 
 Private Sub Theme_Changed

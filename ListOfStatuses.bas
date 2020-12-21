@@ -99,7 +99,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 	RemoveInsertedItems
 	If AddCurrentToStack Then
 		If feed.mLink.IsInitialized And (GoToItem = Null Or GoToItem.Link.Title <> feed.mLink.Title) Then
-			Stack.PushToStack(feed, CLV)
+			Stack.PushToStack(feed, CLV, False)
 		End If
 	End If
 	Wait For (StopAndClear) Complete (unused As Boolean)
@@ -144,6 +144,9 @@ Public Sub StopAndClear As ResumableSub
 	CLV.Clear
 	CLV.sv.ScrollViewOffsetY = 0
 	CloseLargeImage
+	#if B4i
+	Sleep(5) 'attempt to fix a flicker issue in iOS.
+	#end if
 	Return True
 End Sub
 
@@ -159,6 +162,10 @@ End Sub
 
 
 Private Sub GoBack
+	Dim CurrentItem As PLMLink = feed.mLink
+	If CurrentItem.IsInitialized And Stack.BookmarkedTitles.Contains(CurrentItem.Title) Then
+		Stack.PushToStack(feed, CLV, True)
+	End If
 	RefreshImpl(Null, Null, False, Stack.Pop)
 End Sub
 
@@ -504,7 +511,7 @@ Private Sub btnShare_Click
 		Else
 			avc.Initialize("avc", Array(cb.Bmp))
 		End If
-		avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+		avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), Sender)
 	Catch
 		Log(LastException)
 		B4XPages.MainPage.ShowMessage("Error creating attachment: " & LastException)
@@ -532,8 +539,9 @@ Private Sub CloseLargeImage
 	If pnlLargeImage.Visible Then
 		B4XPages.MainPage.Drawer.GestureEnabled = True
 		pnlLargeImage.SetVisibleAnimated(100, False)
-		B4XPages.MainPage.UpdateHamburgerIcon
 	End If
+	Sleep(150)
+	B4XPages.MainPage.UpdateHamburgerIcon
 End Sub
 
 Private Sub btnLargeImageClose_Click

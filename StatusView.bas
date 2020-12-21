@@ -273,14 +273,15 @@ Public Sub SetVisibility (visible As Boolean)
 			Dim cv As CardView = x.Tag
 			cv.SetVisibility(visible)
 		Else If visible = False Then
+			#If B4A or B4i
 			#if B4A
 			If x.Tag Is SimpleExoPlayer Then
-				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
 			#else if B4i
 			If x.Tag Is VideoPlayer Then
-				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
 			#End If
+				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
 			End If
+			#end if
 		End If
 	Next
 	BBListItem1.ChangeVisibility(visible)
@@ -621,7 +622,7 @@ Private Sub SharePost
 #Else If B4i
 	Dim avc As ActivityViewController
 	avc.Initialize("avc", Array(mStatus.URI))
-	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), B4XPages.MainPage.Root)
+	avc.Show(B4XPages.GetNativeParent(B4XPages.MainPage), BBBottom.mBase)
 #End If
 End Sub
 
