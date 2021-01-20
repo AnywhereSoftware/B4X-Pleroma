@@ -30,7 +30,6 @@ Public Sub Subscribe
 	m.Put("data", CreateMap("alerts": settings.KeysValues))
 	Dim gen As JSONGenerator
 	gen.Initialize(m)
-	Log(gen.ToPrettyString(4))
 	j.PostString(B4XPages.MainPage.GetServer.URL & "/api/v1/push/subscription", gen.ToString)
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	j.GetRequest.SetContentType("application/json")
@@ -54,11 +53,14 @@ Public Sub GetSettings As PLMNotificationSettings
 	End If
 	If B4XPages.MainPage.store.ContainsKey(Constants.NotificationSettingsStoreKey) = False Then
 		settings.Initialize
-		settings.KeysValues = CreateMap("follow": True, "favourite": True, "mention": True, "reblog": True)
+		settings.KeysValues = CreateMap("follow": True, "favourite": True, "mention": True, "reblog": True, "pleroma:chat_mention": True)
 		B4XPages.MainPage.store.Put(Constants.NotificationSettingsStoreKey, settings)
 		Return settings
 	Else
 		settings = B4XPages.MainPage.store.Get(Constants.NotificationSettingsStoreKey)
+		If settings.KeysValues.ContainsKey("pleroma:chat_mention") = False Then
+			settings.KeysValues.Put("pleroma:chat_mention", True)
+		End If
 	End If
 	If settings.Auth.Length = 0 Then
 		Dim auth(16) As Byte

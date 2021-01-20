@@ -1,33 +1,38 @@
 ﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
 File1=AccountView.bal
-File10=icon.png
-File11=LeftDrawer.bal
-File12=lstDrawerUser.bal
-File13=MainPage.bal
-File14=MiniAccountView.bal
-File15=Missing-image-232x150.png
-File16=nsfw.74818f9.png
-File17=play.png
-File18=PostView.bal
-File19=PostView.json
+File10=hamburger.png
+File11=hamburger_notif.png
+File12=icon.png
+File13=LeftDrawer.bal
+File14=lstDrawerUser.bal
+File15=MainPage.bal
+File16=message.wav
+File17=MiniAccountView.bal
+File18=Missing-image-232x150.png
+File19=nsfw.74818f9.png
 File2=AccountView.json
-File20=PostViewMedia.bal
-File21=ReactionsView.bal
-File22=Report.json
-File23=Search.bal
-File24=Settings.json
-File25=StatusList.bal
-File26=StatusViewImpl.bal
-File27=theme.json
-File28=VideoPlayer.bal
-File29=WebViewDialog.bal
+File20=play.png
+File21=PostView.bal
+File22=PostView.json
+File23=PostViewMedia.bal
+File24=ReactionsView.bal
+File25=Report.json
+File26=Search.bal
+File27=Settings.json
+File28=StatusList.bal
+File29=StatusViewImpl.bal
 File3=CardView.bal
-File4=close_icon.png
-File5=DialogContainer.bal
-File6=empty.png
-File7=GifView.bal
-File8=hamburger.png
-File9=hamburger_notif.png
+File30=theme.json
+File31=tile.png
+File32=tile-dark.png
+File33=VideoPlayer.bal
+File34=WebViewDialog.bal
+File4=ChatInputField.bal
+File5=ChatView.bal
+File6=close_icon.png
+File7=DialogContainer.bal
+File8=empty.png
+File9=GifView.bal
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -51,6 +56,11 @@ FileGroup27=Default Group
 FileGroup28=Default Group
 FileGroup29=Default Group
 FileGroup3=Default Group
+FileGroup30=Default Group
+FileGroup31=Default Group
+FileGroup32=Default Group
+FileGroup33=Default Group
+FileGroup34=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
 FileGroup6=Default Group
@@ -85,46 +95,50 @@ Library8=minihtmlparser
 Library9=bitmapsasync
 ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="21" android:targetSdkVersion="29"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~SetApplicationAttribute(android:largeHeap, "true")~\n~'End of default text.~\n~AddActivityText(Main,~\n~  <intent-filter>~\n~  <action android:name="android.intent.action.VIEW" />~\n~  <category android:name="android.intent.category.DEFAULT" />~\n~  <category android:name="android.intent.category.BROWSABLE" />~\n~  <data android:scheme="$PACKAGE$" />~\n~  </intent-filter>~\n~   )~\n~   SetActivityAttribute(main, android:windowSoftInputMode, adjustResize|stateHidden)~\n~   CreateResourceFromFile(Macro, Core.NetworkClearText)~\n~   CreateResourceFromFile(Macro, FirebaseAnalytics.GooglePlayBase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Firebase)~\n~CreateResourceFromFile(Macro, FirebaseAnalytics.Crashlytics)~\n~CreateResourceFromFile(Macro, FirebaseNotifications.FirebaseNotifications)~\n~~\n~AddApplicationText(~\n~  <provider~\n~  android:name="android.support.v4.content.FileProvider"~\n~  android:authorities="$PACKAGE$.provider"~\n~  android:exported="false"~\n~  android:grantUriPermissions="true">~\n~  <meta-data~\n~  android:name="android.support.FILE_PROVIDER_PATHS"~\n~  android:resource="@xml/provider_paths"/>~\n~  </provider>~\n~)~\n~CreateResource(xml, provider_paths,~\n~   <files-path name="name" path="shared" />~\n~)~\n~SetApplicationAttribute(android:allowBackup, "false")~\n~SetApplicationAttribute(android:icon, "@mipmap/ic_launcher")~\n~CreateResource(mipmap-anydpi-v26, ic_launcher.xml,~\n~<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">~\n~    <background android:drawable="@mipmap/background"/>~\n~    <foreground android:drawable="@mipmap/foreground"/>~\n~</adaptive-icon>~\n~)~\n~~\n~SetApplicationAttribute(android:theme, "@style/LightTheme")~\n~CreateResource(values, theme.xml,~\n~<resources>~\n~    <style~\n~        name="LightTheme" parent="@android:style/Theme.Material.Light">~\n~	   <item name="android:actionMenuTextAppearance">@style/LowerCaseMenu</item>~\n~	    <item name="android:colorPrimary">@color/actionbar</item>~\n~        <item name="android:colorPrimaryDark">@color/statusbar</item>~\n~        <item name="android:textColorPrimary">@color/textColorPrimary</item>~\n~       ~\n~    </style>~\n~	 <style name="LowerCaseMenu" parent="android:TextAppearance.Material.Widget.ActionBar.Menu">~\n~        <item name="android:textAllCaps">false</item>~\n~    </style>~\n~</resources>~\n~)~\n~CreateResource(values, colors.xml,~\n~<resources>~\n~    <color name="actionbar">#FF006FA6</color>~\n~   <color name="statusbar">#FF00496D</color>~\n~   <color name="textColorPrimary">#ffffffff</color>~\n~   <color name="navigationBar">#ff006db3</color>~\n~</resources>~\n~)~\n~~\n~
 Module1=|relative|..\AccountView
-Module10=|relative|..\ImagesCache
-Module11=|relative|..\ListOfStatuses
-Module12=|relative|..\MediaChooser
-Module13=|relative|..\MiniAccountView
-Module14=|relative|..\OAuth
-Module15=|relative|..\PleromaFeed
-Module16=|relative|..\PLMSettings
-Module17=|relative|..\PostView
-Module18=|relative|..\Push
-Module19=|relative|..\ReactionsView
+Module10=|relative|..\DrawerManager
+Module11=FirebaseMessaging
+Module12=|relative|..\HtmlToRuns
+Module13=|relative|..\ImagesCache
+Module14=|relative|..\ListOfStatuses
+Module15=|relative|..\MediaChooser
+Module16=|relative|..\MiniAccountView
+Module17=|relative|..\OAuth
+Module18=|relative|..\PleromaFeed
+Module19=|relative|..\PLMSettings
 Module2=|relative|..\B4XLinksManager
-Module20=|relative|..\ReportManager
-Module21=|relative|..\RequestsManager
-Module22=|relative|..\SearchManager
-Module23=|relative|..\ServerManager
-Module24=|relative|..\StackManager
-Module25=Starter
-Module26=|relative|..\StatusView
-Module27=|relative|..\Streamer
-Module28=|relative|..\StubView
-Module29=|relative|..\TextUtils
+Module20=|relative|..\PostView
+Module21=|relative|..\Push
+Module22=|relative|..\ReactionsView
+Module23=|relative|..\ReportManager
+Module24=|relative|..\RequestsManager
+Module25=|relative|..\SearchManager
+Module26=|relative|..\ServerManager
+Module27=|relative|..\StackManager
+Module28=Starter
+Module29=|relative|..\StatusView
 Module3=|relative|..\B4XMainPage
-Module30=|relative|..\ThemeManager
-Module31=|relative|..\ViewsCache
-Module32=|relative|..\WebViewDialog
+Module30=|relative|..\Streamer
+Module31=|relative|..\StubView
+Module32=|relative|..\TextUtils
+Module33=|relative|..\ThemeManager
+Module34=|relative|..\ViewsCache
+Module35=|relative|..\WebViewDialog
+Module36=|relative|..\X2SoundPool
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
-Module6=|relative|..\Constants
-Module7=|relative|..\DrawerManager
-Module8=FirebaseMessaging
-Module9=|relative|..\HtmlToRuns
-NumberOfFiles=29
+Module6=|relative|..\ChatManager
+Module7=|relative|..\ChatView
+Module8=|relative|..\CLVBackwards
+Module9=|relative|..\Constants
+NumberOfFiles=34
 NumberOfLibraries=25
-NumberOfModules=32
-Version=10.2
+NumberOfModules=36
+Version=10.5
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 8
-	#VersionName: 1.30
+	#VersionCode: 9
+	#VersionName: 1.40
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False
@@ -143,7 +157,7 @@ Sub Process_Globals
 End Sub
 
 Sub Globals
-	Private ime As IME
+	Public ime As IME
 End Sub
 
 Sub Activity_Create(FirstTime As Boolean)
@@ -152,6 +166,7 @@ Sub Activity_Create(FirstTime As Boolean)
 	Dim pm As B4XPagesManager
 	pm.Initialize(Activity)
 End Sub
+
 
 Sub IME_HeightChanged (NewHeight As Int, OldHeight As Int)
 	B4XPages.GetManager.RaiseEvent(B4XPages.GetManager.GetTopPage, "IME_HeightChanged", Array(NewHeight, OldHeight))
@@ -176,7 +191,8 @@ Sub Activity_Resume
 	Dim in As Intent = Activity.GetStartingIntent
 	If in.IsInitialized And in.HasExtra("Notification_Tag") Then
 		If LastIntent.IsInitialized = False Or LastIntent <> in Then
-			If B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized Then B4XPages.MainPage.NotificationClicked			
+			Dim tag As String = in.GetExtra("Notification_Tag")
+			If B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized Then B4XPages.MainPage.NotificationClicked (tag = "chat")
 		End If
 	End If
 	B4XPages.Delegate.Activity_Resume

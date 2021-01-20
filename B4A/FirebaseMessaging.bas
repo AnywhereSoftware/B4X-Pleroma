@@ -30,12 +30,19 @@ End Sub
 Sub fm_MessageArrived (Message As RemoteMessage)
 	Log("Message arrived")
 	Log($"Message data: ${Message.GetData}"$)
+	Dim title As String = Message.GetData.Get("title")
+	Dim IsChat As Boolean = title = Constants.NewChatMessageTitle
+	If IsChat And B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized And B4XPages.MainPage.Background = False Then
+		Return
+	End If
 	Dim n As Notification
 	n.Initialize2(n.IMPORTANCE_HIGH)
 	n.Icon = "icon"
 	n.AutoCancel = True
-	n.SetInfo2(Message.GetData.Get("title"), Message.GetData.Get("body"), "message", Main)
-	n.Notify(Rnd(1, 10000))
+	Dim tag As String
+	If IsChat Then tag = "chat" Else tag = "notification"
+	n.SetInfo2(title, Message.GetData.Get("body"), tag, Main)
+	n.Notify(1)
 End Sub
 
 Sub Service_Destroy

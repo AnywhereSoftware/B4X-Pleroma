@@ -27,7 +27,7 @@ Private Sub MyLoop
 			Continue
 		End If
 		
-		If IsClientConnected = False Or DateTime.Now > LastConnectedTime + 5 * DateTime.TicksPerMinute Then
+		If IsClientConnected = False Or DateTime.Now > LastConnectedTime + 10 * DateTime.TicksPerMinute Then
 			Connect
 		End If
 	Loop
@@ -77,8 +77,16 @@ Private Sub Client_TextMessage (Message As String)
 			Case "update"
 				links.LinksWithStreamerEvents.Add(links.LINK_HOME.URL)
 			Case "notification"
+				Dim payload As String = m.GetDefault("payload", "")
+				If payload.Contains("pleroma:chat_mention") Then Return
 				links.LinksWithStreamerEvents.Add(links.LINK_NOTIFICATIONS.URL)
+			Case "pleroma:chat_update"
+				Dim link As String = B4XPages.MainPage.Statuses.Chat.MessageFromStreamer(m)
+				If link <> "" Then
+					links.LinksWithStreamerEvents.Add(link)
+				End If
 		End Select
+		links.AfterLinksWithStreamerChanged
 		B4XPages.MainPage.DrawerManager1.UpdateLeftDrawerList
 		B4XPages.MainPage.UpdateHamburgerIcon
 	End If

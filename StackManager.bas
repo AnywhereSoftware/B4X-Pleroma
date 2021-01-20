@@ -11,11 +11,13 @@ Sub Class_Globals
 	
 	Private mList As ListOfStatuses
 	Public BookmarkedTitles As B4XSet
+	Private AlwaysFresh As B4XSet
 End Sub
 
 Public Sub Initialize (list As ListOfStatuses)
 	Items.Initialize
 	mList = list
+	AlwaysFresh = B4XCollections.CreateSet2(Array(Constants.LINKTYPE_NOTIFICATIONS, Constants.LINKTYPE_CHAT, Constants.LINKTYPE_CHATS_LIST))
 	BookmarkedTitles.Initialize
 End Sub
 
@@ -26,7 +28,7 @@ Public Sub PushToStack (Feed As PleromaFeed, CLV As CustomListView, AddToBottom 
 		clvitems.Add(CLV.GetValue(i))
 	Next
 	Dim NewItem As StackItem = CreateStackItem(Feed.user, Feed.server, Feed.mLink, Feed.Statuses, clvitems, CLV.sv.ScrollViewOffsetY, DateTime.Now)
-	If NewItem.Link.LinkType = Constants.LINKTYPE_NOTIFICATIONS Or NewItem.Link.URL = B4XPages.MainPage.LinksManager.LINK_HOME.URL Then
+	If AlwaysFresh.Contains(NewItem.Link.LinkType) Or NewItem.Link.URL = B4XPages.MainPage.LinksManager.LINK_HOME.URL Then
 		NewItem.Time = 0 'always reload
 	End If
 	Items.Remove(NewItem.Link)

@@ -136,7 +136,7 @@ Private Sub Post (status As String)
 				Sleep(1000) 'give the server some time to process the attachments.
 			End If
 			CallSub2(mCallback, mEventName & "_NewPost", st) 'ReplyToId is reset after this call.
-			
+			B4XPages.MainPage.Sound.PlaySound(Constants.SOUND_MESSAGE)
 		End If
 		
 	End If

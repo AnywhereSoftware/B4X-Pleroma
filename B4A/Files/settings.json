@@ -55,6 +55,13 @@
             "type": "Boolean",
             "key": "push_reblog",
             "required": false
+        },
+		 {
+            "title": "Chat",
+            "type": "Boolean",
+            "key": "push_pleroma:chat_mention",
+            "required": false
         }
+		
     ]
 }

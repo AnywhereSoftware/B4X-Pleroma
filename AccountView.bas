@@ -73,7 +73,7 @@ Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	consumer.NoAnimation = True
 	consumer.PanelColor = xui.Color_Transparent
 	ImagesCache1.SetImage(Account.HeaderURL, ImageView1.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
-	tu.SetAccountTopText(bbTop, mAccount, Null, False)
+	tu.SetAccountTopText(bbTop, mAccount, Null, False, Null)
 	Dim node As HtmlNode = mp.TextUtils1.HtmlParser.Parse(Account.Note)
 	Dim clr As String = mTheme.ColorToHex(mTheme.DefaultText)
 	Dim bbcode As String = $"[color=${clr}]
@@ -92,7 +92,6 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	BBListItem1.SetRuns(runs)
 	If node.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
 	mBase.Height = ImageView1.Parent.Height + BBListItem1.mBase.Height - 50dip
-	
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip
 	pnlLine.Visible = Not(mDialog.IsInitialized)
@@ -102,9 +101,9 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	pnlCurrentUser.Visible = False
 	lblChangeAvatar.Visible = False
 	If mAccount.Id = B4XPages.MainPage.User.Id Then CurrentUser
-	Wait For (tu.UpdateFollowButton(btnFollow, mAccount, False)) Complete (Success As Boolean)
-	If Success Then
-		tu.SetAccountTopText(bbTop, mAccount, Null, False)
+	Wait For (tu.UpdateFollowButton(btnFollow, mAccount, False)) Complete (ShouldUpdate As Boolean)
+	If ShouldUpdate Then
+		tu.SetAccountTopText(bbTop, mAccount, Null, False, Null)
 	End If
 End Sub
 
@@ -300,5 +299,5 @@ Private Sub lblMore_Click
 End Sub
 
 Private Sub btnMore_Click
-	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, False, bbTop, Null)
+	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, False, bbTop, Null, Null)
 End Sub

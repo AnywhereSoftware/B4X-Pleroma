@@ -81,7 +81,7 @@ Public Sub ShowSettings
 		m.Put(key, settings.Get(key))
 	Next
 	Dim PushSettings As PLMNotificationSettings = B4XPages.MainPage.push1.GetSettings
-	Dim PushKeys As List = Array("follow", "mention", "reblog", "favourite")
+	Dim PushKeys As List = Array("follow", "mention", "reblog", "favourite", "pleroma:chat_mention")
 	For Each k As String In PushKeys
 		m.Put("push_" & k, PushSettings.KeysValues.Get(k))
 	Next
@@ -129,7 +129,7 @@ End Sub
 'returns True if the dialog was closed
 Public Sub BackKeyPressed (OnlyTesting As Boolean) As Boolean
 	If PrefDialog.IsInitialized And PrefDialog.Dialog.Visible Then
-		if OnlyTesting = False Then PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
+		If OnlyTesting = False Then PrefDialog.Dialog.Close(xui.DialogResponse_Cancel)
 		Return True
 	End If
 	Return False

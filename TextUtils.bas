@@ -75,7 +75,7 @@ Public Sub CreateUserLink (id As String, name As String, Method As String) As PL
 End Sub
 
 Private Sub MethodToTitle (method As String) As String
-	If method = "" Then Return method
+	If method = "" Then Return ""
 	Return " (" & method.SubString2(0, 1).ToUpperCase & method.SubString(1) & ")"
 End Sub
 
@@ -227,6 +227,19 @@ Public Sub PutExtraInStatus(Status As PLMStatus, Key As String, Value As Object)
 	Status.ExtraContent.Put(Key, Value)
 End Sub
 
+Public Sub ParseChatMessage (Message As Map) As PLMChatMessage
+	Dim cm As PLMChatMessage
+	cm.Initialize
+	cm.ChatId = Message.Get("chat_id")
+	cm.Id = Message.Get("id")
+	cm.Unread = Message.GetDefault("unread", False)
+	cm.Content = CreateContent(Message.Get("content"))
+	cm.Emojies = GetEmojies(Message, 32)
+	cm.CreateAt = ParseDate(Message.GetDefault("created_at", DateTime.Now))
+	cm.AccountId = Message.GetDefault("account_id", "")
+	Return cm
+End Sub
+
 Private Sub GetEmojies (Raw As Map, Size As Int) As List
 	Dim res As List
 	Dim emojis As List = Raw.Get("emojis")
@@ -327,6 +340,19 @@ Public Sub JsonParseMap (s As String) As Map
 	Return res
 End Sub
 
+Public Sub ParseMetaChat (m As Map) As PLMMetaChat
+	Dim Chat As PLMMetaChat
+	Chat.Initialize
+	Chat.ID = m.Get("id")
+	Chat.Account = CreateAccount(m.Get("account"))
+	Chat.Unread = m.GetDefault("unread", 0)
+	Dim last As Map = m.Get("last_message")
+	If last.IsInitialized Then
+		Chat.LastMessage = ParseChatMessage(last)
+	End If
+	Return Chat
+End Sub
+
 Public Sub AddRelationship (accounts As Map) As ResumableSub
 	If B4XPages.MainPage.User.SignedIn = False Then Return False
 	Dim j As HttpJob
@@ -396,13 +422,16 @@ End Sub
 
 Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount, Mini As Boolean) As ResumableSub
 	btnFollow.Tag = mAccount
+	Dim WasAlreadyInvisible As Boolean = btnFollow.Visible = False
 	btnFollow.Visible = False
 	If mAccount.Id = B4XPages.MainPage.User.Id Then Return False
+	Dim ShouldUpddate As Boolean = False
 	If mAccount.RelationshipAdded = False Then
 		B4XPages.MainPage.ShowProgress
 		Wait For (B4XPages.MainPage.TextUtils1.AddRelationship(CreateMap(mAccount.Id: mAccount))) Complete (Unused As Boolean)
 		If btnFollow.Tag <> mAccount Then Return False
 		B4XPages.MainPage.HideProgress
+		ShouldUpddate = True
 	End If
 	If mAccount.Following Then
 		btnFollow.Text = "Unfollow"
@@ -411,11 +440,13 @@ Public Sub UpdateFollowButton (btnFollow As B4XView, mAccount As PLMAccount, Min
 	Else
 		btnFollow.Text = "Follow"
 	End If
-	btnFollow.Visible = True
-	Return True
+	If WasAlreadyInvisible = False Then
+		btnFollow.Visible = True
+	End If
+	Return ShouldUpddate
 End Sub
 
-Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif As PLMNotification, Mini As Boolean)
+Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif As PLMNotification, Mini As Boolean, MetaChat As PLMMetaChat)
 	bbTop.PrepareBeforeRuns
 	Dim runs As List
 	runs.Initialize
@@ -428,8 +459,20 @@ Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif 
 		End If
 	End If
 	TextWithEmojisToRuns(displayname, runs, Account.Emojis, bbTop.ParseData, xui.CreateDefaultBoldFont(14))
-	Dim r As BCTextRun = CreateUrlRun("@", Account.Acct, bbTop.ParseData)
-	runs.Add(r)
+	If MetaChat <> Null And MetaChat.IsInitialized Then
+		If MetaChat.Unread > 0 Then
+			Dim run As BCTextRun = CreateRun(" (" & MetaChat.Unread & ")", xui.CreateDefaultBoldFont(12))
+			run.TextColor = xui.Color_Red
+			runs.Add(run)
+		End If
+		If MetaChat.LastMessage.IsInitialized And MetaChat.LastMessage.Content.IsInitialized Then
+		runs.Add(TextEngine.CreateRun(CRLF))
+			runs.AddAll(HtmlConverter.ConvertHtmlToRuns(MetaChat.LastMessage.Content.RootHtmlNode, bbTop.ParseData, MetaChat.LastMessage.Emojies))
+		End If
+	Else
+		Dim r As BCTextRun = CreateUrlRun("@", Account.Acct, bbTop.ParseData)
+		runs.Add(r)
+	End If
 	If Notif <> Null And Notif.IsInitialized Then
 		runs.Add(TextEngine.CreateRun(CRLF))
 		runs.Add(CreateRun(Chr(0xF234) & " followed you", xui.CreateFontAwesome(14)))
@@ -440,14 +483,16 @@ Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif 
 		Next
 	End If
 	bbTop.SetRuns(runs)
-	bbTop.UpdateVisibleRegion(0, 200dip)
+	bbTop.UpdateVisibleRegion(0, 300dip)
+	bbTop.ChangeVisibility(True)
 End Sub
 
-Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Mini As Boolean, bbtob As BBListItem, notif As PLMNotification) 
+Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Mini As Boolean, bbtob As BBListItem, notif As PLMNotification, MetaChat As PLMMetaChat)
 	If B4XPages.MainPage.MakeSureThatUserSignedIn = False Then Return
 	Dim Account As PLMAccount = AccountHolder(0)
 	Dim items As List
 	items.Initialize
+	items.Add(CreateMenuItem(0xF086, "Chat"))
 	Dim text As String
 	If Account.Muted Then text = "Unmute" Else text = "Mute"
 	items.Add(CreateMenuItem(0xF028, text))
@@ -455,23 +500,32 @@ Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLM
 	items.Add(CreateMenuItem(0xF235, text))
 	items.Add(CreateMenuItem(0xF024, "Report"))
 	Wait For (B4XPages.MainPage.ShowListDialog(items, Not(Mini))) Complete (result As String)
-	If Account <> AccountHolder(0) Then Return 
+	If Account <> AccountHolder(0) Then Return
 	Dim i As Int = items.IndexOf(result)
 	Dim verb As String
 	Select i
-		Case 0
-			verb = "mute"
 		Case 1
-			verb = "block"
+			verb = "mute"
 		Case 2
+			verb = "block"
+		Case 3
 			B4XPages.MainPage.Report.Show(Account, "")
+			Return
+		Case 0
+			Dim statuses As ListOfStatuses = B4XPages.MainPage.Statuses
+			Dim cm As ChatManager = statuses.Chat
+			If cm.ChatSupported = False Then
+				B4XPages.MainPage.ShowMessage("Instance does not support this feature.")
+			Else
+				cm.StartChat(Account)
+			End If
 			Return
 		Case Else
 			Return
 	End Select
 	Wait For (VerbOrUnverb(Account, verb)) Complete (unused As Boolean)
 	If Account <> AccountHolder(0) Then Return
-	SetAccountTopText(bbtob, Account, notif, Mini)
+	SetAccountTopText(bbtob, Account, notif, Mini, MetaChat)
 End Sub
 
 Public Sub FollowButtonClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Verb As String, Mini As Boolean) As ResumableSub
@@ -568,6 +622,24 @@ End Sub
 
 Public Sub CreateMenuItem(IconCodePoint As Int, Text As String) As String
 	Return Chr(IconCodePoint) & "  " & Text
+End Sub
+
+Public Sub TicksToTimeString (ticks As Long, ShowDaysAndMonths As Boolean) As String
+	Dim DeltaSeconds As Int = (DateTime.Now - ticks) / DateTime.TicksPerSecond
+	Dim s As String
+	Select True
+		Case DeltaSeconds <= 30
+			s = "now"
+		Case DeltaSeconds < 3600
+			s = $"$1.0{DeltaSeconds / 60}m"$
+		Case DeltaSeconds < 3600 * 24
+			s = $"$1.0{DeltaSeconds / 3600}h"$
+		Case DeltaSeconds < 3600 * 24 * 30
+			If ShowDaysAndMonths Then s = $"$1.0{DeltaSeconds / 3600 / 24}d"$
+		Case Else
+			If ShowDaysAndMonths Then s = $"$1.0{DeltaSeconds / 3600 / 24 / 30}mo"$
+	End Select
+	Return s
 End Sub
 
 

@@ -20,7 +20,11 @@ Sub Class_Globals
 	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
 	Type PLMPost (ReplyToStatusId As String, Mentions As B4XSet, Visibility As String)
-	Type PLMMiniAccount (Account As PLMAccount, Notification As PLMNotification)
+	Type PLMMiniAccount (Account As PLMAccount, Notification As PLMNotification, MetaChat As PLMMetaChat)
+	Type PLMMetaChat (Id As String, Account As PLMAccount, Unread As Int, LastMessage As PLMChatMessage, UpdatedAt As Long)
+	Type PLMChatMessage (ChatId As String, CreateAt As Long, Unread As Boolean, Emojies As List, Content As PLMContent, _
+		Id As String, AccountId As String)
+	Type PLMStub (Id As String, Height As Int, Text As String)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
 	Private mCallback As Object
@@ -30,22 +34,25 @@ Sub Class_Globals
 	Public user As PLMUser
 	Public server As PLMServer
 	Public mTitle As String
-	Public NoMoreItems As Object
+	Public NoMoreItems As PLMStub
 	Private tu As TextUtils
-	Public Const NewPostId = "newpost", LastPostId = "last", ReactionsId = "reactions" As String
-	
+	Public Const NewPostId = "newpost", LastPostId = "last", ReactionsId = "reactions", FirstStubId = "first" As String
+	Private ChatMan As ChatManager
+	Public Const IndexOfFirstChatMessage As Int = 1
 End Sub
 
-Public Sub Initialize (Callback As Object)
+Public Sub Initialize (Callback As ListOfStatuses)
 	mCallback = Callback
 	Statuses.Initialize
 	DateTime.DateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
 	Timer1.Initialize("Timer1", 100)
 	tu = B4XPages.MainPage.TextUtils1
+	ChatMan = Callback.Chat
+	NoMoreItems = CreatePLMStub(LastPostId, 300dip, "No more items")
 End Sub
 
 'returns the new item index
-Public Sub InsertItem(AfterId As String, Status As Object, Id As String) As Int
+Public Sub InsertItemAfter (AfterId As String, Status As Object, Id As String) As Int
 	Dim i As Int = Statuses.Keys.IndexOf(AfterId)
 	Statuses.Remove(Id)
 	Statuses.Put(Id, Status)
@@ -54,6 +61,12 @@ Public Sub InsertItem(AfterId As String, Status As Object, Id As String) As Int
 	Return i + 1
 End Sub
 
+Public Sub InsertItemAt (Index As Int, Id As String, status As Object)
+	Statuses.Remove(Id)
+	Statuses.Put(Id, status)
+	Statuses.Keys.RemoveAt(Statuses.Keys.Size - 1)
+	Statuses.Keys.InsertAt(Index, Id)
+End Sub
 
 Public Sub Start (KeepStatuses As Boolean)
 	DownloadIndex = DownloadIndex + 1
@@ -75,6 +88,9 @@ Public Sub Start (KeepStatuses As Boolean)
 	If Success Then
 		Dim features As PLMInstanceFeatures = B4XPages.MainPage.ServerManager1.GetServerFeatures(server)
 		B4XPages.MainPage.ServerSupportsEmojiReactions = features.Features.Contains("pleroma_emoji_reactions")
+		ChatMan.AfterServerVerified(features)
+		Dim IsChat As Boolean = mLink.LinkType = Constants.LINKTYPE_CHAT
+		If IsChat Then NoMoreItems.Height = 0dip Else NoMoreItems.Height = 300dip
 	End If
 End Sub
 
@@ -94,14 +110,18 @@ Private Sub Timer1_Tick
 		Else if LastStatus Is PLMStatus Then
 			Dim sm As PLMStatus = LastStatus
 			settings.Put("max_id", sm.id)
+		Else If LastStatus Is PLMChatMessage Then
+			Dim cm As PLMChatMessage = LastStatus
+			settings.Put("max_id", cm.Id)
 		Else
 			settings.Put("limit", 5)
 '			settings.Put("max_id", "A0zawCxrAV8t57UgFM")
 		End If
 		If mLink.LINKTYPE = Constants.LINKTYPE_SEARCH Then
-			
 			settings.Put("q", mLink.Extra.Get("query"))
 			settings.Put("limit", 20)
+		Else If mLink.LinkType = Constants.LINKTYPE_CHAT Or mLink.LinkType = Constants.LINKTYPE_CHATS_LIST Then
+			settings.Remove("only_media")
 		End If
 		If mLink.Extra.IsInitialized And mLink.Extra.ContainsKey("params") Then
 			Dim p As Map = mLink.Extra.Get("params")
@@ -160,11 +180,15 @@ Private Sub Download (Params As Map)
 					If IsStatuses = False Then acct.Note = ""
 				Else If IsStatuses Then
 					res = ParseTimelines(j.GetString)
-				Else 
+				Else
 					SetNextLink(j)
 					Wait For (ParseFollowersOrFollowing(tu.JsonParseList(str))) Complete (res2 As B4XOrderedMap)
 					res = res2
 				End If
+			Case Constants.LINKTYPE_CHAT
+				ParseChat(str) 'fills Statuses internally
+			Case Constants.LINKTYPE_CHATS_LIST
+				ParseChatsList(str)
 		End Select
 		If MyIndex = DownloadIndex Then
 			If res.IsInitialized Then
@@ -173,6 +197,12 @@ Private Sub Download (Params As Map)
 				Next
 			End If
 			If Statuses.Size = CurrentSize Then
+				If mLink.LinkType = Constants.LINKTYPE_CHAT Then
+					If Statuses.Size > 1 Then
+						Dim LastMessage As PLMChatMessage = Statuses.Get(Statuses.Keys.Get(Statuses.Size - 1))
+						AddDateStubIfNeeded(LastMessage.CreateAt, 0)
+					End If
+				End If
 				Statuses.Put(LastPostId, NoMoreItems)
 			End If
 		End If
@@ -313,6 +343,56 @@ Private Sub ParseFollowersOrFollowing (accounts As List) As ResumableSub
 	Return res
 End Sub
 
+Private Sub ParseChat (s As String)
+	Dim messages As List = tu.JsonParseList(s)
+	If Statuses.Size = 0 Then
+		Statuses.Put(FirstStubId, CreatePLMStub(FirstStubId, 120dip, ""))
+	End If
+	Dim LastMessage As PLMChatMessage
+	If Statuses.Size > IndexOfFirstChatMessage Then
+		LastMessage = Statuses.Get(Statuses.Keys.Get(Statuses.Size - 1))
+	End If
+	If messages.IsInitialized Then
+		For i = 0 To messages.Size - 1
+			Dim message As Map = messages.Get(i)
+			Dim cm As PLMChatMessage = tu.ParseChatMessage(message)
+			If LastMessage.IsInitialized Then
+				AddDateStubIfNeeded(LastMessage.CreateAt, cm.CreateAt)
+			End If
+			LastMessage = cm
+			Statuses.Put(cm.Id, cm)
+		Next
+	End If
+End Sub
+
+Private Sub ParseChatsList (s As String)
+	Dim messages As List = tu.JsonParseList(s)
+	For Each message As Map In messages
+		Dim cm As PLMMetaChat = tu.ParseMetaChat(message)
+		Dim MiniAccount As PLMMiniAccount
+		MiniAccount.Initialize
+		MiniAccount.Account = cm.Account
+		MiniAccount.MetaChat = cm
+		Statuses.Put(cm.Id, MiniAccount)
+	Next
+	Statuses.Put(LastPostId, NoMoreItems)
+End Sub
+
+Private Sub AddDateStubIfNeeded (LastDate As Long, CurrentDate As Long)
+	If DateTime.GetDayOfYear(LastDate) <> DateTime.GetDayOfYear(CurrentDate) Then
+		Dim s As String
+		If DateUtils.IsSameDay(DateTime.Now, LastDate) Then
+			s = "Today"
+		Else If DateUtils.IsSameDay(DateTime.Now - DateTime.TicksPerDay, LastDate) Then 'not 100% accurate
+			s = "Yesterday"
+		Else
+			s = $"$1.0{DateTime.GetMonth(LastDate)}/$1.0{DateTime.GetDayOfMonth(LastDate)}/${NumberFormat2(DateTime.GetYear(LastDate), 1, 0, 0, False)}"$
+		End If
+		Dim id As String = "date-" & s
+		Statuses.Put(id, CreatePLMStub(id, 30dip, s))
+	End If
+End Sub
+
 
 Private Sub ParseTimelines(s As String) As B4XOrderedMap
 	Dim res As B4XOrderedMap = B4XCollections.CreateOrderedMap
@@ -349,5 +429,16 @@ Public Sub CreatePLMNotification (NotificationType As String, Id As String, Crea
 	t1.Id = Id
 	t1.CreatedAt = CreatedAt
 	t1.Account = Account
+	Return t1
+End Sub
+
+
+
+Public Sub CreatePLMStub (Id As String, Height As Int, Text As String) As PLMStub
+	Dim t1 As PLMStub
+	t1.Initialize
+	t1.Id = Id
+	t1.Height = Height
+	t1.Text = Text
 	Return t1
 End Sub

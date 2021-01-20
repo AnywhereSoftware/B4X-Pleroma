@@ -1,34 +1,39 @@
 ﻿Build1=Default,b4i.pleroma,HU2_PUBLIC
 Build2=Simulator,b4i.pleroma,HU2_PUBLIC,SIMULATOR
 File1=AccountView.bil
-File10=icon.png
-File11=LeftDrawer.bil
-File12=lstDrawerUser.bil
-File13=MainPage.bil
-File14=MiniAccountView.bil
-File15=Missing-image-232x150.png
-File16=nsfw.74818f9.png
-File17=play.png
-File18=PostView.bil
-File19=PostView.json
+File10=hamburger.png
+File11=hamburger_notif.png
+File12=icon.png
+File13=LeftDrawer.bil
+File14=lstDrawerUser.bil
+File15=MainPage.bil
+File16=message.wav
+File17=MiniAccountView.bil
+File18=Missing-image-232x150.png
+File19=nsfw.74818f9.png
 File2=AccountView.json
-File20=PostViewMedia.bil
-File21=ReactionsView.bil
-File22=Report.json
-File23=Search.bil
-File24=Settings.json
-File25=StatusList.bil
-File26=StatusViewImpl.bil
-File27=theme.json
-File28=VideoPlayer.bil
-File29=WebViewDialog.bil
+File20=play.png
+File21=PostView.bil
+File22=PostView.json
+File23=PostViewMedia.bil
+File24=ReactionsView.bil
+File25=Report.json
+File26=Search.bil
+File27=Settings.json
+File28=StatusList.bil
+File29=StatusViewImpl.bil
 File3=CardView.bil
-File4=close_icon.png
-File5=DialogContainer.bil
-File6=empty.png
-File7=GifView.bil
-File8=hamburger.png
-File9=hamburger_notif.png
+File30=theme.json
+File31=tile.png
+File32=tile-dark.png
+File33=VideoPlayer.bil
+File34=WebViewDialog.bil
+File4=ChatInputField.bil
+File5=ChatView.bil
+File6=close_icon.png
+File7=DialogContainer.bil
+File8=empty.png
+File9=GifView.bil
 FileGroup1=Default Group
 FileGroup10=Default Group
 FileGroup11=Default Group
@@ -52,6 +57,11 @@ FileGroup27=Default Group
 FileGroup28=Default Group
 FileGroup29=Default Group
 FileGroup3=Default Group
+FileGroup30=Default Group
+FileGroup31=Default Group
+FileGroup32=Default Group
+FileGroup33=Default Group
+FileGroup34=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
 FileGroup6=Default Group
@@ -59,68 +69,73 @@ FileGroup7=Default Group
 FileGroup8=Default Group
 FileGroup9=Default Group
 Group=Default Group
-Library1=icore
-Library10=zoomimageview
-Library11=webp
-Library12=keyvaluestore
-Library13=b4xdrawer
-Library14=b4xpreferencesdialog
-Library15=bctoast
-Library16=ifirebaseanalytics
-Library17=imedia
-Library18=iphone
-Library19=ifirebasenotifications
-Library2=b4xpages
-Library20=ihttputils2
-Library21=iui9
-Library22=iwebsocket
-Library3=xui views
-Library4=bctextengine
-Library5=ijson
-Library6=iui8
-Library7=b4xgifview
-Library8=minihtmlparser
-Library9=bitmapsasync
+Library1=b4xdrawer
+Library10=ifirebasenotifications
+Library11=ihttputils2
+Library12=ijson
+Library13=imedia
+Library14=iphone
+Library15=iui8
+Library16=iui9
+Library17=iwebsocket
+Library18=keyvaluestore
+Library19=minihtmlparser
+Library2=b4xgifview
+Library20=webp
+Library21=xui views
+Library22=zoomimageview
+Library23=igameview
+Library3=b4xpages
+Library4=b4xpreferencesdialog
+Library5=bctextengine
+Library6=bctoast
+Library7=bitmapsasync
+Library8=icore
+Library9=ifirebaseanalytics
 Module1=|relative|..\AccountView
-Module10=|relative|..\ListOfStatuses
-Module11=|relative|..\MediaChooser
-Module12=|relative|..\MiniAccountView
-Module13=|relative|..\OAuth
-Module14=|relative|..\PleromaFeed
-Module15=|relative|..\PLMSettings
-Module16=|relative|..\PostView
-Module17=|relative|..\Push
-Module18=|relative|..\ReactionsView
-Module19=|relative|..\ReportManager
+Module10=|relative|..\DrawerManager
+Module11=|relative|..\HtmlToRuns
+Module12=|relative|..\ImagesCache
+Module13=|relative|..\ListOfStatuses
+Module14=|relative|..\MediaChooser
+Module15=|relative|..\MiniAccountView
+Module16=|relative|..\OAuth
+Module17=|relative|..\PleromaFeed
+Module18=|relative|..\PLMSettings
+Module19=|relative|..\PostView
 Module2=|relative|..\B4XLinksManager
-Module20=|relative|..\RequestsManager
-Module21=|relative|..\SearchManager
-Module22=|relative|..\ServerManager
-Module23=|relative|..\StackManager
-Module24=|relative|..\StatusView
-Module25=|relative|..\Streamer
-Module26=|relative|..\StubView
-Module27=|relative|..\TextUtils
-Module28=|relative|..\ThemeManager
-Module29=UserNotificationCenter
+Module20=|relative|..\Push
+Module21=|relative|..\ReactionsView
+Module22=|relative|..\ReportManager
+Module23=|relative|..\RequestsManager
+Module24=|relative|..\SearchManager
+Module25=|relative|..\ServerManager
+Module26=|relative|..\StackManager
+Module27=|relative|..\StatusView
+Module28=|relative|..\Streamer
+Module29=|relative|..\StubView
 Module3=|relative|..\B4XMainPage
-Module30=|relative|..\ViewsCache
-Module31=|relative|..\WebViewDialog
+Module30=|relative|..\TextUtils
+Module31=|relative|..\ThemeManager
+Module32=UserNotificationCenter
+Module33=|relative|..\ViewsCache
+Module34=|relative|..\WebViewDialog
+Module35=|relative|..\X2SoundPool
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
-Module6=|relative|..\Constants
-Module7=|relative|..\DrawerManager
-Module8=|relative|..\HtmlToRuns
-Module9=|relative|..\ImagesCache
-NumberOfFiles=29
-NumberOfLibraries=22
-NumberOfModules=31
+Module6=|relative|..\ChatManager
+Module7=|relative|..\ChatView
+Module8=|relative|..\CLVBackwards
+Module9=|relative|..\Constants
+NumberOfFiles=34
+NumberOfLibraries=23
+NumberOfModules=35
 Version=6.8
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.29.0
+	#Version: 1.30.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -183,6 +198,7 @@ Private Sub Application_Start (Nav As NavigationController)
 	End If
 	#end if
 	fm.Initialize("fm")	
+	unc.Initialize
 End Sub
 
 Private Sub fm_FCMConnected
@@ -195,13 +211,24 @@ Private Sub Application_RemoteNotification (Message As Map, CompletionHandler As
 		Log("Notification clicked")
 		Sleep(100)
 		If B4XPages.IsInitialized And B4XPages.MainPage.IsInitialized Then
-			B4XPages.MainPage.NotificationClicked
+			Dim title As String = Message.Get("title")
+			B4XPages.MainPage.NotificationClicked (title = Constants.NewChatMessageTitle)
 		End If
 	Else
 		Log($"Message arrived: ${Message}"$)
-		If unc.IsInitialized = False Then unc.Initialize
-		unc.CreateNotificationWithContent(Message.Get("title"), Message.Get("body"), Message.Get("gcm.message_id"), "", 1)
 		CompletionHandler.Complete
+	End If
+End Sub
+
+Public Sub UserNotification_WillPresent (Notification As Object) As Int
+	Dim n As NativeObject = Notification
+	Dim request As NativeObject = n.GetField("request")
+	Dim content As NativeObject = request.GetField("content")
+	Dim title As String = content.GetField("title").AsString
+	If title = Constants.NewChatMessageTitle Then
+		Return 0
+	Else
+		Return 6 'alert + sound
 	End If
 End Sub
 
@@ -313,6 +340,14 @@ End Sub
 
 #if OBJC
 @end
+@interface B4IViewController (KeyboardWillHide)
+@end
+@implementation B4IViewController (KeyboardWillHide)
+- (void) addWillHide {
+	 [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardWillHideNotification object:nil];
+}
+@end
+
 @interface B4IPanelView  (touchcancelled)
 @end
 @implementation B4IPanelView  (touchcancelled)

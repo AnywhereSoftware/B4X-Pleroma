@@ -56,7 +56,7 @@ End Sub
 
 Private Sub Search (s As String)
 	Dim mp As B4XMainPage = B4XPages.MainPage
-	Dim link As PLMLink = mp.TextUtils1.CreatePLMLink(Constants.URL_SEARCH, Constants.LINKTYPE_SEARCH, s)
+	Dim link As PLMLink = mp.TextUtils1.CreatePLMLink(Constants.URL_SEARCH, Constants.LINKTYPE_SEARCH, s & " (Search)")
 	link.Extra = CreateMap("query": s)
 	mp.Statuses.Refresh2(mp.User, link, True, False)
 	

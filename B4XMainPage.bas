@@ -53,8 +53,10 @@ Sub Class_Globals
 	Private Dialog2ListTemplate As B4XListTemplate
 	#if B4A
 	Public Provider As FileProvider
+	Private IME As IME 'ignore
 	#End If
-	Private B4iKeyboardHeight As Int
+	Public B4iKeyboardHeight As Int
+	Public B4AKeyboardActivityHeight As Int
 	Public push1 As Push
 	Public LinksManager As B4XLinksManager
 	Public MediaChooser1 As MediaChooser
@@ -72,6 +74,9 @@ Sub Class_Globals
 	#End If
 	Private UpdateHamburgerIconIndex As Int
 	Private HamburgerState As Int = HamburgerState_Invalid
+	Private B4XImageView1 As B4XImageView
+	Public Sound As X2SoundPool
+	Public Background As Boolean = True
 End Sub
 
 Public Sub Initialize
@@ -105,6 +110,9 @@ Public Sub Initialize
 	Report.Initialize
 	Theme.RegisterForEvents(Me)
 	Stream.Initialize
+	B4XPages.GetManager.TransitionAnimationDuration = 0
+	Sound.Initialize
+	Sound.AddSound(Constants.SOUND_MESSAGE, File.DirAssets, "message.wav")
 End Sub
 
 Private Sub UpdateOldStore
@@ -118,7 +126,12 @@ Private Sub Theme_Changed
 	Toast.pnl.Color = Theme.DefaultText
 	Toast.DefaultTextColor = Theme.Background
 	DialogContainer.Color = 0
-	
+	'Background pattern from Toptal Subtle Patterns (https://www.toptal.com/designers/subtlepatterns)
+	If Theme.IsDark Then
+		B4XImageView1.Bitmap = xui.LoadBitmap(File.DirAssets, "tile-dark.png")
+	Else
+		B4XImageView1.Bitmap = xui.LoadBitmap(File.DirAssets, "tile.png")
+	End If
 End Sub
 
 
@@ -143,11 +156,15 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Root = Root1
 	Drawer.Initialize(Me, "Drawer", Root, 200dip)
 	Drawer.CenterPanel.LoadLayout("MainPage")
-	
 	DrawerManager1.Initialize(Drawer)
+#if B4i
+Dim no As NativeObject = B4XPages.GetNativeParent(Me)
+no.RunMethod("addWillHide", Null)
+#End If
 	#if B4A
 	Drawer.ExtraWidth = 30dip
 	#end if
+	B4AKeyboardActivityHeight = Root.Height
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcons.Put(HamburgerState_Default, xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True))
 	HamburgerIcons.Put(HamburgerState_Notification, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True))
@@ -309,6 +326,7 @@ Private Sub CheckAllClosableInterfaces (OnlyTesting As Boolean, BackButton As Bo
 	End If
 	If Report.BackKeyPressed (OnlyTesting) Then Return True
 	'back key
+	
 	If Drawer.LeftOpen Then
 		If OnlyTesting = False Then Drawer.LeftOpen = False
 		Return True
@@ -331,7 +349,12 @@ Private Sub CheckAllClosableInterfaces (OnlyTesting As Boolean, BackButton As Bo
 		If OnlyTesting = False Then HideSearch
 		Return True
 	End If
-	
+	#if B4i
+	If B4iKeyboardHeight > 0 Then
+		If OnlyTesting = False Then B4XPages.GetNativeParent(Me).ResignFocus
+		Return True
+	End If
+	#end if
 	Return Statuses.IsInitialized And Statuses.BackKeyPressedShouldClose(OnlyTesting, BackButton)
 End Sub
 
@@ -474,7 +497,7 @@ End Sub
 
 Public Sub ConfirmMessage2 (Message As String, Yes As String, Cancel As String, No As String) As ResumableSub
 	#if B4i
-	B4XPages.GetNativeParent(Me).ResignFocus
+	HideKeyboard
 	#End If
 	Wait For (Dialog2.Show(Message, Yes, No, Cancel)) Complete (Result As Int)
 	Return Result
@@ -514,7 +537,7 @@ Private Sub btnRefresh_Click
 	Statuses.Refresh
 End Sub
 
-Private Sub CloseDialogAndDrawer
+Public Sub CloseDialogAndDrawer
 	If Dialog2.Visible Then Dialog2.Close(xui.DialogResponse_Cancel)
 	ClosePrevDialog
 	Drawer.LeftOpen = False
@@ -563,6 +586,13 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 End Sub
 
 Private Sub btnPlus_Click
+	If Statuses.feed.mLink.LinkType = Constants.LINKTYPE_CHAT Then
+		Statuses.Chat.Focus
+		Return
+	Else If Statuses.feed.mLink.LinkType = Constants.LINKTYPE_CHATS_LIST Then
+		btnSearch_Click
+		Return
+	End If
 	ShowCreatePostInDialog ("")
 End Sub
 
@@ -578,6 +608,7 @@ Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	Dim post As PLMPost = Statuses.feed.CreatePLMPost("", "public")
 	If MentionAcct <> "" Then post.Mentions.Add(MentionAcct)
 	PostView1.SetContent(post, Null)
+	If PostView1.mBase.Parent.IsInitialized Then Return
 	Dim rs As Object = ShowDialogWithoutButtons(PostView1.mBase, False)
 	Sleep(0)
 	PostView1.B4XFloatTextField1.RequestFocusAndShowKeyboard
@@ -628,9 +659,7 @@ Private Sub LinkClickedShared (Link As PLMLink)
 End Sub
 
 Private Sub ClosePrevDialog As ResumableSub
-	#if B4i
-	B4XPages.GetNativeParent(Me).ResignFocus
-	#End If
+	HideKeyboard
 	DialogIndex = DialogIndex + 1
 	Dim MyIndex As Int = DialogIndex
 	If Dialog.Visible Then
@@ -712,6 +741,7 @@ Private Sub Statuses_LinkUpdated (Link As PLMLink)
 	Dim st As ListOfStatuses = Sender
 	If st = DialogListOfStatuses Then Return
 	LinksManager.LinksWithStreamerEvents.Remove(Link.URL)
+	LinksManager.AfterLinksWithStreamerChanged
 	B4XPages.SetTitle(Me, Link.Title)
 	DrawerManager1.StackChanged
 	UpdateHamburgerIcon
@@ -765,6 +795,12 @@ Private Sub B4XPage_Background
 	store.Put("stack", Statuses.Stack.GetDataForStore)
 	If ViewsCache1.IsInitialized = False Then Return
 	ViewsCache1.StopPlaybackOfOtherVideos(Null)
+	Background = True
+End Sub
+
+Private Sub B4XPage_Foreground
+	Log("foreground")
+	Background = False
 End Sub
 
 Private Sub PostView1_Close
@@ -809,8 +845,32 @@ End Sub
 
 
 Private Sub B4XPage_KeyboardStateChanged (Height As Float)
+	If B4iKeyboardHeight = Height Then Return
 	B4iKeyboardHeight = Height
+	If Statuses.IsInitialized And Statuses.Chat.IsInitialized And Statuses.ListGoesUp Then
+		Statuses.Chat.KeyboardStateChanged
+	End If
+	UpdateHamburgerIcon
 End Sub
+
+Public Sub getIsKeyboardVisible As Boolean
+	Return B4iKeyboardHeight > 0
+End Sub
+
+Private Sub IME_HeightChanged(NewHeight As Int, OldHeight As Int)
+	#if B4A
+	Dim h As Int
+	If GetDeviceLayoutValues.Height - NewHeight > 200dip Then
+		h = 1
+	Else
+		h = 0
+	End If
+	B4AKeyboardActivityHeight = NewHeight
+	B4XPage_KeyboardStateChanged(h)
+	#End If
+End Sub
+
+
 
 Public Sub UserDetailsChanged
 	Wait For (auth.VerifyUser(GetServer)) Complete (Result As PLMResult)
@@ -837,16 +897,29 @@ Public Sub CreatePLMResult2 (Success As Boolean, ErrorMessage As String) As PLMR
 	Return t1
 End Sub
 
-Public Sub NotificationClicked
+Public Sub NotificationClicked (chat As Boolean)
 	If User.SignedIn = False Then
 		Sleep(3000)
 	End If
 	If User.SignedIn Then
 		Sleep(1000)
-		Statuses.Refresh2(User, LinksManager.LINK_NOTIFICATIONS, True, False)
+		If chat Then
+			Statuses.Refresh2(User, LinksManager.LINK_CHATS_LIST, True, False)
+		Else
+			Statuses.Refresh2(User, LinksManager.LINK_NOTIFICATIONS, True, False)
+		End If
 	End If
 End Sub
 
 Private Sub Drawer_StateChanged (Open As Boolean)
 	UpdateHamburgerIcon
+End Sub
+
+Public Sub HideKeyboard
+	#if B4i
+	B4XPages.GetNativeParent(Me).ResignFocus
+	B4XPage_KeyboardStateChanged(0)
+	#Else If B4A
+	IME.HideKeyboard
+	#End If
 End Sub

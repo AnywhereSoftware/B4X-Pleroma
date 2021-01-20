@@ -91,7 +91,7 @@ Private Sub Theme_Changed
 	BBListItem1.ParseData.DefaultColor = mTheme.DefaultText
 	pnlLine.Color = mTheme.Divider
 	imgAvatar.Parent.Color = mTheme.AttachmentPanelBackground
-	lblTime.TextColor = mTheme.NoMoreItemsBackground
+	lblTime.TextColor = mTheme.SecondTextColor
 End Sub
 
 
@@ -228,7 +228,6 @@ Private Sub ReblogClick
 	End If
 	j.Release
 	B4XPages.MainPage.HideProgress
-	
 End Sub
 
 Public Sub EmojiClick (url As String)
@@ -694,21 +693,7 @@ End Sub
 Private Sub SetTime
 	Dim t As Long = mStatus.CreatedAt
 	If Notif.IsInitialized Then t = Notif.CreatedAt
-	Dim DeltaSeconds As Int = (DateTime.Now - t) / DateTime.TicksPerSecond
-	Dim s As String
-	Select True
-		Case DeltaSeconds < 30
-			s = "now"
-		Case DeltaSeconds < 3600
-			s = $"$1.0{DeltaSeconds / 60}m"$
-		Case DeltaSeconds < 3600 * 24
-			s = $"$1.0{DeltaSeconds / 3600}h"$
-		Case DeltaSeconds < 3600 * 24 * 30
-			s = $"$1.0{DeltaSeconds / 3600 / 24}d"$
-		Case Else
-			s = $"$1.0{DeltaSeconds / 3600 / 24 / 30}mo"$
-	End Select
-	lblTime.Text = s
+	lblTime.Text = tu.TicksToTimeString(t, True)
 	
 End Sub
 

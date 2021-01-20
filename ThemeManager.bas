@@ -18,6 +18,8 @@ Sub Class_Globals
 	Public OverlayColor As Int
 	Public OverlayColorMadeWithLove As Int
 	Public PrefSeparatorColor As Int
+	Public SecondTextColor As Int
+	Public ChatMeBackground As Int
 	Public ActionBar As Int
 	Private CurrentPallete As Map
 	Public ReadMoreGradient As B4XBitmap
@@ -95,6 +97,8 @@ Private Sub SetDefaults
 	OverlayColor = CurrentPallete.Get("OverlayColor")
 	OverlayColorMadeWithLove = CurrentPallete.Get("OverlayColorMadeWithLove")
 	PrefSeparatorColor = CurrentPallete.Get("PrefSeparatorColor")
+	ChatMeBackground = CurrentPallete.Get("ChatMeBackground")
+	SecondTextColor = CurrentPallete.Get("SecondTextColor")
 	If FirstTime Then
 		FirstTime = False
 	Else
@@ -123,4 +127,22 @@ Public Sub SetFloatTextFieldColor (ft As B4XFloatTextField)
 	ft.TextField.TextColor = DefaultText
 	If ft.lblClear.IsInitialized Then ft.lblClear.TextColor = DefaultText
 	If ft.lblV.IsInitialized Then ft.lblV.TextColor = DefaultText
+	#if B4A
+	ChangeEditTextLineColor(ft.TextField, 0xFF006FA6, 0xFF006FA6)
+	#End If
 End Sub
+
+#if B4A
+Private Sub ChangeEditTextLineColor (View As View, Active As Int, Enabled As Int)
+	Dim States(2,1) As Int
+	States(0,0) = 16842908     'Active
+	States(1,0) = 16842910    'Enabled
+	Dim Color(2) As Int = Array As Int(Active,Enabled)
+	Dim CSL As JavaObject
+	CSL.InitializeNewInstance("android.content.res.ColorStateList",Array As Object(States,Color))
+	Dim jo As JavaObject
+	jo.InitializeStatic("android.support.v4.view.ViewCompat")
+	jo.RunMethod("setBackgroundTintList", Array(View, CSL))
+End Sub
+#End If
+

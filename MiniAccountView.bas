@@ -21,10 +21,14 @@ Sub Class_Globals
 	Private btnMore As B4XView
 	Private AccountHolder(1) As PLMAccount
 	Private mTheme As ThemeManager
+	Private ChatListMode As Boolean
+	Private MetaChat As PLMMetaChat
+	Private btnChat As B4XView
 End Sub
 
-Public Sub Initialize (Parent As B4XView, Callback As Object, EventName As String)
-	mBase = Parent
+Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
+	mBase = xui.CreatePanel("mBase")
+	mBase.SetLayoutAnimated (0, 0, 0, Width, 65dip)
 	mBase.LoadLayout("MiniAccountView")
 	bbTop.TextEngine = B4XPages.MainPage.TextUtils1.TextEngine
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
@@ -46,14 +50,26 @@ End Sub
 Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	Notif = Account.Notification
 	mAccount = Account.Account
+	MetaChat = Account.MetaChat
 	AccountHolder(0) = mAccount
+	ChatListMode = Account.MetaChat.IsInitialized
+	If ChatListMode Then
+		bbTop.ClickHighlight = xui.CreatePanel("")
+	Else
+		bbTop.ClickHighlight = Null
+	End If
 	Dim mp As B4XMainPage = B4XPages.MainPage
 	Dim consumer As ImageConsumer = mp.SetImageViewTag(imgAvatar)
 	consumer.IsVisible = True
 	Dim tu As TextUtils = B4XPages.MainPage.TextUtils1
 	ImagesCache1.SetImage(mAccount.Avatar, imgAvatar.Tag, ImagesCache1.RESIZE_NONE)
-	tu.SetAccountTopText(bbTop, mAccount, Notif, True)
-	tu.UpdateFollowButton(btnFollow, mAccount, True)
+	tu.SetAccountTopText(bbTop, mAccount, Notif, True, MetaChat)
+	btnChat.Visible = ChatListMode
+	btnFollow.Visible = Not(ChatListMode)
+	Wait For (tu.UpdateFollowButton(btnFollow, mAccount, True)) Complete (ShouldUpdate As Boolean)
+	If ShouldUpdate Then
+		tu.SetAccountTopText(bbTop, mAccount, Notif, True, MetaChat)
+	End If
 End Sub
 
 Private Sub btnFollow_Click
@@ -61,7 +77,7 @@ Private Sub btnFollow_Click
 End Sub
 
 Private Sub btnMore_Click
-	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, True, bbTop, Notif)
+	tu.OtherAccountMoreClicked(btnFollow, AccountHolder, True, bbTop, Notif, MetaChat)
 End Sub
 
 Public Sub RemoveFromParent
@@ -79,6 +95,7 @@ End Sub
 
 #if B4J
 Private Sub imgAvatar_MouseClicked (EventData As MouseEvent)
+	EventData.Consume
 #else
 Private Sub imgAvatar_Click
 #end if
@@ -86,10 +103,30 @@ Private Sub imgAvatar_Click
 End Sub
 
 Private Sub BBTOP_LinkClicked (URL As String, Text As String)
+	If URL = "~time click" Then
+		btnChat_Click
+		Return
+	End If
 	CallSub2(mCallBack, mEventName & "_LinkClicked", B4XPages.MainPage.TextUtils1.ManageLink(Null, mAccount, URL, Text))
 End Sub
 
 
 Public Sub GetBase As B4XView
 	Return mBase
+End Sub
+
+#if B4J
+Private Sub mBase_MouseClicked (EventData As MouseEvent)
+	EventData.Consume
+#else
+Private Sub mBase_Click
+#end if
+	If ChatListMode Then
+		btnChat_Click
+	End If
+End Sub
+
+
+Private Sub btnChat_Click
+	B4XPages.MainPage.Statuses.Chat.StartChat(mAccount)
 End Sub

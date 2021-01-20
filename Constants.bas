@@ -23,12 +23,14 @@ Sub Process_Globals
 	Public Const URL_PUBLIC As String = "/api/v1/timelines/public"
 	Public Const URL_HOME As String = "/api/v1/timelines/home"
 	Public Const URL_NOTIFICATIONS As String = "/api/v1/notifications"
+	Public Const URL_CHATS_LIST As String = "/api/v1/pleroma/chats"
+	
 	Public Const LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
-		LINKTYPE_SEARCH = 6, LINKTYPE_NOTIFICATIONS = 7 As Int
+		LINKTYPE_SEARCH = 6, LINKTYPE_NOTIFICATIONS = 7, LINKTYPE_CHAT = 8, LINKTYPE_CHATS_LIST = 9 As Int
 	Public AppName As String = "B4X Pleroma"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.30
+	Public Const Version As Float = 1.40
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
@@ -53,6 +55,9 @@ Sub Process_Globals
 	Public UserContentAgreement As String = $"There is no tolerance for objectionable content or abusive behavior.
 Before you can post, you need to agree not to post objectional content."$
 	Public VisibilityKeyToUserValue As Map = CreateMap("public": "Public", "unlisted": "Unlisted", "private": "Private", "direct": "Direct")
+	Public Const SOUND_MESSAGE = "message" As String
+	
+	Public Const NewChatMessageTitle As String = "New Chat Message"
 End Sub
 
 Public Sub Initialize

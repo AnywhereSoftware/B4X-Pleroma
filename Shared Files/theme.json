@@ -85,6 +85,16 @@
             "OverlayColorMadeWithLove",
             "64FFFFFF",
             "64000000"
+        ],
+        [
+            "ChatMeBackground",
+            "FF61FF65",
+            "FF127816"
+        ],
+        [
+            "SecondTextColor",
+            "FF8E8E92",
+            "FFBCBCBE"
         ]
     ]
 }

@@ -68,9 +68,12 @@ Public Sub UpdateLeftDrawerList
 	If weHaveAUser Then
 		AddDrawerItem(0xF015, "Home", LinksManager.LINK_HOME)
 		AddDrawerItem(0xF0F3, "Notifications", LinksManager.LINK_NOTIFICATIONS)
+		If B4XPages.MainPage.Statuses.Chat.ChatSupported Then
+			AddDrawerItem(0xF086, "Chats", LinksManager.LINK_CHATS_LIST)
+		End If
 	End If
 	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
-		AddDrawerItem(0xF1D7, Link.Title, Link)
+		AddDrawerItem(0xF09E, Link.Title, Link)
 	Next
 	
 	Divider.RemoveViewFromParent
@@ -102,9 +105,15 @@ Private Sub AddLink (link As PLMLink, CurrentOne As Boolean)
 	Dim icon As Int = 0
 	If link.LINKTYPE = Constants.LINKTYPE_SEARCH Then
 		icon = 0xF002
+	Else If link.LinkType = Constants.LINKTYPE_CHAT Then
+		icon = 0xF086
 	End If
 	AddDrawerItem(icon, link.Title, link)
 	Dim p As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
+	Dim MaybeCircle As B4XView = p.GetView(p.NumberOfViews - 1)
+	If CurrentOne = False And "circle" = MaybeCircle.Tag Then
+		MaybeCircle.Left = MaybeCircle.Left - 50dip
+	End If
 	Dim lbl As B4XView = CreateXLabel ("lblDelete", Chr(0xF00D))
 	lbl.Visible = CurrentOne = False
 	p.AddView(lbl, lstDrawer.AsView.Width - 2dip - lbl.Width, p.Height / 2 - lbl.Height / 2, lbl.Width, lbl.Height)
@@ -159,6 +168,7 @@ Private Sub AddDrawerItem (icon As Int, Title As String, Link As PLMLink)
 	#End If
 	If Link <> Null And LinksManager.LinksWithStreamerEvents.Contains(Link.URL) Then
 		Dim circle As B4XView = B4XPages.MainPage.ViewsCache1.CreateNotificationPanel
+		circle.Tag = "circle"
 		p.AddView(circle, p.Width - 20dip, p.Height / 2 - circle.Height / 2, circle.Width, circle.Height)
 	End If
 End Sub
