@@ -596,6 +596,7 @@ Private Sub ShowMoreOptions
 	Dim options As List
 	options.Initialize
 	options.Add(tu.CreateMenuItem(0xF1E0, "Share"))
+	options.Add(tu.CreateMenuItem(0xF0C5, "Copy text"))
 	options.Add(tu.CreateMenuItem(0xF024, "Report"))
 	If B4XPages.MainPage.User.SignedIn And mStatus.StatusAuthor.Id = B4XPages.MainPage.User.Id Then
 		options.Add(tu.CreateMenuItem(0xF014, "Delete"))
@@ -605,10 +606,35 @@ Private Sub ShowMoreOptions
 		Case 0
 			SharePost
 		Case 1
-			B4XPages.MainPage.Report.Show(mStatus.StatusAuthor, mStatus.id)
+			CopyToClipboard
 		Case 2
+			B4XPages.MainPage.Report.Show(mStatus.StatusAuthor, mStatus.id)
+		Case 3
 			DeleteStatus
 	End Select
+End Sub
+
+Private Sub CopyToClipboard
+	Try
+		
+		Dim text As String = tu.HtmlConverter.ConvertHtmlToText(mStatus.Content.RootHtmlNode, mStatus.Emojis)
+	#if B4J
+	Dim fx As JFX
+	fx.Clipboard.SetString(text)
+	#Else If B4i
+	Dim c As Clipboard
+	c.StringItem = text
+	#Else if B4A
+	Dim ctxt As JavaObject
+	ctxt.InitializeContext
+	Dim ClipboardManager As JavaObject = ctxt.RunMethod("getSystemService", Array("clipboard"))
+	ClipboardManager.RunMethod("setText", Array(text))
+	#End If
+	B4XPages.MainPage.ShowMessage("Message copied to clipboard.")
+	Catch
+		Log(LastException)
+		B4XPages.MainPage.ShowMessage("Failed to copy message: " & LastException)
+	End Try
 End Sub
 
 Private Sub SharePost

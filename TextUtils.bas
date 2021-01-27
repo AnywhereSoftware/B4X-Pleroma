@@ -165,7 +165,7 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	status.URI = StatusMap.GetDefault("uri", "")
 	status.Url = StatusMap.GetDefault("url", "")
 	status.id = StatusMap.Get("id")
-	status.CreatedAt = ParseDate(StatusMap.GetDefault("created_at", DateTime.Now))
+	status.CreatedAt = ParseDate(StatusMap.GetDefault("created_at", ""))
 	status.Sensitive = StatusMap.GetDefault("sensitive", False)
 	status.ReblogsCount = StatusMap.GetDefault("reblogs_count", 0)
 	status.FavouritesCount = StatusMap.GetDefault("favourites_count", 0)
@@ -235,7 +235,7 @@ Public Sub ParseChatMessage (Message As Map) As PLMChatMessage
 	cm.Unread = Message.GetDefault("unread", False)
 	cm.Content = CreateContent(Message.Get("content"))
 	cm.Emojies = GetEmojies(Message, 32)
-	cm.CreateAt = ParseDate(Message.GetDefault("created_at", DateTime.Now))
+	cm.CreateAt = ParseDate(Message.GetDefault("created_at", ""))
 	cm.AccountId = Message.GetDefault("account_id", "")
 	Return cm
 End Sub
@@ -263,7 +263,19 @@ Public Sub CreateAttachment (Attachment As Map) As PLMMedia
 End Sub
 
 Public Sub ParseDate(s As String) As Long
-	Return DateTime.DateParse(s.Replace("Z", "+0000"))
+	Try
+		If s = "" Then Return DateTime.Now
+		If Regex.IsMatch(".*\.\d\d\d.*", s) = False Then
+			Dim i As Int = s.IndexOf("+")
+			If i = -1 Then i = s.LastIndexOf("-")
+			s = s.SubString2(0, i) & ".000" & s.SubString(i)
+		End If
+		
+		Return DateTime.DateParse(s.Replace("Z", "+0000"))
+	Catch
+		Log(LastException)
+	End Try
+	Return DateTime.Now
 End Sub
 
 Public Sub CreateAccount (Account As Map) As PLMAccount
@@ -289,7 +301,7 @@ End Sub
 Private Sub CreateContent (RawContent As String) As PLMContent
 	Dim pc As PLMContent
 	pc.Initialize
-	pc.RootHtmlNode = B4XPages.MainPage.TextUtils1.HtmlParser.Parse(RawContent)
+	pc.RootHtmlNode = HtmlParser.Parse(RawContent)
 	Return pc
 End Sub
 
@@ -346,6 +358,7 @@ Public Sub ParseMetaChat (m As Map) As PLMMetaChat
 	Chat.ID = m.Get("id")
 	Chat.Account = CreateAccount(m.Get("account"))
 	Chat.Unread = m.GetDefault("unread", 0)
+	Chat.UpdatedAt = ParseDate(m.GetDefault("updated_at", ""))
 	Dim last As Map = m.Get("last_message")
 	If last.IsInitialized Then
 		Chat.LastMessage = ParseChatMessage(last)

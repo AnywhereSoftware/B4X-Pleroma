@@ -59,7 +59,7 @@
 		 {
             "title": "Chat",
             "type": "Boolean",
-            "key": "push_chat",
+            "key": "push_pleroma:chat_mention",
             "required": false
         }
 		

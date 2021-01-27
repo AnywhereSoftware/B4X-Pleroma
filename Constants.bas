@@ -27,10 +27,10 @@ Sub Process_Globals
 	
 	Public Const LINKTYPE_TAG = 1, LINKTYPE_USER = 2, LINKTYPE_OTHER = 3, LINKTYPE_TIMELINE = 4, LINKTYPE_THREAD = 5, _
 		LINKTYPE_SEARCH = 6, LINKTYPE_NOTIFICATIONS = 7, LINKTYPE_CHAT = 8, LINKTYPE_CHATS_LIST = 9 As Int
-	Public AppName As String = "B4X Pleroma"
+	Public AppName As String = "B4X for P & M"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.40
+	Public Const Version As Float = 1.41
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"

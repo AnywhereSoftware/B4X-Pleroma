@@ -3,31 +3,32 @@ Build2=Simulator,b4i.pleroma,HU2_PUBLIC,SIMULATOR
 File1=AccountView.bil
 File10=hamburger.png
 File11=hamburger_notif.png
-File12=icon.png
-File13=LeftDrawer.bil
-File14=lstDrawerUser.bil
-File15=MainPage.bil
-File16=message.wav
-File17=MiniAccountView.bil
-File18=Missing-image-232x150.png
-File19=nsfw.74818f9.png
+File12=hamburger_notif_small.png
+File13=icon.png
+File14=LeftDrawer.bil
+File15=lstDrawerUser.bil
+File16=MainPage.bil
+File17=message.wav
+File18=MiniAccountView.bil
+File19=Missing-image-232x150.png
 File2=AccountView.json
-File20=play.png
-File21=PostView.bil
-File22=PostView.json
-File23=PostViewMedia.bil
-File24=ReactionsView.bil
-File25=Report.json
-File26=Search.bil
-File27=Settings.json
-File28=StatusList.bil
-File29=StatusViewImpl.bil
+File20=nsfw.74818f9.png
+File21=play.png
+File22=PostView.bil
+File23=PostView.json
+File24=PostViewMedia.bil
+File25=ReactionsView.bil
+File26=Report.json
+File27=Search.bil
+File28=Settings.json
+File29=StatusList.bil
 File3=CardView.bil
-File30=theme.json
-File31=tile.png
-File32=tile-dark.png
-File33=VideoPlayer.bil
-File34=WebViewDialog.bil
+File30=StatusViewImpl.bil
+File31=theme.json
+File32=tile.png
+File33=tile-dark.png
+File34=VideoPlayer.bil
+File35=WebViewDialog.bil
 File4=ChatInputField.bil
 File5=ChatView.bil
 File6=close_icon.png
@@ -62,6 +63,7 @@ FileGroup31=Default Group
 FileGroup32=Default Group
 FileGroup33=Default Group
 FileGroup34=Default Group
+FileGroup35=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
 FileGroup6=Default Group
@@ -127,15 +129,15 @@ Module6=|relative|..\ChatManager
 Module7=|relative|..\ChatView
 Module8=|relative|..\CLVBackwards
 Module9=|relative|..\Constants
-NumberOfFiles=34
+NumberOfFiles=35
 NumberOfLibraries=23
 NumberOfModules=35
-Version=6.8
+Version=6.95
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#Version: 1.30.0
+	#Version: 1.40.1
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait

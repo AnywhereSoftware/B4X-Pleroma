@@ -63,7 +63,7 @@ Public Sub UpdateLeftDrawerList
 	Else
 		UserItem.RemoveViewFromParent
 		UserItem.Color = mTheme.SecondBackground
-		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.DisplayName, "statuses"))
+		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.Acct, "statuses"))
 	End If
 	If weHaveAUser Then
 		AddDrawerItem(0xF015, "Home", LinksManager.LINK_HOME)

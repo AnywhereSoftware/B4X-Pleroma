@@ -53,6 +53,7 @@ Public Sub AfterServerVerified (Features As PLMInstanceFeatures)
 End Sub
 
 Public Sub StartChat (User As PLMAccount)
+	
 	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, True)
 	If j = Null Then Return
 	Dim link As String = B4XPages.MainPage.GetServer.URL & $"/api/v1/pleroma/chats/by-account-id/${User.id}/"$
@@ -95,13 +96,17 @@ Public Sub MessageFromStreamer (m As Map) As String
 				If mCallback.feed.mLink.LinkType = Constants.LINKTYPE_CHATS_LIST Then
 					mCallback.Refresh
 				End If
-				Return $"/api/v1/pleroma/chats/${msg.ChatId}/messages"$
+				Return ChatMessagesUrlFromChatId(msg.ChatId)
 			End If
 		End If
 	Catch
 		Log(LastException)
 	End Try
 	Return ""
+End Sub
+
+Public Sub ChatMessagesUrlFromChatId (vChatId As String) As String
+	Return $"/api/v1/pleroma/chats/${vChatId}/messages"$
 End Sub
 
 Public Sub Show (link As PLMLink)

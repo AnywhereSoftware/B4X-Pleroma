@@ -52,7 +52,10 @@ Private Sub AfterSettingsChanged
 End Sub
 
 Public Sub GetUserAgreedToSafeContent As Boolean
-	Return settings.GetDefault("UserAgreedToSafeContent", False)
+	#if DIRECT
+	Return True
+	#End If
+	Return settings.GetDefault("UserAgreedToSafeContent", False) 'ignore
 End Sub
 
 Public Sub SetUserAgreed
@@ -71,7 +74,7 @@ Public Sub ShowSettings
 	Dim views As ViewsCache = B4XPages.MainPage.ViewsCache1
 	PrefDialog.CustomListView1.Clear 'as we update the titles, we need to clear the existing items.
 	Dim pi As B4XPrefItem = PrefDialog.PrefItems.Get(0)
-	pi.Title = "B4X Pleroma v" & NumberFormat2(Constants.Version, 1, 2, 2, False)
+	pi.Title = Constants.AppName & " v" & NumberFormat2(Constants.Version, 1, 2, 2, False)
 	Dim server As PLMServer = B4XPages.MainPage.GetServer
 	PrefDialog.GetPrefItem("server").Title =  views.CreateRichTextWithSize($"Server (${server.Name})"$, 14)
 	

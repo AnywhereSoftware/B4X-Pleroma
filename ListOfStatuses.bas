@@ -40,6 +40,8 @@ Sub Class_Globals
 	Private EmptyListSize As Int
 	Private FeedStarted As Boolean
 	Public Chat As ChatManager
+	Private RefreshImplIndex As Int
+	Private LastRefreshTime As Long
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
@@ -103,6 +105,12 @@ Public Sub Refresh2 (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As B
 End Sub
 
 Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack As Boolean, GoToItem As StackItem)
+	If LastRefreshTime + 50 > DateTime.Now Then Return
+	LastRefreshTime = DateTime.Now
+	RefreshImplIndex = RefreshImplIndex + 1
+	Dim MyIndex As Int = RefreshImplIndex
+	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
+	If Success = False Or MyIndex <> RefreshImplIndex Then Return
 	FeedStarted = False
 	btnBack.Visible = False
 	B4XPages.MainPage.ResetProgress
@@ -113,7 +121,7 @@ Private Sub RefreshImpl (User As PLMUser, NewLink As PLMLink, AddCurrentToStack 
 		End If
 	End If
 	Wait For (StopAndClear) Complete (Success As Boolean)
-	If Success = False Then Return
+	If Success = False Or MyIndex <> RefreshImplIndex Then Return
 	TargetId = ""
 	Dim KeepOldStatuses As Boolean
 	If GoToItem <> Null Then
@@ -145,20 +153,6 @@ Public Sub UpdateBackKey
 	btnBack.Visible = Stack.IsEmpty = False And B4XPages.MainPage.MadeWithLove1.mBase.Visible = False
 End Sub
 
-Public Sub StopAndClear As ResumableSub
-	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
-	If Success = False Then Return False
-	feed.Stop
-	RemoveInvisibleItems(0, 0, True)
-	CLV.Clear
-	CLV.sv.ScrollViewOffsetY = 0
-	CloseLargeImage
-	Chat.Hide
-	#if B4i
-	Sleep(5) 'attempt to fix a flicker issue in iOS.
-	#end if
-	Return True
-End Sub
 
 Private Sub WaitForWaitingForItemsToBeFalse As ResumableSub
 	RefreshIndex = RefreshIndex + 1
@@ -172,6 +166,7 @@ End Sub
 
 
 Private Sub GoBack
+	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	Dim CurrentItem As PLMLink = feed.mLink
 	If CurrentItem.IsInitialized And Stack.BookmarkedTitles.Contains(CurrentItem.Title) Then
 		Stack.PushToStack(feed, CLV, True)
@@ -213,12 +208,28 @@ End Sub
 
 Private Sub Chat_NewMessage (Message As PLMChatMessage)
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
+	If Success = False Then Return
 	If feed.Statuses.ContainsKey(Message.Id) Then Return
 	B4XPages.MainPage.Sound.PlaySound(Constants.SOUND_MESSAGE)
+	Dim LastDate As Long
+	If feed.Statuses.Size > feed.IndexOfFirstChatMessage Then
+		Dim m As Object = feed.Statuses.Get(feed.Statuses.Keys.Get(feed.IndexOfFirstChatMessage))
+		If m Is PLMChatMessage Then
+			Dim mm As PLMChatMessage = m
+			LastDate = mm.CreateAt
+		End If
+	End If
+	If feed.AddDateStubIfNeeded(Message.CreateAt, LastDate, True) Then
+		InsertNewItem(CreateListIndexFromFeedIndex(feed.IndexOfFirstChatMessage, True))
+	End If
 	feed.InsertItemAt(feed.IndexOfFirstChatMessage, Message.Id, Message)
 	Dim index As ListIndex = CreateListIndexFromFeedIndex(feed.IndexOfFirstChatMessage, True)
 	InsertNewItem(index)
 	Dim item As PLMCLVItem = CLV.GetValue(index.CLVIndex)
+	If feed.Statuses.Size = feed.IndexOfFirstChatMessage + 2 Then '+1 because of the NoMoreItems
+		feed.AddDateStubIfNeeded(DateTime.Now, 0, True)
+		InsertNewItem(CreateListIndexFromFeedIndex(feed.Statuses.Size - 1, True))
+	End If
 	Sleep(0)
 	SmoothScrollBy(item.ItemHeight + 20dip)
 	Chat.MarkAsRead (feed)
@@ -229,14 +240,13 @@ Private Sub PostView1_NewPost (Status As PLMStatus)
 	RemoveInsertedItems
 	PostView1.mReplyToId = ""
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
-	Dim index As Int = feed.InsertItemAfter(ReplyId, Status, Status.id)
 	If Success = False Then Return
+	Dim index As Int = feed.InsertItemAfter(ReplyId, Status, Status.id)
 	InsertNewItem(CreateListIndexFromFeedIndex(index, True))
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
 End Sub
 
 Private Sub JumpToTarget
-	Log("jump to target")
 	Sleep(0)
 	B4XPages.MainPage.HideProgress
 	Dim i As Int = feed.Statuses.Keys.IndexOf(TargetId)
@@ -256,6 +266,20 @@ Private Sub AreThereMoreItems As Boolean
 	End If
 	Return last.Content <> feed.NoMoreItems
 End Sub
+
+Public Sub StopAndClear As ResumableSub
+	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
+	If Success = False Then Return False
+	Backwards.RefreshIndex = Backwards.RefreshIndex + 1
+	feed.Stop
+	RemoveInvisibleItems(0, 0, True)
+	CLV.Clear
+	CLV.sv.ScrollViewOffsetY = 0
+	CloseLargeImage
+	Chat.Hide
+	Return True
+End Sub
+
 
 Private Sub StartFeed (KeepOldStatuses As Boolean)
 	EmptyListSize = 0
@@ -448,7 +472,7 @@ End Sub
 
 Sub CLV_VisibleRangeChanged (FirstIndex As Int, LastIndex As Int)
 	If FeedStarted = False Then Return
-'	Log(FirstIndex & " -> " & LastIndex)
+'	Log(FirstIndex & " -> " & LastIndex & ", " & EmptyListSize & ", " & CLV.Size)
 	If LastIndex >= CLV.Size Then Return
 	RemoveInvisibleItems(FirstIndex, LastIndex, False) 'reactions and post views can be removed in this call.
 	If ListGoesUp Then
@@ -549,10 +573,12 @@ Private Sub IsVisible(Index As Int, FirstIndex As Int, LastIndex As Int) As Bool
 End Sub
 
 Sub CLV_ItemClick (Index As Int, Value As Object)
-	Dim st As PLMCLVItem = Value
-	If st.Content Is PLMStatus Then
-		Dim s As PLMStatus = st.Content
-		Log(s.id)
+	If Value Is PLMCLVItem Then
+		Dim st As PLMCLVItem = Value
+		If st.Content Is PLMStatus And st.Content <> Null Then
+			Dim s As PLMStatus = st.Content
+			Log(s.id)
+		End If
 	End If
 End Sub
 

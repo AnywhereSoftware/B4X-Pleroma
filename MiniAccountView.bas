@@ -24,6 +24,7 @@ Sub Class_Globals
 	Private ChatListMode As Boolean
 	Private MetaChat As PLMMetaChat
 	Private btnChat As B4XView
+	Private PreventDoubleClick As Long
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
@@ -128,5 +129,7 @@ End Sub
 
 
 Private Sub btnChat_Click
-	B4XPages.MainPage.Statuses.Chat.StartChat(mAccount)
+	If PreventDoubleClick + 300 > DateTime.Now Then Return
+	PreventDoubleClick = DateTime.Now
+	B4XPages.MainPage.Statuses.Chat.StartChat(mAccount) 
 End Sub

@@ -30,7 +30,7 @@ Sub Class_Globals
 	Public User As PLMUser
 	Private pnlList As B4XView
 	Public Drawer As B4XDrawer
-	Private HamburgerIcons As Map
+
 	Public Dialog As B4XDialog
 	Public Dialog2 As B4XDialog
 	Private AccountView1 As AccountView
@@ -68,7 +68,9 @@ Sub Class_Globals
 	Public Report As ReportManager
 	Public Theme As ThemeManager
 	Public Stream As Streamer
-	Private Const HamburgerState_Close = 1, HamburgerState_Default = 2, HamburgerState_Notification = 3, HamburgerState_Invalid = 4 As Int
+	Private HamburgerIcons As Map
+	Private Const HamburgerState_Close = 1, HamburgerState_Default = 2, HamburgerState_Notification_Large = 3, HamburgerState_Notification_Small = 4, _
+		HamburgerState_Invalid = 5 As Int
 	#if B4J
 	Private ivHamburger As ImageView
 	#End If
@@ -110,6 +112,7 @@ Public Sub Initialize
 	Report.Initialize
 	Theme.RegisterForEvents(Me)
 	Stream.Initialize
+	Stream.LoadFromStore(store)
 	B4XPages.GetManager.TransitionAnimationDuration = 0
 	Sound.Initialize
 	Sound.AddSound(Constants.SOUND_MESSAGE, File.DirAssets, "message.wav")
@@ -167,7 +170,8 @@ no.RunMethod("addWillHide", Null)
 	B4AKeyboardActivityHeight = Root.Height
 	Statuses.Initialize(Me, "Statuses", pnlList)
 	HamburgerIcons.Put(HamburgerState_Default, xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True))
-	HamburgerIcons.Put(HamburgerState_Notification, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True))
+	HamburgerIcons.Put(HamburgerState_Notification_Large, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True))
+	HamburgerIcons.Put(HamburgerState_Notification_Small, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif_small.png", 32dip, 32dip, True))
 	HamburgerIcons.Put(HamburgerState_Close, xui.LoadBitmapResize(File.DirAssets, "close_icon.png", 32dip, 32dip, True))
 	B4XPages.SetTitle(Me, Constants.AppName)
 	MediaChooser1.Initialize
@@ -351,7 +355,7 @@ Private Sub CheckAllClosableInterfaces (OnlyTesting As Boolean, BackButton As Bo
 	End If
 	#if B4i
 	If B4iKeyboardHeight > 0 Then
-		If OnlyTesting = False Then B4XPages.GetNativeParent(Me).ResignFocus
+		If OnlyTesting = False Then HideKeyboard
 		Return True
 	End If
 	#end if
@@ -381,7 +385,12 @@ Public Sub UpdateHamburgerIcon
 	If CheckAllClosableInterfaces(True, False) Then
 		NewState = HamburgerState_Close
 	Else If LinksManager.LinksWithStreamerEvents.Size > 0 Then
-		NewState = HamburgerState_Notification
+		If LinksManager.LinksWithStreamerEvents.Contains(LinksManager.LINK_CHATS_LIST.URL) Or _
+				LinksManager.LinksWithStreamerEvents.Contains(LinksManager.LINK_NOTIFICATIONS.URL) Then
+			NewState = HamburgerState_Notification_Large
+		Else
+			NewState = HamburgerState_Notification_Small
+		End If
 	Else
 		NewState = HamburgerState_Default
 	End If
@@ -467,6 +476,7 @@ Public Sub SignOut
 	User.DisplayName = ""
 	User.AccessToken = ""
 	PersistUserAndServers
+	Stream.MostRecentNotification = 0
 	Statuses.Stack.Clear
 	Statuses.Refresh2(User, LinksManager.LINK_LOCAL, False, False)
 	DrawerManager1.UpdateLeftDrawerList
@@ -793,6 +803,7 @@ End Sub
 Private Sub B4XPage_Background
 	If store.IsInitialized = False Then Return 
 	store.Put("stack", Statuses.Stack.GetDataForStore)
+	Stream.SaveToStore(store)
 	If ViewsCache1.IsInitialized = False Then Return
 	ViewsCache1.StopPlaybackOfOtherVideos(Null)
 	Background = True
@@ -801,6 +812,8 @@ End Sub
 Private Sub B4XPage_Foreground
 	Log("foreground")
 	Background = False
+	Sleep(3000)
+	Stream.CheckForNewNotificationsAndChats
 End Sub
 
 Private Sub PostView1_Close

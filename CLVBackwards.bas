@@ -17,7 +17,7 @@ Sub Class_Globals
 	Private items As List
 	Private SpacerItem As CLVItem
 	Public SpacerRemoved As Boolean
-	Private RefreshIndex As Int
+	Public RefreshIndex As Int
 End Sub
 
 Public Sub Initialize (CLV As CustomListView)

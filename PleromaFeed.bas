@@ -170,7 +170,7 @@ Private Sub Download (Params As Map)
 			Case Constants.LINKTYPE_TAG, Constants.LINKTYPE_TIMELINE
 				res = ParseTimelines(str)
 			Case Constants.LINKTYPE_NOTIFICATIONS
-				Wait For (ParseNotifications(str)) Complete (res2 As B4XOrderedMap)
+				Wait For (ParseNotifications(str, mLink.NextURL = "")) Complete (res2 As B4XOrderedMap)
 				res = res2
 				SetNextLink(j)
 			Case Constants.LINKTYPE_USER
@@ -200,7 +200,7 @@ Private Sub Download (Params As Map)
 				If mLink.LinkType = Constants.LINKTYPE_CHAT Then
 					If Statuses.Size > 1 Then
 						Dim LastMessage As PLMChatMessage = Statuses.Get(Statuses.Keys.Get(Statuses.Size - 1))
-						AddDateStubIfNeeded(LastMessage.CreateAt, 0)
+						AddDateStubIfNeeded(LastMessage.CreateAt, 0, False)
 					End If
 				End If
 				Statuses.Put(LastPostId, NoMoreItems)
@@ -286,16 +286,18 @@ Private Sub ParseThread (s As String) As B4XOrderedMap
 	Return res
 End Sub
 
-Private Sub ParseNotifications (s As String) As ResumableSub
+Private Sub ParseNotifications (s As String, UpdateMostRecent As Boolean) As ResumableSub
 	Dim res As B4XOrderedMap = B4XCollections.CreateOrderedMap
 	Dim list As List = tu.JsonParseList(s)
 	If list.IsInitialized = False Then Return res
 	Dim StatusNotifications As List = Array("mention", "reblog", "poll", "favourite")
 	Dim AccountForRelationship As Map
 	AccountForRelationship.Initialize
+	Dim MostRecent As Long
 	For Each m As Map In list
-		Dim notif As PLMNotification = CreatePLMNotification(m.Get("type"), m.Get("id"), tu.ParseDate(m.Get("created_at")), _
+		Dim notif As PLMNotification = CreatePLMNotification(m.Get("type"), m.Get("id"), tu.ParseDate(m.GetDefault("created_at", "")), _
 			tu.CreateAccount(m.Get("account")))
+		If MostRecent = 0 Then MostRecent = notif.CreatedAt
 		If StatusNotifications.IndexOf(notif.NotificationType) > -1 Then
 			If m.ContainsKey("status") Then
 				Dim St As PLMStatus = tu.ParseStatus(m.Get("status"))
@@ -320,6 +322,9 @@ Private Sub ParseNotifications (s As String) As ResumableSub
 	Next
 	If AccountForRelationship.Size > 0 Then
 		Wait For (tu.AddRelationship(AccountForRelationship)) Complete (Success As Boolean)
+	End If
+	If UpdateMostRecent Then
+		B4XPages.MainPage.Stream.MostRecentNotification = MostRecent
 	End If
 	Return res
 End Sub
@@ -357,7 +362,7 @@ Private Sub ParseChat (s As String)
 			Dim message As Map = messages.Get(i)
 			Dim cm As PLMChatMessage = tu.ParseChatMessage(message)
 			If LastMessage.IsInitialized Then
-				AddDateStubIfNeeded(LastMessage.CreateAt, cm.CreateAt)
+				AddDateStubIfNeeded(LastMessage.CreateAt, cm.CreateAt, False)
 			End If
 			LastMessage = cm
 			Statuses.Put(cm.Id, cm)
@@ -378,7 +383,7 @@ Private Sub ParseChatsList (s As String)
 	Statuses.Put(LastPostId, NoMoreItems)
 End Sub
 
-Private Sub AddDateStubIfNeeded (LastDate As Long, CurrentDate As Long)
+Public Sub AddDateStubIfNeeded (LastDate As Long, CurrentDate As Long, InsertAtTheBeginning As Boolean) As Boolean
 	If DateTime.GetDayOfYear(LastDate) <> DateTime.GetDayOfYear(CurrentDate) Then
 		Dim s As String
 		If DateUtils.IsSameDay(DateTime.Now, LastDate) Then
@@ -389,10 +394,16 @@ Private Sub AddDateStubIfNeeded (LastDate As Long, CurrentDate As Long)
 			s = $"$1.0{DateTime.GetMonth(LastDate)}/$1.0{DateTime.GetDayOfMonth(LastDate)}/${NumberFormat2(DateTime.GetYear(LastDate), 1, 0, 0, False)}"$
 		End If
 		Dim id As String = "date-" & s
-		Statuses.Put(id, CreatePLMStub(id, 30dip, s))
+		Dim stub As PLMStub = CreatePLMStub(id, 30dip, s)
+		If InsertAtTheBeginning Then
+			InsertItemAt(IndexOfFirstChatMessage, id, stub)
+		Else
+			Statuses.Put(id, stub)
+		End If
+		Return True
 	End If
+	Return False
 End Sub
-
 
 Private Sub ParseTimelines(s As String) As B4XOrderedMap
 	Dim res As B4XOrderedMap = B4XCollections.CreateOrderedMap

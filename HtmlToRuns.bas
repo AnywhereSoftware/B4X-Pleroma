@@ -11,6 +11,7 @@ Sub Class_Globals
 	Private Runs As List
 	Private Depth As Int
 	Private mEmojis As List
+	Private ToTextSB As StringBuilder
 End Sub
 
 Public Sub Initialize (TextEngine As BCTextEngine, HtmlParser As MiniHtmlParser)
@@ -23,64 +24,70 @@ Public Sub ConvertHtmlToRuns (Parent As HtmlNode, Data As BBCodeParseData, Emoji
 	mData = Data
 	Depth = 0
 	mEmojis = Emojis
-	ImplConvertHtmlToRuns(Parent)
+	ImplConvertHtmlToRuns(Parent, False)
 	Return Runs
 End Sub
 
-Private Sub ImplConvertHtmlToRuns (Parent As HtmlNode)
+Public Sub ConvertHtmlToText (Parent As HtmlNode, Emojis As List) As String
+	ToTextSB.Initialize
+	ImplConvertHtmlToRuns(Parent, True)
+	Return ToTextSB.ToString
+End Sub
+
+Private Sub ImplConvertHtmlToRuns (Parent As HtmlNode, ToText As Boolean)
 	If (Parent.Name = "p" And Runs.Size > 0) Or Parent.Name = "br" Then
-		Runs.Add(mTextEngine.CreateRun(CRLF))
+		If ToText Then
+			ToTextSB.Append(CRLF)
+		Else
+			Runs.Add(mTextEngine.CreateRun(CRLF))
+		End If
 		If Parent.Name = "br" Then Return
 	End If
 	If Parent.Children.Size = 0 Or Parent.Name = "a" Then
-		HandleLeaf(Parent)
+		HandleLeaf(Parent, ToText)
 	Else
 		Depth = Depth + 1
 		For Each c As HtmlNode In Parent.Children
-			ImplConvertHtmlToRuns(c)
+			ImplConvertHtmlToRuns(c, ToText)
 		Next
 		Depth = Depth - 1
 	End If
 End Sub
 
-Private Sub HandleLeaf (Leaf As HtmlNode)
+Private Sub HandleLeaf (Leaf As HtmlNode, ToText As Boolean)
 	Dim Text As String
 	Dim sb As StringBuilder
 	sb.Initialize
 	GetAllTextElements(Leaf, sb)
 	Text = sb.ToString
 	If Leaf.Name = "text" And mEmojis.IsInitialized Then
-		B4XPages.MainPage.TextUtils1.TextWithEmojisToRuns(Text, Runs, mEmojis, mData, mData.DefaultFont)
+		If ToText Then
+			ToTextSB.Append(Text)
+		Else
+			B4XPages.MainPage.TextUtils1.TextWithEmojisToRuns(Text, Runs, mEmojis, mData, mData.DefaultFont)
+		End If
 		Return
 	End If
 
 	Try
-		Dim Run As BCTextRun = mTextEngine.CreateRun(Text)
-		Run.TextColor = mData.DefaultColor
-		Run.TextFont = mData.DefaultFont
-		Runs.Add(Run)
-		If Leaf.Name = "a" Then
-			mData.URLs.Put(Run, mHtmlParser.GetAttributeValue(Leaf, "href", ""))
-			Run.Underline = True
-			Run.TextColor = mData.UrlColor
+		If ToText Then
+			ToTextSB.Append(Text)
+		Else
+			Dim Run As BCTextRun = mTextEngine.CreateRun(Text)
+			Run.TextColor = mData.DefaultColor
+			Run.TextFont = mData.DefaultFont
+			Runs.Add(Run)
+			If Leaf.Name = "a" Then
+				mData.URLs.Put(Run, mHtmlParser.GetAttributeValue(Leaf, "href", ""))
+				Run.Underline = True
+				Run.TextColor = mData.UrlColor
+			End If
 		End If
+		
 	Catch
 		Log("*****    Handle Leaf Error ****: " & Text)
 		Log(LastException)
 	End Try
-'	Dim Nodes(Depth) As Object
-'	Dim n As HtmlNode = Leaf
-'	For i = 0 To Depth - 1
-'		Nodes(i) = n
-'		n = n.Parent
-'	Next
-'	For i = Depth - 1 To 0 Step - 1
-'		Dim node As HtmlNode = Nodes(i)
-'		Select node.Name
-'			Case "a"
-
-'		End Select
-'	Next
 End Sub
 
 
