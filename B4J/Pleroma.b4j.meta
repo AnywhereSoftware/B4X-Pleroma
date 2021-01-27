@@ -103,6 +103,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=Streamer,IsClientConnected,122,0,Streamer,Class_Globals,12,5,Streamer,UserChanged,65,1,Streamer,Disconnect,119,0,Main,MainForm_FocusChanged,21,0,Main,AppStart,10,0,B4XMainPage,B4XPage_Foreground,809,3,Streamer,CheckForNewNotificationsAndChats,154,6,Streamer,Client_TextMessage,93,0,ChatManager,MessageFromStreamer,76,0
+NavigationStack=Streamer,UserChanged,65,1,Streamer,Disconnect,119,0,Main,MainForm_FocusChanged,21,0,Main,AppStart,10,0,B4XMainPage,B4XPage_Foreground,809,3,ChatManager,MessageFromStreamer,76,0,PLMSettings,Class_Globals,0,0,Constants,Process_Globals,30,0,Streamer,Client_TextMessage,93,0,Streamer,CheckForNewNotificationsAndChats,131,6,TextUtils,CreateHttpJob,551,0
 SelectedBuild=0
 VisibleModules=28,9,3,2,18,26,17,30,6

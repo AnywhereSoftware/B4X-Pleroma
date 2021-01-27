@@ -135,25 +135,30 @@ End Sub
 Public Sub CheckForNewNotificationsAndChats
 	If LastExplicitCheck + 10 * DateTime.TicksPerSecond > DateTime.Now Then Return
 	LastExplicitCheck = DateTime.Now
-	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, False)
-	If j = Null Then Return
-	j.Download(B4XPages.MainPage.GetServer.URL & B4XPages.MainPage.LinksManager.LINK_CHATS_LIST.URL)
-	B4XPages.MainPage.auth.AddAuthorization(j)
-	Wait For (j) JobDone(j As HttpJob)
-	If j.Success Then
-		Dim messages As List = tu.JsonParseList(j.GetString)
-		If messages.IsInitialized Then
-			For Each message As Map In messages
-				Dim cm As PLMMetaChat = tu.ParseMetaChat(message)
-				If cm.Unread > 0 Then
-					LinksManager.LinksWithStreamerEvents.Add(B4XPages.MainPage.Statuses.Chat.ChatMessagesUrlFromChatId(cm.Id))
-				End If
-			Next
+	If B4XPages.MainPage.User.SignedIn = False Then Return
+	Dim Chat As ChatManager = B4XPages.MainPage.Statuses.Chat
+	If Chat.ChatSupported Then
+		Dim j As HttpJob = tu.CreateHttpJob(Me, Null, True)
+		If j = Null Then Return
+		j.Download(B4XPages.MainPage.GetServer.URL & B4XPages.MainPage.LinksManager.LINK_CHATS_LIST.URL)
+		B4XPages.MainPage.auth.AddAuthorization(j)
+		Wait For (j) JobDone(j As HttpJob)
+		If j.Success Then
+			Dim messages As List = tu.JsonParseList(j.GetString)
+			If messages.IsInitialized Then
+				For Each message As Map In messages
+					Dim cm As PLMMetaChat = tu.ParseMetaChat(message)
+					If cm.Unread > 0 Then
+						LinksManager.LinksWithStreamerEvents.Add(Chat.ChatMessagesUrlFromChatId(cm.Id))
+					End If
+				Next
+			End If
 		End If
+		j.Release
+		B4XPages.MainPage.HideProgress
 	End If
-	j.Release
-	B4XPages.MainPage.HideProgress
-	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, False)
+	
+	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, True)
 	If j = Null Then Return
 	j.Download(B4XPages.MainPage.GetServer.URL & B4XPages.MainPage.LinksManager.LINK_NOTIFICATIONS.URL)
 	B4XPages.MainPage.auth.AddAuthorization(j)

@@ -1,4 +1,5 @@
 ﻿Build1=Default,b4a.pleroma,HU2_PUBLIC
+Build2=Direct,b4a.pleroma,HU2_PUBLIC,DIRECT
 File1=AccountView.bal
 File10=hamburger.png
 File11=hamburger_notif.png
