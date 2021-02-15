@@ -9,7 +9,7 @@ Sub Class_Globals
 	Private TempServer As PLMServer
 	Private lstTemplate As B4XSearchTemplate
 	Private xui As XUI
-	Type PLMInstanceFeatures (URI As String, Title As String, Version As String, IsPleroma As Boolean, Features As B4XSet)
+	Type PLMInstanceFeatures (URI As String, Title As String, Version As String, IsPleroma As Boolean, Features As B4XSet, StatusMaxLength as int)
 	Private InstanceFeatures As Map '<string, PLMInstanceFeatures>
 	Private tu As TextUtils
 	Private mTheme As ThemeManager
@@ -150,6 +150,7 @@ Public Sub VerifyInstanceFeatures (server As PLMServer) As ResumableSub
 			features.Title = m.GetDefault("title", "")
 			features.URI = m.GetDefault("uri", "")
 			features.Version = m.GetDefault("version", "")
+			features.StatusMaxLength = m.GetDefault("max_toot_chars", 500)
 			features.Features.Initialize
 			If m.ContainsKey("pleroma") Then
 				features.IsPleroma = True

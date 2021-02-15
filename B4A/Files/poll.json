@@ -1,0 +1,93 @@
+{
+    "Version": 1.66,
+    "Theme": "Light Theme",
+    "Items": [
+        {
+            "title": "Expiry date",
+            "type": "Date",
+            "key": "Date",
+            "required": true
+        },
+        {
+            "options": [
+                "24"
+            ],
+            "title": "Expiry time",
+            "type": "Time",
+            "key": "Time",
+            "required": true
+        },
+        {
+            "title": "Multiple choices",
+            "type": "Boolean",
+            "key": "Multiple",
+            "required": false
+        },
+        {
+            "title": "Options",
+            "type": "Separator",
+            "key": "",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o1",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o2",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o3",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o4",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o5",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o6",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o7",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o8",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o9",
+            "required": false
+        },
+        {
+            "title": "",
+            "type": "Text",
+            "key": "o10",
+            "required": false
+        }
+    ]
+}

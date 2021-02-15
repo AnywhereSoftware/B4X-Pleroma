@@ -30,6 +30,10 @@ Sub Class_Globals
 	Private MediaChooser1 As MediaChooser
 	Private Pane1 As B4XView
 	Private mTheme As ThemeManager
+	Private PollDialog As PreferencesDialog
+	Private PollOptionsMap As Map
+	Private PollOptionsList As List
+	Private lblTextLength As B4XView
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
@@ -55,6 +59,9 @@ End Sub
 
 Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	PostOptions = CreateMap("nsfw": False, "visibility": Constants.VisibilityKeyToUserValue.GetDefault(Content.Visibility, "Public"))
+	CreateDefaultPollOptions
+	
+	PollOptionsList.Initialize
 	Dim IsSameReplyAsPreviousOne As Boolean = mReplyToId <> "" And mReplyToId = Content.ReplyToStatusId
 	mReplyToId = Content.ReplyToStatusId
 	mBase.Color = mTheme.Background
@@ -88,7 +95,7 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	et.SetSelection(B4XFloatTextField1.Text.Length, 0)
 	#End If
 	ArrangeMedias
-	
+	B4XFloatTextField1_TextChanged("", B4XFloatTextField1.Text)
 End Sub
 
 Public Sub SetVisibility (visible As Boolean)
@@ -108,6 +115,10 @@ Private Sub Post (status As String)
 			AttachmentIds.Add(pm.Media.Id)
 		End If
 	Next
+	If status.Length > B4XPages.MainPage.ServerFeatures.StatusMaxLength Then
+		B4XPages.MainPage.ShowMessage("Status too long.")
+		Return
+	End If
 	Posting = True
 	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 	If j = Null Then Return
@@ -116,6 +127,11 @@ Private Sub Post (status As String)
 	Dim vis As String = PostOptions.Get("visibility")
 	params.Put("visibility", vis.ToLowerCase)
 	params.Put("sensitive", PostOptions.Get("nsfw"))
+	If PollOptionsList.Size > 0 Then
+		Dim expiresIn As Int = (GetPollExpiryTime(PollOptionsMap) - DateTime.Now) / DateTime.TicksPerSecond
+		Dim poll As Map = CreateMap("multiple": PollOptionsMap.Get("Multiple"), "expires_in": expiresIn, "options": PollOptionsList)
+		params.Put("poll", poll)
+	End If
 	If AttachmentIds.Size > 0 Then params.Put("media_ids", AttachmentIds)
 	Dim jg As JSONGenerator
 	jg.Initialize(params)
@@ -252,10 +268,13 @@ Private Sub lblDelete_Click
 End Sub
 
 Private Sub btnMore_Click
-	Dim options As List = Array("Capture image", "Image from gallery", "Capture video", "Video from gallery")
+	Dim options As List = Array("Capture image", "Image from gallery", "Capture video", "Video from gallery", "Poll")
 	Wait For (B4XPages.MainPage.ShowListDialog(options, True)) Complete (Result As String)
 	Dim rs As Object
-	Select options.IndexOf(Result)
+	Dim option As Int = options.IndexOf(Result)
+	Dim IsPoll As Boolean = option = 4
+	If IsPollWithMedia(IsPoll) Then Return
+	Select option
 		Case 0
 			rs = MediaChooser1.AddImageFromCamera
 		Case 1
@@ -269,18 +288,90 @@ Private Sub btnMore_Click
 			#else
 			rs = MediaChooser1.AddVideoFromGallery
 			#End If
+		Case 4
+			AddPoll
 	End Select
 	Wait For (rs) Complete (pm As PostMedia)
 	AttachMediaFile(pm)
 End Sub
 
+Private Sub IsPollWithMedia (IsPoll As Boolean) As Boolean
+	If (IsPoll And pnlMedia.NumberOfViews > 0) Or (IsPoll = False And PollOptionsList.Size > 0) Then
+		B4XPages.MainPage.ShowMessage("Cannot create poll with other media.")
+		Return True
+	End If
+	Return False
+End Sub
+
+Private Sub AddPoll
+	If PollDialog.IsInitialized = False Then
+		PollDialog = B4XPages.MainPage.ViewsCache1.CreatePreferencesDialog("Poll.json")
+	End If
+	For i = 1 To 10
+		If PollOptionsList.Size >= i Then
+			PollOptionsMap.Put("o" & i, PollOptionsList.Get(i - 1))
+		Else
+			PollOptionsMap.Put("o" & i, "")
+		End If
+	Next
+	PollDialog.SetEventsListener(Me, "PollDialog")
+	Dim rs As Object = PollDialog.ShowDialog(PollOptionsMap, "Ok", "Cancel")
+	B4XPages.MainPage.ViewsCache1.AfterShowDialog(PollDialog.Dialog)
+	B4XFloatTextField1.TextField.Enabled = False
+	Wait For (rs) Complete (Result As Int)
+	B4XFloatTextField1.TextField.Enabled = True
+	
+	If Result = xui.DialogResponse_Positive Then
+		PollOptionsList.Clear
+		For i = 1 To 10
+			Dim t As String = PollOptionsMap.Get("o" & i)
+			t = t.Trim
+			If t <> "" Then
+				PollOptionsList.Add(t)
+			End If
+		Next
+	End If
+End Sub
+
+Private Sub PollDialog_IsValid (TempData As Map) As Boolean
+	If GetPollExpiryTime(TempData) <= DateTime.Now + 1 * DateTime.TicksPerMinute Then
+		B4XPages.MainPage.ShowMessage("Invalid expiry date")
+		Return False
+	End If
+	Return True	
+End Sub
+
+Private Sub GetPollExpiryTime (m As Map) As Long
+	Dim date As Long = m.Get("Date")
+	Dim time As Period = m.Get("Time")
+	Return DateUtils.AddPeriod(date, time)
+End Sub
+
+Private Sub CreateDefaultPollOptions
+	Dim n As Long = DateTime.Now
+	PollOptionsMap = CreateMap("Date": DateUtils.SetDate(DateTime.GetYear(n), DateTime.GetMonth(n), DateTime.GetDayOfMonth(n)))
+	Dim m As Int = DateTime.GetMinute(n) + 10
+	Dim h As Int = DateTime.GetHour(n)
+	If m > 60 Then 
+		m = m - 60
+		h = (h + 1) Mod 24
+	End If
+	Dim p As Period
+	p.Initialize
+	p.Hours = h
+	p.Minutes = m
+	PollOptionsMap.Put("Time", p)
+End Sub
+
 Private Sub btnCamera_Click
+	If IsPollWithMedia(False) Then Return
 	Wait For (MediaChooser1.AddImageFromCamera) Complete (pm As PostMedia)
 	AttachMediaFile(pm)
 	
 End Sub
 
 Sub btnGallery_Click
+	If IsPollWithMedia(False) Then Return
 	Wait For (MediaChooser1.AddImageFromGallery (btnCamera)) Complete (pm As PostMedia)
 	AttachMediaFile(pm)
 End Sub
@@ -307,4 +398,10 @@ End Sub
 
 Private Sub btnSend_Click
 	Post(B4XFloatTextField1.Text)
+End Sub
+
+Private Sub B4XFloatTextField1_TextChanged (Old As String, New As String)
+	Dim maxlength As Int = B4XPages.MainPage.ServerFeatures.StatusMaxLength
+	lblTextLength.Text = $"${New.Length}/${maxlength}"$
+	If New.Length > maxlength Then lblTextLength.TextColor = xui.Color_Red Else lblTextLength.TextColor = mTheme.DefaultText
 End Sub

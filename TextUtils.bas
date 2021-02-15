@@ -173,6 +173,7 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	status.Reblogged = StatusMap.GetDefault("reblogged", False)
 	status.RepliesCount = StatusMap.GetDefault("replies_count", 0)
 	status.Mentions = StatusMap.Get("mentions")
+	status.Poll = CreatePoll(StatusMap.Get("poll"))
 	status.Attachments.Initialize
 	Dim attachments As List = StatusMap.Get("media_attachments")
 	If attachments.IsInitialized Then
@@ -188,6 +189,25 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	status.InReplyToAccountId = StatusMap.Get("in_reply_to_account_id")
 	status.InReplyToId = StatusMap.Get("in_reply_to_id")
 	Return status
+End Sub
+
+Public Sub CreatePoll (raw As Map) As PLMPoll
+	Dim poll As PLMPoll
+	If raw.IsInitialized = False Or raw.ContainsKey("options") = False Then Return poll
+	poll.Initialize
+	poll.Expired = raw.GetDefault("expired", True)
+	poll.ExpiresAt = ParseDate(raw.GetDefault("expires_at", ""))
+	poll.Id = raw.Get("id")
+	poll.Multiple = raw.GetDefault("multiple", False)
+	poll.Options = raw.Get("options")
+	poll.UserVoted = raw.GetDefault("voted", False)
+	poll.OwnVotes = raw.GetDefault("own_votes", Constants.EmptyList)
+	Dim v As Object = raw.Get("voters_count")
+	If v <> Null And IsNumber(v) Then
+		poll.VotersCount = v
+	End If
+	poll.VotesCount = raw.GetDefault("votes_count", 0)
+	Return poll
 End Sub
 
 Public Sub DuplicateStatus(OldStatus As PLMStatus) As PLMStatus
@@ -263,6 +283,7 @@ Public Sub CreateAttachment (Attachment As Map) As PLMMedia
 End Sub
 
 Public Sub ParseDate(s As String) As Long
+	Dim res As Long
 	Try
 		If s = "" Then Return DateTime.Now
 		If Regex.IsMatch(".*\.\d\d\d.*", s) = False Then
@@ -270,12 +291,14 @@ Public Sub ParseDate(s As String) As Long
 			If i = -1 Then i = s.LastIndexOf("-")
 			s = s.SubString2(0, i) & ".000" & s.SubString(i)
 		End If
-		
-		Return DateTime.DateParse(s.Replace("Z", "+0000"))
+		DateTime.DateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+		res = DateTime.DateParse(s.Replace("Z", "+0000"))
 	Catch
 		Log(LastException)
+		res = DateTime.Now
 	End Try
-	Return DateTime.Now
+	DateTime.DateFormat = Constants.DateFormat
+	Return res
 End Sub
 
 Public Sub CreateAccount (Account As Map) As PLMAccount

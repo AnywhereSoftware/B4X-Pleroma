@@ -15,7 +15,7 @@ Sub Class_Globals
 		id As String, CreatedAt As Long, Tags As List, URI As String, Url As String, Visibility As String, Attachments As List, _
 		Sensitive As Boolean, InReplyToAccountAcct As String, RepliesCount As Int, ReblogsCount As Int, FavouritesCount As Int, _
 		Mentions As List, Emojis As List, InReplyToAccountId As String, InReplyToId As String, ExtraContent As Map, _
-		EmojiReactions As List, Favourited As Boolean, Reblogged As Boolean, StubForDuplicatedNotification As Boolean)
+		EmojiReactions As List, Favourited As Boolean, Reblogged As Boolean, StubForDuplicatedNotification As Boolean, Poll As PLMPoll)
 	Type PLMMedia (Id As String, TType As String, Url As String, PreviewUrl As String)
 	Type PLMLink (URL As String, LinkType As Int, Title As String, FirstURL As String, Extra As Map, NextURL As String)
 	Type PLMEmoji (Shortcode As String, URL As String, Size As Int)
@@ -25,6 +25,8 @@ Sub Class_Globals
 	Type PLMChatMessage (ChatId As String, CreateAt As Long, Unread As Boolean, Emojies As List, Content As PLMContent, _
 		Id As String, AccountId As String)
 	Type PLMStub (Id As String, Height As Int, Text As String)
+	Type PLMPoll (Id As String, ExpiresAt As Long, Expired As Boolean, Multiple As Boolean, VotesCount As Int, VotersCount As Int, UserVoted As Boolean, _
+		Options As List, OwnVotes As List)
 	Public Statuses As B4XOrderedMap
 	Private Timer1 As Timer
 	Private mCallback As Object
@@ -44,7 +46,7 @@ End Sub
 Public Sub Initialize (Callback As ListOfStatuses)
 	mCallback = Callback
 	Statuses.Initialize
-	DateTime.DateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+	
 	Timer1.Initialize("Timer1", 100)
 	tu = B4XPages.MainPage.TextUtils1
 	ChatMan = Callback.Chat
@@ -88,6 +90,7 @@ Public Sub Start (KeepStatuses As Boolean)
 	If Success Then
 		Dim features As PLMInstanceFeatures = B4XPages.MainPage.ServerManager1.GetServerFeatures(server)
 		B4XPages.MainPage.ServerSupportsEmojiReactions = features.Features.Contains("pleroma_emoji_reactions")
+		B4XPages.MainPage.ServerFeatures = features
 		ChatMan.AfterServerVerified(features)
 		Dim IsChat As Boolean = mLink.LinkType = Constants.LINKTYPE_CHAT
 		If IsChat Then NoMoreItems.Height = 0dip Else NoMoreItems.Height = 300dip

@@ -30,7 +30,7 @@ Sub Process_Globals
 	Public AppName As String = "B4X for P & M"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.41
+	Public Const Version As Float = 1.42
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"
@@ -58,6 +58,7 @@ Before you can post, you need to agree not to post objectional content."$
 	Public Const SOUND_MESSAGE = "message" As String
 	
 	Public Const NewChatMessageTitle As String = "New Chat Message"
+	Public Const DateFormat As String = DateTime.DeviceDefaultDateFormat
 End Sub
 
 Public Sub Initialize

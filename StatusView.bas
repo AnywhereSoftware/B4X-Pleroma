@@ -39,11 +39,13 @@ Sub Class_Globals
 	Private IconsFont As B4XFont
 	Private VideoPlayersReady As B4XSet
 	Private mTheme As ThemeManager
+	Private mViewsCache As ViewsCache
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
 	mEventName = EventName
 	mCallBack = Callback
+	mViewsCache = B4XPages.MainPage.ViewsCache1
 	ImagesCache1 = B4XPages.MainPage.ImagesCache1
 	TopFont = xui.CreateDefaultFont(12)
 	IconsFont = xui.CreateFontAwesome(18)
@@ -71,7 +73,7 @@ Public Sub Create (Base As B4XView)
 	BBBottom.TextEngine = mTextEngine
 	B4XPages.MainPage.SetImageViewTag(imgAvatar)
 	imgAvatar.SetColorAndBorder(xui.Color_Transparent, 0, 0, 5dip)
-	B4XPages.MainPage.ViewsCache1.SetCircleClip(imgAvatar.Parent)
+	mViewsCache.SetCircleClip(imgAvatar.Parent)
 	bbTop.WordWrap = False
 	Dim lbl As Label
 	lbl.Initialize("lblReadMore")
@@ -123,7 +125,6 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 		h = h + HandleAttachments
 	End If
 	BBBottom.mBase.Visible = mStatus.StubForDuplicatedNotification = False
-	
 	mBase.Height = pnlTop.Height + h + pnlBottom.Height
 	SetHeightBasedOnMBaseHeight
 End Sub
@@ -131,6 +132,8 @@ End Sub
 Private Sub GetAvatarAccount As PLMAccount
 	If Notif.IsInitialized Then Return Notif.Account Else Return mStatus.StatusAuthor
 End Sub
+
+
 
 #If B4J
 Private Sub lblReadMore_MouseClicked (EventData As MouseEvent)
@@ -278,7 +281,7 @@ Public Sub SetVisibility (visible As Boolean)
 			#else if B4i
 			If x.Tag Is VideoPlayer Then
 			#End If
-				B4XPages.MainPage.ViewsCache1.StopVideoPlayback(x)
+				mViewsCache.StopVideoPlayback(x)
 			End If
 			#end if
 		End If
@@ -339,6 +342,8 @@ Private Sub NotificationToText (runs As List)
 			r = tu.CreateRun(Chr(0xF006) & " favorited your status", fnt)
 		Case "mention"
 			r = tu.CreateRun(Chr(0xF1FA) & " mentioned you in their status", fnt)
+		Case "poll"
+			r = tu.CreateRun(Chr(0xF080) & " voted on your poll", fnt)
 		Case Else
 			Log("Not implemented: " & Notif.NotificationType)
 	End Select
@@ -370,6 +375,10 @@ Private Sub SetBottomPanel
 	If B4XPages.MainPage.ServerSupportsEmojiReactions Then
 		runs.Add(mTextEngine.CreateRun(tb))
 		runs.Add(CreateIconRun("~reactions", Chr(0xF118), False))
+	End If
+	If mStatus.Visibility = "private" Or mStatus.Visibility = "direct" Then
+		runs.Add(mTextEngine.CreateRun(tb))
+		runs.Add(CreateIconRun("~visibility", Chr(0xF023), False))
 	End If
 	
 	runs.Add(mTextEngine.CreateRun(tb))
@@ -417,6 +426,7 @@ Private Sub HandleAttachments As Int
 	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyCard) Then
 		CardAttachment(mStatus.ExtraContent.Get(Constants.ExtraContentKeyCard), h)
 	End If
+	If mStatus.Poll.IsInitialized Then PollAttachment(h)
 	pnlMedia.Height = h(0)
 	pnlMedia.Visible = h(0) > 0
 	Return h(0)
@@ -425,8 +435,9 @@ End Sub
 Private Sub CardAttachment (card As Map, h() As Int)
 	Dim stub As PLMMedia
 	stub.TType = "card"
-	Dim cv As CardView = B4XPages.MainPage.ViewsCache1.GetCardView
+	Dim cv As CardView = mViewsCache.GetCardView
 	Dim parent As B4XView = CreateAttachmentPanel(stub, h, 100dip, 15dip, cv.ImageView1.Tag)
+	
 	parent.AddView(cv.base, 0, 0, parent.Width, parent.Height)
 	cv.SetCard(card, mCallBack, mEventName, mStatus.Attachments)
 	parent.Height = cv.base.Height
@@ -447,14 +458,24 @@ Private Sub ImageAttachment (attachment As PLMMedia, h() As Int)
 	End If
 End Sub
 
-Private Sub CreateAttachmentPanel (att As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
+Private Sub PollAttachment (h() As Int)
+	Dim stub As PLMMedia
+	stub.TType = "poll"
+	Dim pv As PollView = mViewsCache.GetPollView
+	pv.SetContent(mStatus, pnlMedia.Width - 40dip)
+	Dim Parent As B4XView = CreateAttachmentPanel(stub, h, pv.mBase.Height, 10dip, Null)
+	Parent.AddView(pv.mBase, 10dip, 0, Parent.Width - 20dip, Parent.Height)
+	Parent.SetColorAndBorder(xui.Color_Transparent, 1dip, mTheme.PrefSeparatorColor, 5dip)
+End Sub
+
+Private Sub CreateAttachmentPanel (vTag As PLMMedia, h() As Int, Height As Int, SideGap As Int, Consumer As ImageConsumer) As B4XView
 	Dim Parent As B4XView = xui.CreatePanel("AttachmentParent")
 	If Consumer <> Null Then
 		Consumer.PanelColor = mTheme.Background
 	End If
 	Parent.SetColorAndBorder(mTheme.AttachmentPanelBackground, 0, 0, 5dip)
-	B4XPages.MainPage.ViewsCache1.SetClipToOutline(Parent)
-	Parent.Tag = att
+	mViewsCache.SetClipToOutline(Parent)
+	Parent.Tag = vTag
 	pnlMedia.AddView(Parent, SideGap, h(0) + 10dip, pnlMedia.Width - 2 * SideGap, Height)
 	h(0) = h(0) + Height + 10dip
 	Return Parent
@@ -464,7 +485,7 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	If xui.IsB4J Then Return
 	Dim iv As B4XView = B4XPages.MainPage.CreateImageView
 	Dim Parent As B4XView = CreateAttachmentPanel(attachment, h, MediaSize, 2dip, iv.Tag)
-	Dim playerview As B4XView = B4XPages.MainPage.ViewsCache1.GetVideoPlayer (Me, attachment)
+	Dim playerview As B4XView = mViewsCache.GetVideoPlayer (Me, attachment)
 	Parent.AddView(playerview, 0, 0, Parent.Width, Parent.Height)
 	Parent.AddView(iv, 0, 0, 0, 0)
 	#if B4A
@@ -556,7 +577,7 @@ Private Sub ToggleVideo (PlayerView As B4XView) 'ignore
 			player.Position = 0
 		End If
 		player.Play
-		B4XPages.MainPage.ViewsCache1.StopPlaybackOfOtherVideos(PlayerView)
+		mViewsCache.StopPlaybackOfOtherVideos(PlayerView)
 	End If
 #end if
 End Sub
@@ -589,6 +610,8 @@ Private Sub BBBottom_LinkClicked (URL As String, Text As String)
 		ShowMoreOptions
 	Else If URL.StartsWith("~emoji") Then
 		EmojiClick(URL)
+	Else If URL.StartsWith("~visibility") Then
+		B4XPages.MainPage.ShowMessage($"Visibility: ${mStatus.Visibility}"$)
 	End If
 End Sub
 
@@ -675,19 +698,18 @@ End Sub
 Public Sub RemoveFromParent
 	B4XPages.MainPage.ImagesCache1.ReleaseImage(imgAvatar.Tag)
 	B4XPages.MainPage.ImagesCache1.RemovePanelChildImageViews(pnlMedia)
-	Dim vc As ViewsCache = B4XPages.MainPage.ViewsCache1
 	For i = 0 To pnlMedia.NumberOfViews - 1
 		Dim parent As B4XView = pnlMedia.GetView(i)
 		Dim attachment As PLMMedia = parent.Tag
-		If attachment.TType = "video" Then
-			Dim playerview As B4XView = parent.GetView(0)
-			vc.StopVideoPlayback (playerview)
-			playerview.RemoveViewFromParent
-			vc.ReturnVideoPlayer(playerview)
-		Else If attachment.TType = "card" Then
-			Dim cv As CardView = parent.GetView(0).Tag
-			cv.Release
-		End If
+		Select attachment.TType
+			Case "video"
+				Dim playerview As B4XView = parent.GetView(0)
+				mViewsCache.StopVideoPlayback (playerview)
+				playerview.RemoveViewFromParent
+				mViewsCache.ReturnVideoPlayer(playerview)
+			Case "card", "poll"
+				CallSub(parent.GetView(0).Tag, "Release")
+		End Select
 	Next
 	pnlMedia.RemoveAllViews
 	BBListItem1.TextIndex = BBListItem1.TextIndex + 1

@@ -167,10 +167,12 @@ End Sub
 
 Private Sub GoBack
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
+	If Success = False Then Return
 	Dim CurrentItem As PLMLink = feed.mLink
 	If CurrentItem.IsInitialized And Stack.BookmarkedTitles.Contains(CurrentItem.Title) Then
 		Stack.PushToStack(feed, CLV, True)
 	End If
+	If Stack.IsEmpty Then Return
 	RefreshImpl(Null, Null, False, Stack.Pop)
 End Sub
 
@@ -311,7 +313,8 @@ Private Sub AddMoreItems
 		ProgressBar = True
 		B4XPages.MainPage.ShowProgress
 	End If
-	Dim NumberOfRealItemsInList As Int = CLV.Size - EmptyListSize
+	Dim CLVSize As Int = CLV.Size
+	Dim NumberOfRealItemsInList As Int = CLVSize - EmptyListSize
 	Do Until feed.Statuses.Size > NumberOfRealItemsInList
 		Sleep(100)
 		If MyRefreshIndex <> RefreshIndex Then
@@ -320,7 +323,11 @@ Private Sub AddMoreItems
 			Return
 		End If
 	Loop
-	
+	If CLVSize <> CLV.Size Then
+		Log("CLV size changed")
+		WaitingForItems = False
+		Return
+	End If
 	Dim NewList As Boolean = NumberOfRealItemsInList = 0 And TargetId = ""
 	Dim MaxIndex As Int = Min(feed.Statuses.Size - 1, NumberOfRealItemsInList + 10)
 	If TargetId <> "" Then MaxIndex = feed.Statuses.Size - 1

@@ -79,6 +79,7 @@ Sub Class_Globals
 	Private B4XImageView1 As B4XImageView
 	Public Sound As X2SoundPool
 	Public Background As Boolean = True
+	Public ServerFeatures As PLMInstanceFeatures
 End Sub
 
 Public Sub Initialize
@@ -116,6 +117,7 @@ Public Sub Initialize
 	B4XPages.GetManager.TransitionAnimationDuration = 0
 	Sound.Initialize
 	Sound.AddSound(Constants.SOUND_MESSAGE, File.DirAssets, "message.wav")
+	ServerFeatures.Initialize
 End Sub
 
 Private Sub UpdateOldStore
@@ -813,7 +815,7 @@ Private Sub B4XPage_Foreground
 	Log("foreground")
 	Background = False
 	Sleep(3000)
-	Stream.CheckForNewNotificationsAndChats
+	Stream.PeriodicCheck
 End Sub
 
 Private Sub PostView1_Close

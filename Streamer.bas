@@ -17,6 +17,7 @@ Sub Class_Globals
 	Private tu As TextUtils
 	Private LinksManager As B4XLinksManager
 	Private LastExplicitCheck As Long
+	Private xui As XUI
 End Sub
 
 Public Sub Initialize
@@ -29,6 +30,7 @@ End Sub
 Private Sub MyLoop
 	Do While True
 		Sleep(10000)
+		PeriodicCheck
 		If Connecting And ConnectingStartTime + 60  * DateTime.TicksPerSecond > DateTime.Now Then
 			Continue
 		End If
@@ -70,7 +72,7 @@ End Sub
 Public Sub UserChanged
 	Disconnect
 	LastExplicitCheck = 0
-	CheckForNewNotificationsAndChats
+	PeriodicCheck
 End Sub
 
 Private Sub Client_Connected
@@ -94,7 +96,14 @@ Private Sub Client_TextMessage (Message As String)
 				LinksManager.LinksWithStreamerEvents.Add(LinksManager.LINK_HOME.URL)
 			Case "notification"
 				Dim payload As String = m.GetDefault("payload", "")
-				If payload.Contains("pleroma:chat_mention") Then Return
+				Dim pay As Map = tu.JsonParseMap(payload)
+				If pay.IsInitialized = False Then Return
+				Dim typ As String = pay.GetDefault("type", "")
+				If typ = "pleroma:chat_mention" Then Return
+				If typ = "follow_request" Then
+					CheckForForFollowRequest
+					Return
+				End If
 				LinksManager.LinksWithStreamerEvents.Add(LinksManager.LINK_NOTIFICATIONS.URL)
 			Case "pleroma:chat_update"
 				Dim link As String = B4XPages.MainPage.Statuses.Chat.MessageFromStreamer(m)
@@ -132,8 +141,8 @@ Private Sub IsClientConnected As Boolean
 	#End If
 End Sub
 
-Public Sub CheckForNewNotificationsAndChats
-	If LastExplicitCheck + 10 * DateTime.TicksPerSecond > DateTime.Now Then Return
+Public Sub PeriodicCheck
+	If LastExplicitCheck + 3 * DateTime.TicksPerMinute > DateTime.Now Then Return
 	LastExplicitCheck = DateTime.Now
 	If B4XPages.MainPage.User.SignedIn = False Then Return
 	Dim Chat As ChatManager = B4XPages.MainPage.Statuses.Chat
@@ -176,8 +185,49 @@ Public Sub CheckForNewNotificationsAndChats
 			Next
 		End If
 	End If
+	j.Release
 	B4XPages.MainPage.HideProgress
+	Wait For (CheckForForFollowRequest) Complete (unused As Boolean)
+	
 	AfterStateChanged
 	
+End Sub
+
+Private Sub CheckForForFollowRequest As ResumableSub
+	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, True)
+	If j = Null Then Return False
+	j.Download(B4XPages.MainPage.GetServer.URL & "/api/v1/follow_requests")
+	B4XPages.MainPage.auth.AddAuthorization(j)
+	Wait For (j) JobDone(j As HttpJob)
+	If j.Success Then
+		Dim list As List = tu.JsonParseList(j.GetString)
+		If list.IsInitialized Then
+			Dim accounts As List
+			accounts.Initialize
+			For Each m As Map In list
+				accounts.Add(tu.CreateAccount(m))
+			Next
+		End If
+	End If
 	j.Release
+	B4XPages.MainPage.HideProgress
+	For Each account As PLMAccount In accounts
+		Dim message As String = $"Approve follow request from ${account.DisplayName} (${account.Acct})?"$
+		Wait For (B4XPages.MainPage.ConfirmMessage2(message, "Yes", "", "No")) Complete (Result As Int)
+		If Result = xui.DialogResponse_Cancel Then Return False
+		Dim verb As String
+		If Result = xui.DialogResponse_Positive Then verb = "authorize" Else verb = "reject"
+		Dim j As HttpJob = tu.CreateHttpJob(Me, B4XPages.MainPage.Root, True)
+		If j = Null Then Return False
+		j.PostString(B4XPages.MainPage.GetServer.URL & $"/api/v1/follow_requests/${account.Id}/${verb}"$, "")
+		B4XPages.MainPage.auth.AddAuthorization(j)
+		Wait For (j) JobDone(j As HttpJob)
+		If j.Success Then
+		Else
+			B4XPages.MainPage.ShowMessage("Response failed: " & j.ErrorMessage)
+		End If
+		j.Release
+		B4XPages.MainPage.HideProgress
+	Next
+	Return True
 End Sub

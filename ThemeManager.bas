@@ -21,6 +21,7 @@ Sub Class_Globals
 	Public SecondTextColor As Int
 	Public ChatMeBackground As Int
 	Public ActionBar As Int
+	Public SystemGray3 As Int
 	Private CurrentPallete As Map
 	Public ReadMoreGradient As B4XBitmap
 	Private xui As XUI
@@ -28,6 +29,7 @@ Sub Class_Globals
 	Private ThemeChangedTargets As B4XSet
 	Private PalleteIndex As Int
 	Private FirstTime As Boolean = True
+	
 End Sub
 
 Public Sub Initialize (json As String)
@@ -99,6 +101,7 @@ Private Sub SetDefaults
 	PrefSeparatorColor = CurrentPallete.Get("PrefSeparatorColor")
 	ChatMeBackground = CurrentPallete.Get("ChatMeBackground")
 	SecondTextColor = CurrentPallete.Get("SecondTextColor")
+	SystemGray3 = CurrentPallete.Get("systemGray3")
 	If FirstTime Then
 		FirstTime = False
 	Else

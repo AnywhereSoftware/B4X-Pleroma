@@ -14,21 +14,23 @@ File19=Missing-image-232x150.png
 File2=AccountView.json
 File20=nsfw.74818f9.png
 File21=play.png
-File22=PostView.bil
-File23=PostView.json
-File24=PostViewMedia.bil
-File25=ReactionsView.bil
-File26=Report.json
-File27=Search.bil
-File28=Settings.json
-File29=StatusList.bil
+File22=Poll.json
+File23=PollView.bil
+File24=PostView.bil
+File25=PostView.json
+File26=PostViewMedia.bil
+File27=ReactionsView.bil
+File28=Report.json
+File29=Search.bil
 File3=CardView.bil
-File30=StatusViewImpl.bil
-File31=theme.json
-File32=tile.png
-File33=tile-dark.png
-File34=VideoPlayer.bil
-File35=WebViewDialog.bil
+File30=Settings.json
+File31=StatusList.bil
+File32=StatusViewImpl.bil
+File33=theme.json
+File34=tile.png
+File35=tile-dark.png
+File36=VideoPlayer.bil
+File37=WebViewDialog.bil
 File4=ChatInputField.bil
 File5=ChatView.bil
 File6=close_icon.png
@@ -64,6 +66,8 @@ FileGroup32=Default Group
 FileGroup33=Default Group
 FileGroup34=Default Group
 FileGroup35=Default Group
+FileGroup36=Default Group
+FileGroup37=Default Group
 FileGroup4=Default Group
 FileGroup5=Default Group
 FileGroup6=Default Group
@@ -95,49 +99,51 @@ Library7=bitmapsasync
 Library8=icore
 Library9=ifirebaseanalytics
 Module1=|relative|..\AccountView
-Module10=|relative|..\DrawerManager
-Module11=|relative|..\HtmlToRuns
-Module12=|relative|..\ImagesCache
-Module13=|relative|..\ListOfStatuses
-Module14=|relative|..\MediaChooser
-Module15=|relative|..\MiniAccountView
-Module16=|relative|..\OAuth
-Module17=|relative|..\PleromaFeed
-Module18=|relative|..\PLMSettings
-Module19=|relative|..\PostView
+Module10=|relative|..\Constants
+Module11=|relative|..\DrawerManager
+Module12=|relative|..\HtmlToRuns
+Module13=|relative|..\ImagesCache
+Module14=|relative|..\ListOfStatuses
+Module15=|relative|..\MediaChooser
+Module16=|relative|..\MiniAccountView
+Module17=|relative|..\OAuth
+Module18=|relative|..\PleromaFeed
+Module19=|relative|..\PLMSettings
 Module2=|relative|..\B4XLinksManager
-Module20=|relative|..\Push
-Module21=|relative|..\ReactionsView
-Module22=|relative|..\ReportManager
-Module23=|relative|..\RequestsManager
-Module24=|relative|..\SearchManager
-Module25=|relative|..\ServerManager
-Module26=|relative|..\StackManager
-Module27=|relative|..\StatusView
-Module28=|relative|..\Streamer
-Module29=|relative|..\StubView
+Module20=|relative|..\PollView
+Module21=|relative|..\PostView
+Module22=|relative|..\Push
+Module23=|relative|..\ReactionsView
+Module24=|relative|..\ReportManager
+Module25=|relative|..\RequestsManager
+Module26=|relative|..\SearchManager
+Module27=|relative|..\ServerManager
+Module28=|relative|..\StackManager
+Module29=|relative|..\StatusView
 Module3=|relative|..\B4XMainPage
-Module30=|relative|..\TextUtils
-Module31=|relative|..\ThemeManager
-Module32=UserNotificationCenter
-Module33=|relative|..\ViewsCache
-Module34=|relative|..\WebViewDialog
-Module35=|relative|..\X2SoundPool
+Module30=|relative|..\Streamer
+Module31=|relative|..\StubView
+Module32=|relative|..\TextUtils
+Module33=|relative|..\ThemeManager
+Module34=UserNotificationCenter
+Module35=|relative|..\ViewsCache
+Module36=|relative|..\WebViewDialog
+Module37=|relative|..\X2SoundPool
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
 Module6=|relative|..\ChatManager
 Module7=|relative|..\ChatView
 Module8=|relative|..\CLVBackwards
-Module9=|relative|..\Constants
-NumberOfFiles=35
+Module9=|relative|..\CLVSelections
+NumberOfFiles=37
 NumberOfLibraries=23
-NumberOfModules=35
-Version=6.95
+NumberOfModules=37
+Version=7
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X for P &amp; M
-	#Version: 1.41.0
+	#Version: 1.42.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -159,7 +165,7 @@ Version=6.95
 	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
 	#if Not(SIMULATOR)
-'	#ProvisionFile: pleroma_store.mobileprovision
+	#ProvisionFile: pleroma_store.mobileprovision
 	#End If
 	'This enables the system dark mode feature.
 	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->

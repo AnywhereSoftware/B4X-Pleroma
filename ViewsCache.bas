@@ -17,6 +17,7 @@ Sub Class_Globals
 	Private CardViews As Map
 	Private VideosToStatusViews As Map
 	Private mTheme As ThemeManager
+	Private PollViews As Map
 	Public Const EmptyPrefDialog As PreferencesDialog
 End Sub
 
@@ -25,6 +26,7 @@ Public Sub Initialize
 	ImageViews.Initialize
 	CardViews.Initialize
 	VideosToStatusViews.Initialize
+	PollViews.Initialize
 	mTheme = B4XPages.MainPage.Theme
 End Sub
 
@@ -85,6 +87,19 @@ End Sub
 
 Public Sub ReleaseCardView (cv As CardView)
 	CardViews.Put(cv, False)
+End Sub
+
+Public Sub GetPollView As PollView
+	Dim p As PollView = GetFromMap(PollViews)
+	If p = Null Then
+		Dim p As PollView
+		p.Initialize
+	End If
+	Return p
+End Sub
+
+Public Sub ReleasePollView (poll As PollView)
+	PollViews.Put(poll, False)
 End Sub
 
 Public Sub ReleaseImageView(iv As B4XView)
