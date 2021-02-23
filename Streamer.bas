@@ -196,14 +196,14 @@ End Sub
 Private Sub CheckForForFollowRequest As ResumableSub
 	Dim j As HttpJob = tu.CreateHttpJob(Me, Null, True)
 	If j = Null Then Return False
+	Dim accounts As List
+	accounts.Initialize
 	j.Download(B4XPages.MainPage.GetServer.URL & "/api/v1/follow_requests")
 	B4XPages.MainPage.auth.AddAuthorization(j)
 	Wait For (j) JobDone(j As HttpJob)
 	If j.Success Then
 		Dim list As List = tu.JsonParseList(j.GetString)
 		If list.IsInitialized Then
-			Dim accounts As List
-			accounts.Initialize
 			For Each m As Map In list
 				accounts.Add(tu.CreateAccount(m))
 			Next

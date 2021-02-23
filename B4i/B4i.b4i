@@ -165,7 +165,7 @@ Version=7
 	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
 	#if Not(SIMULATOR)
-	#ProvisionFile: pleroma_store.mobileprovision
+'	#ProvisionFile: pleroma_store.mobileprovision
 	#End If
 	'This enables the system dark mode feature.
 	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->

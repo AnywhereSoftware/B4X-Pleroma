@@ -115,6 +115,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=StatusView,ToggleVideo,575,0,PostView,Class_Globals,31,0,PostView,AddPoll,310,5,PostView,IsPollWithMedia,296,3,PostView,btnMore_Click,272,6,PostView,btnCamera_Click,360,5,PostView,btnGallery_Click,366,0,PostView,btnOptions_Click,381,0,Visual Designer,PostView.bal,-100,2,Constants,Process_Globals,26,0,PollView,Class_Globals,0,0
+NavigationStack=PostView,btnCamera_Click,360,5,PostView,btnGallery_Click,366,0,PostView,btnOptions_Click,381,0,PollView,Class_Globals,0,0,Visual Designer,PostView.bal,-100,5,Main,Globals,24,0,Main,Activity_Create,30,1,Main,IME_HeightChanged,35,0,Main,Process_Globals,17,0,Constants,Process_Globals,26,0,B4XMainPage,Class_Globals,19,0
 SelectedBuild=1
 VisibleModules=21,36,35,31,34,23,3,22,10
