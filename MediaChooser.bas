@@ -27,7 +27,7 @@ Public Sub Initialize
 	VideoRecorder.Initialize("VideoRecorder")
 	#Else If B4i
 	Camera.Initialize("Camera", B4XPages.GetNativeParent(B4XPages.MainPage))
-	Camera.AllowsEditing = True
+	
 	#End If
 End Sub
 
@@ -106,6 +106,7 @@ Public Sub AddImageFromCamera As ResumableSub
 	If Camera.IsSupported = False Then
 		B4XPages.MainPage.ShowMessage("Not supported")
 	Else
+		Camera.AllowsEditing = True
 		Camera.TakePicture
 		Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
 		If Success Then
@@ -136,6 +137,7 @@ Public Sub AddVideoFromCamera As ResumableSub
 	If Camera.IsVideoSupported = False Then
 		B4XPages.MainPage.ShowMessage("Not supported")
 	Else
+		Camera.AllowsEditing = True
 		Camera.TakeVideo
 		Dim TopPage As String = B4XPages.GetManager.GetTopPage.Id
 		Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
@@ -165,6 +167,7 @@ Public Sub AddImageFromGallery (btn As B4XView) As ResumableSub
 	Wait For (MediaFromContentChooser(False)) Complete (pm As PostMedia)
 	Return pm
 	#Else If B4i
+	Camera.AllowsEditing = False
 	Camera.SelectFromPhotoLibrary(btn, Camera.TYPE_IMAGE)
 	Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
 	If Success Then
@@ -188,6 +191,7 @@ Public Sub AddVideoFromGallery As ResumableSub
 End Sub
 #else if B4i
 Public Sub AddVideoFromGallery (Callback As Object, Event As String, btn As B4XView)
+	Camera.AllowsEditing = True
 	Camera.SelectFromPhotoLibrary(btn, Camera.TYPE_MOVIE)
 	Wait For Camera_Complete (Success As Boolean, Image As Bitmap, VideoPath As String)
 	If VideoPath <> "" Then

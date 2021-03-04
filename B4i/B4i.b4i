@@ -138,12 +138,12 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=23
 NumberOfModules=37
-Version=7
+Version=7.15
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X for P &amp; M
-	#Version: 1.42.0
+	#Version: 1.43.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -164,8 +164,9 @@ Version=7
 	#PlistExtra:<key>NSMicrophoneUsageDescription</key><string>Add videos as attachments.</string>
 	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
+	#CertificateFile: ios_old_distribution.cer
 	#if Not(SIMULATOR)
-'	#ProvisionFile: pleroma_store.mobileprovision
+	#ProvisionFile: pleroma_store.mobileprovision
 	#End If
 	'This enables the system dark mode feature.
 	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->

@@ -244,6 +244,7 @@ Private Sub PostView1_NewPost (Status As PLMStatus)
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	If Success = False Then Return
 	Dim index As Int = feed.InsertItemAfter(ReplyId, Status, Status.id)
+	if index > CLV.Size Then Return
 	InsertNewItem(CreateListIndexFromFeedIndex(index, True))
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
 End Sub
@@ -731,14 +732,20 @@ Private Sub StatusView1_HeightChanged
 	Dim sv As StatusView = Sender
 	Dim ItemIndex As ListIndex = GetUsedItemIndex(StatusesViewsManager, sv)
 	Dim i As PLMCLVItem = ResizeItem(ItemIndex, sv.mBase.Height)
-	i.Expanded = True
+	If i <> Null Then
+		i.Expanded = True
+	End If
 End Sub
 
 Private Sub ResizeItem (ItemIndex As ListIndex, NewSize As Int) As PLMCLVItem
 	CLV.ResizeItem(ItemIndex.CLVIndex, NewSize)
 	RemoveClickRecognizer(CLV.GetPanel(ItemIndex.CLVIndex))
 	Dim i As PLMCLVItem = CLV.GetValue(ItemIndex.CLVIndex)
-	i.ItemHeight = NewSize
+	If i <> Null Then
+		i.ItemHeight = NewSize
+	Else
+		Log("ResizeItem - Null: " & ItemIndex.CLVIndex)
+	End If
 	Return i
 End Sub
 

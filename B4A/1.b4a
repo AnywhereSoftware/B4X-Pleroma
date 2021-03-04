@@ -142,7 +142,7 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=25
 NumberOfModules=38
-Version=10.55
+Version=10.65
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
