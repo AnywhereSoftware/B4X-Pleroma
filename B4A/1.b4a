@@ -142,13 +142,13 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=25
 NumberOfModules=38
-Version=10.65
+Version=10.66
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 14
+	#VersionCode: 15
 	'CHECK the build configuration!!!
-	#VersionName: 1.43
+	#VersionName: 1.44
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False

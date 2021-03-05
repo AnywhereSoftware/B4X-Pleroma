@@ -107,25 +107,44 @@ Private Sub Timer1_Tick
 		Dim LastStatus As Object
 		If Statuses.Size > 0 Then LastStatus = Statuses.Get(Statuses.Keys.Get(Statuses.Size - 1))
 		If LastStatus = NoMoreItems Then Return
-		Dim settings As Map = CreateMap("limit": 10, "only_media": False)
+		Dim settings As Map = CreateMap()
+		Dim linktype As Int
+		Dim ShouldAddMaxId As Boolean = True
 		If mLink.NextURL <> "" Then
-			'
-		Else if LastStatus Is PLMStatus Then
-			Dim sm As PLMStatus = LastStatus
-			settings.Put("max_id", sm.id)
-		Else If LastStatus Is PLMChatMessage Then
-			Dim cm As PLMChatMessage = LastStatus
-			settings.Put("max_id", cm.Id)
+			'no parameters
+			linktype = -1
+			ShouldAddMaxId = False
+		Else If mLink.FirstURL <> "" Then
+			'user
+			linktype = Constants.LINKTYPE_USER
+			ShouldAddMaxId = False
 		Else
-			settings.Put("limit", 5)
-'			settings.Put("max_id", "A0zawCxrAV8t57UgFM")
+			linktype = mLink.LinkType
 		End If
-		If mLink.LINKTYPE = Constants.LINKTYPE_SEARCH Then
-			settings.Put("q", mLink.Extra.Get("query"))
-			settings.Put("limit", 20)
-		Else If mLink.LinkType = Constants.LINKTYPE_CHAT Or mLink.LinkType = Constants.LINKTYPE_CHATS_LIST Then
-			settings.Remove("only_media")
+		Select linktype
+			Case Constants.LINKTYPE_SEARCH
+				settings.Put("q", mLink.Extra.Get("query"))
+				settings.Put("limit", 20)
+			Case Constants.LINKTYPE_THREAD, Constants.LINKTYPE_TIMELINE, Constants.LINKTYPE_TAG
+				settings.Put("limit", 10)
+				settings.Put("only_media", False)
+			Case Constants.LINKTYPE_NOTIFICATIONS
+				settings.Put("limit", 10)
+			Case Constants.LINKTYPE_CHATS_LIST
+				ShouldAddMaxId = False
+		End Select
+		If ShouldAddMaxId Then
+			If LastStatus Is PLMStatus Then
+				Dim sm As PLMStatus = LastStatus
+				settings.Put("max_id", sm.id)
+			Else If LastStatus Is PLMChatMessage Then
+				Dim cm As PLMChatMessage = LastStatus
+				settings.Put("max_id", cm.Id)
+			Else
+				settings.Put("limit", 5)
+			End If
 		End If
+		
 		If mLink.Extra.IsInitialized And mLink.Extra.ContainsKey("params") Then
 			Dim p As Map = mLink.Extra.Get("params")
 			For Each k As String In p.Keys
@@ -149,7 +168,6 @@ Private Sub Download (Params As Map)
 		url = server.URL & mLink.FirstURL
 	Else If mLink.NextURL <> "" Then
 		url = mLink.NextURL
-		Params.Clear
 	Else
 		url = server.URL & mLink.URL
 	End If
