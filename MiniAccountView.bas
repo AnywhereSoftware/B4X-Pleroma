@@ -25,10 +25,11 @@ Sub Class_Globals
 	Private MetaChat As PLMMetaChat
 	Private btnChat As B4XView
 	Private PreventDoubleClick As Long
+	Private pnlTouch As B4XView
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
-	mBase = xui.CreatePanel("mBase")
+	mBase = xui.CreatePanel("")
 	mBase.SetLayoutAnimated (0, 0, 0, Width, 65dip)
 	mBase.LoadLayout("MiniAccountView")
 	bbTop.TextEngine = B4XPages.MainPage.TextUtils1.TextEngine
@@ -54,6 +55,7 @@ Public Sub SetContent(Account As PLMMiniAccount, ListItem As PLMCLVItem)
 	MetaChat = Account.MetaChat
 	AccountHolder(0) = mAccount
 	ChatListMode = Account.MetaChat.IsInitialized
+	pnlTouch.Visible = ChatListMode
 	If ChatListMode Then
 		bbTop.ClickHighlight = xui.CreatePanel("")
 	Else
@@ -117,10 +119,10 @@ Public Sub GetBase As B4XView
 End Sub
 
 #if B4J
-Private Sub mBase_MouseClicked (EventData As MouseEvent)
+Private Sub pnlTouch_MouseClicked (EventData As MouseEvent)
 	EventData.Consume
 #else
-Private Sub mBase_Click
+Private Sub pnlTouch_Click
 #end if
 	If ChatListMode Then
 		btnChat_Click

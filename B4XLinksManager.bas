@@ -6,7 +6,7 @@ Version=8.5
 @EndOfDesignText@
 Sub Class_Globals
 	Public LINK_PUBLIC, LINK_LOCAL, LINK_NOTIFICATIONS As PLMLink
-	Public LINK_HOME, LINK_CHATS_LIST As PLMLink
+	Public LINK_HOME, LINK_CHATS_LIST, LINK_DIRECTMESSAGES_LIST As PLMLink
 	Private DefaultLinks As List
 	Private DefaultLinksTitles As B4XSet
 	Public LinksWithStreamerEvents As B4XSet
@@ -14,7 +14,7 @@ End Sub
 
 Public Sub Initialize
 	CreateInitialLinks
-	DefaultLinks = Array(LINK_HOME, LINK_NOTIFICATIONS, LINK_CHATS_LIST, LINK_LOCAL, LINK_PUBLIC)
+	DefaultLinks = Array(LINK_HOME, LINK_NOTIFICATIONS, LINK_CHATS_LIST, LINK_DIRECTMESSAGES_LIST, LINK_LOCAL, LINK_PUBLIC)
 	DefaultLinksTitles.Initialize
 	For Each LINK As PLMLink In DefaultLinks
 		DefaultLinksTitles.Add(LINK.Title)
@@ -24,8 +24,8 @@ End Sub
 
 Public Sub AfterLinksWithStreamerChanged
 	LinksWithStreamerEvents.Remove(LINK_CHATS_LIST.URL)
-	For Each link As String In LinksWithStreamerEvents.AsList
-		If link.StartsWith("/api/v1/pleroma/chats") Then
+	For Each LINK As String In LinksWithStreamerEvents.AsList
+		If LINK.StartsWith("/api/v1/pleroma/chats") Then
 			LinksWithStreamerEvents.Add(LINK_CHATS_LIST.URL)
 			Exit
 		End If
@@ -40,6 +40,7 @@ Private Sub CreateInitialLinks
 	LINK_HOME = tu.CreatePLMLink(Constants.URL_HOME, Constants.LINKTYPE_TIMELINE, "Home")
 	LINK_CHATS_LIST = tu.CreatePLMLink(Constants.URL_CHATS_LIST, Constants.LINKTYPE_CHATS_LIST, "Chats")
 	LINK_NOTIFICATIONS = tu.CreatePLMLink(Constants.URL_NOTIFICATIONS, Constants.LINKTYPE_NOTIFICATIONS, "Notifications")
+	LINK_DIRECTMESSAGES_LIST = tu.CreatePLMLink(Constants.URL_DIRECTMESSAGES_LIST, Constants.LINKTYPE_DIRECTMESSAGES_LIST, "Direct messages")
 End Sub
 
 Public Sub IsRecentLink (LINK As PLMLink) As Boolean
@@ -55,7 +56,7 @@ End Sub
 Public Sub GetDefaultLinksWithoutHome As List
 	Dim res As List
 	res.Initialize
-	For i = 3 To DefaultLinks.Size - 1
+	For i = 4 To DefaultLinks.Size - 1
 		res.Add(DefaultLinks.Get(i))
 	Next
 	Return res

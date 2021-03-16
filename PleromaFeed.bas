@@ -132,6 +132,8 @@ Private Sub Timer1_Tick
 				settings.Put("limit", 10)
 			Case Constants.LINKTYPE_CHATS_LIST
 				ShouldAddMaxId = False
+			Case Constants.LINKTYPE_DIRECTMESSAGES_LIST
+				ShouldAddMaxId = False
 		End Select
 		If ShouldAddMaxId Then
 			If LastStatus Is PLMStatus Then
@@ -210,6 +212,9 @@ Private Sub Download (Params As Map)
 				ParseChat(str) 'fills Statuses internally
 			Case Constants.LINKTYPE_CHATS_LIST
 				ParseChatsList(str)
+			Case Constants.LINKTYPE_DIRECTMESSAGES_LIST
+				ParseDirectMessagesList(str)
+				SetNextLink(j)
 		End Select
 		If MyIndex = DownloadIndex Then
 			If res.IsInitialized Then
@@ -402,6 +407,27 @@ Private Sub ParseChatsList (s As String)
 		Statuses.Put(cm.Id, MiniAccount)
 	Next
 	Statuses.Put(LastPostId, NoMoreItems)
+End Sub
+
+Private Sub ParseDirectMessagesList (s As String)
+	Dim conversations As List = tu.JsonParseList(s)
+	If conversations.IsInitialized Then
+		For Each conv As Map In conversations
+			If conv.ContainsKey("last_status") Then
+				Dim rawaccounts As List = conv.Get("accounts")
+				Dim accounts As List
+				accounts.Initialize
+				For Each acct As Map In rawaccounts
+					accounts.Add(tu.CreateAccount(acct))
+				Next
+				Dim st As Map = conv.Get("last_status")
+				Dim status As PLMStatus = tu.ParseStatus(st)
+				status.StatusAuthor = accounts.Get(0)
+				tu.PutExtraInStatus(status, Constants.ExtraContentKeyDirectMessageAccounts, accounts)
+				Statuses.Put(status.id, status)
+			End If
+		Next
+	End If
 End Sub
 
 Public Sub AddDateStubIfNeeded (LastDate As Long, CurrentDate As Long, InsertAtTheBeginning As Boolean) As Boolean

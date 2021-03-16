@@ -34,6 +34,7 @@ Sub Class_Globals
 	Private PollOptionsMap As Map
 	Private PollOptionsList As List
 	Private lblTextLength As B4XView
+	Private lblVisibility As B4XView
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Width As Int)
@@ -96,6 +97,17 @@ Public Sub SetContent(Content As PLMPost, ListItem As PLMCLVItem)
 	#End If
 	ArrangeMedias
 	B4XFloatTextField1_TextChanged("", B4XFloatTextField1.Text)
+	UpdateVisibiliyLabel
+End Sub
+
+Private Sub UpdateVisibiliyLabel
+	Dim key As String = PostOptions.Get("visibility")
+	key = key.ToLowerCase
+	Dim str As String
+	If key = "private" Or key = "direct" Then
+		str = Chr(0xF023) & " "
+	End If
+	lblVisibility.Text = str & Constants.VisibilityKeyToUserValue.Get(key.ToLowerCase)
 End Sub
 
 Public Sub SetVisibility (visible As Boolean)
@@ -385,6 +397,7 @@ Private Sub btnOptions_Click
 	B4XPages.MainPage.ViewsCache1.AfterShowDialog(PrefDialog.Dialog)
 	Wait For (rs) Complete (Success As Int)
 	B4XPages.MainPage.UpdateHamburgerIcon
+	UpdateVisibiliyLabel
 End Sub
 
 'returns True if the dialog was closed

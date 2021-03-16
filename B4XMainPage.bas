@@ -605,10 +605,10 @@ Private Sub btnPlus_Click
 		btnSearch_Click
 		Return
 	End If
-	ShowCreatePostInDialog ("")
+	ShowCreatePostInDialog ("", "public")
 End Sub
 
-Public Sub ShowCreatePostInDialog (MentionAcct As String)
+Public Sub ShowCreatePostInDialog (MentionAcct As String, VisibilityKey As String)
 	If MakeSureThatUserSignedIn = False Then Return
 	Wait For (ClosePrevDialog) Complete (ShouldReturn As Boolean)
 	If ShouldReturn Then Return
@@ -617,7 +617,7 @@ Public Sub ShowCreatePostInDialog (MentionAcct As String)
 	If PostView1.IsInitialized = False Then
 		PostView1.Initialize(Me, "PostView1", Root.Width * 0.95)
 	End If
-	Dim post As PLMPost = Statuses.feed.CreatePLMPost("", "public")
+	Dim post As PLMPost = Statuses.feed.CreatePLMPost("", VisibilityKey)
 	If MentionAcct <> "" Then post.Mentions.Add(MentionAcct)
 	PostView1.SetContent(post, Null)
 	If PostView1.mBase.Parent.IsInitialized Then Return

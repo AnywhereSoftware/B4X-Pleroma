@@ -100,6 +100,7 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	btnMore.Visible = True
 	pnlCurrentUser.Visible = False
 	lblChangeAvatar.Visible = False
+	btnFollow.Visible = True
 	If mAccount.Id = B4XPages.MainPage.User.Id Then CurrentUser
 	Wait For (tu.UpdateFollowButton(btnFollow, mAccount, False)) Complete (ShouldUpdate As Boolean)
 	If ShouldUpdate Then
@@ -112,6 +113,7 @@ Private Sub CurrentUser
 	btnMention.Visible = False
 	btnMore.Visible = False
 	lblChangeAvatar.Visible = True
+	btnFollow.Visible = False
 End Sub
 
 Private Sub WrapURL(method As String, text As String, clr As String) As String
@@ -282,7 +284,7 @@ Private Sub lblSettings_Click
 End Sub
 
 Private Sub btnMention_Click
-	B4XPages.MainPage.ShowCreatePostInDialog (mAccount.Acct)
+	B4XPages.MainPage.ShowCreatePostInDialog (mAccount.Acct, "public")
 End Sub
 
 'current user more options

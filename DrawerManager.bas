@@ -71,6 +71,9 @@ Public Sub UpdateLeftDrawerList
 		If B4XPages.MainPage.Statuses.Chat.ChatSupported Then
 			AddDrawerItem(0xF086, "Chats", LinksManager.LINK_CHATS_LIST)
 		End If
+		AddDrawerItem(0xF003, "Direct messages", LinksManager.LINK_DIRECTMESSAGES_LIST)
+		Dim pnl As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
+		pnl.GetView(0).Width = pnl.Width
 	End If
 	For Each Link As PLMLink In LinksManager.GetDefaultLinksWithoutHome
 		AddDrawerItem(0xF09E, Link.Title, Link)

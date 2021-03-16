@@ -212,7 +212,9 @@ End Sub
 
 Public Sub MarkAsRead (feed As PleromaFeed)
 	If feed.Statuses.Size <= feed.IndexOfFirstChatMessage Then Return
-	Dim lastmessage As PLMChatMessage = feed.Statuses.Get(feed.Statuses.Keys.Get(feed.IndexOfFirstChatMessage))
+	Dim o As Object = feed.Statuses.Get(feed.Statuses.Keys.Get(feed.IndexOfFirstChatMessage))
+	If (o Is PLMChatMessage) = False Then Return
+	Dim lastmessage As PLMChatMessage = o
 	Dim j As HttpJob = tu.CreateHttpJob(Me, mBase, True)
 	If j = Null Then Return
 	Dim params As Map = CreateMap("last_read_id": lastmessage.Id)

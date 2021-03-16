@@ -129,7 +129,6 @@ Module33=|relative|..\ThemeManager
 Module34=|relative|..\ViewsCache
 Module35=|relative|..\WebViewDialog
 Module36=|relative|..\X2SoundPool
-Module37=|relative|..\xResizeAndCrop
 Module4=|relative|..\BBListItem
 Module5=|relative|..\CardView
 Module6=|relative|..\ChatManager
@@ -138,7 +137,7 @@ Module8=|relative|..\CLVBackwards
 Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=23
-NumberOfModules=37
+NumberOfModules=36
 Version=8.9
 @EndOfDesignText@
 #Region Project Attributes 

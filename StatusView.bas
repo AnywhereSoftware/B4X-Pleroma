@@ -40,6 +40,7 @@ Sub Class_Globals
 	Private VideoPlayersReady As B4XSet
 	Private mTheme As ThemeManager
 	Private mViewsCache As ViewsCache
+	Private DirectMessagesAccounts As List
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -102,9 +103,14 @@ Public Sub SetContent (Status As PLMStatus, ListItem As PLMCLVItem)
 	VideoPlayersReady.Clear
 	SensitiveOverlay = mStatus.Sensitive And B4XPages.MainPage.Settings.NSFW_Overlay
 	Dim Notif As PLMNotification 'this will set it to be uninitialized.
-	If mStatus.ExtraContent.IsInitialized And mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyNotification) Then
-		 Notif = mStatus.ExtraContent.Get(Constants.ExtraContentKeyNotification)
+	DirectMessagesAccounts = Constants.EmptyList
+	If mStatus.ExtraContent.IsInitialized Then
+		If mStatus.ExtraContent.ContainsKey(Constants.ExtraContentKeyNotification) Then
+			Notif = mStatus.ExtraContent.Get(Constants.ExtraContentKeyNotification)
+		End If
+		DirectMessagesAccounts = mStatus.ExtraContent.GetDefault(Constants.ExtraContentKeyDirectMessageAccounts, Constants.EmptyList)
 	End If
+	
 	SetTopText
 	SetBottomPanel
 	SetBBListContent
@@ -307,12 +313,17 @@ Private Sub SetTopText
 	End If
 	Dim acc As PLMAccount
 	If Notif.IsInitialized Then acc = Notif.Account Else acc = mStatus.StatusAuthor
-	tu.TextWithEmojisToRuns(acc.DisplayName & " ", runs, acc.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
-	Dim r As BCTextRun = tu.CreateUrlRun("@", acc.Acct, bbTop.ParseData)
-	r.TextFont = TopFont
-	runs.Add(r)
+	If DirectMessagesAccounts.Size = 0 Then
+		'add the status author
+		tu.TextWithEmojisToRuns(acc.DisplayName & " ", runs, acc.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
+		Dim r As BCTextRun = tu.CreateUrlRun("@", acc.Acct, bbTop.ParseData)
+		r.TextFont = TopFont
+		runs.Add(r)
+	End If
 	If Notif.IsInitialized Then
 		NotificationToText(runs)
+	Else If DirectMessagesAccounts.Size > 0 Then
+		DirectMessageToText(runs)
 	Else
 		If mStatus.InReplyToAccountAcct <> "" Then
 			runs.Add(mTextEngine.CreateRun(CRLF))
@@ -329,6 +340,17 @@ Private Sub SetTopText
 	End If
 	bbTop.SetRuns(runs)
 	bbTop.UpdateVisibleRegion(0, 300dip)
+End Sub
+
+Private Sub DirectMessageToText (runs As List)
+	runs.Add(tu.CreateRun("With ", TopFont))
+	For i = 0 To DirectMessagesAccounts.Size - 1
+		If i > 0 Then
+			runs.Add(tu.CreateRun(", ", TopFont))
+		End If
+		Dim acc As PLMAccount = DirectMessagesAccounts.Get(i)
+		tu.TextWithEmojisToRuns(acc.DisplayName & " ", runs, acc.Emojis, bbTop.ParseData, bbTop.ParseData.DefaultBoldFont)
+	Next
 End Sub
 
 Private Sub NotificationToText (runs As List)

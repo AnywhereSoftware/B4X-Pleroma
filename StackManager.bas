@@ -17,7 +17,8 @@ End Sub
 Public Sub Initialize (list As ListOfStatuses)
 	Items.Initialize
 	mList = list
-	AlwaysFresh = B4XCollections.CreateSet2(Array(Constants.LINKTYPE_NOTIFICATIONS, Constants.LINKTYPE_CHAT, Constants.LINKTYPE_CHATS_LIST))
+	AlwaysFresh = B4XCollections.CreateSet2(Array(Constants.LINKTYPE_NOTIFICATIONS, _
+		Constants.LINKTYPE_CHAT, Constants.LINKTYPE_CHATS_LIST, Constants.LINKTYPE_DIRECTMESSAGES_LIST))
 	BookmarkedTitles.Initialize
 End Sub
 

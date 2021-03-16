@@ -41,6 +41,7 @@ Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String
 			If NewStatus.ExtraContent.IsInitialized Then
 				NewStatus.ExtraContent.Remove(Constants.ExtraContentKeyNotification)
 				NewStatus.ExtraContent.Remove(Constants.ExtraContentKeyReblog)
+				NewStatus.ExtraContent.Remove(Constants.ExtraContentKeyDirectMessageAccounts)
 			End If
 			link.Extra = CreateMap(Constants.LinkExtraCurrentStatus: NewStatus, "targetId": Status.id)
 			Return link
@@ -529,6 +530,7 @@ Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLM
 	Dim items As List
 	items.Initialize
 	items.Add(CreateMenuItem(0xF086, "Chat"))
+	items.Add(CreateMenuItem(0xF003, "Direct message"))
 	Dim text As String
 	If Account.Muted Then text = "Unmute" Else text = "Mute"
 	items.Add(CreateMenuItem(0xF028, text))
@@ -540,13 +542,6 @@ Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLM
 	Dim i As Int = items.IndexOf(result)
 	Dim verb As String
 	Select i
-		Case 1
-			verb = "mute"
-		Case 2
-			verb = "block"
-		Case 3
-			B4XPages.MainPage.Report.Show(Account, "")
-			Return
 		Case 0
 			Dim statuses As ListOfStatuses = B4XPages.MainPage.Statuses
 			Dim cm As ChatManager = statuses.Chat
@@ -556,12 +551,24 @@ Public Sub OtherAccountMoreClicked (btnFollow As B4XView, AccountHolder() As PLM
 				cm.StartChat(Account)
 			End If
 			Return
+		Case 1
+			B4XPages.MainPage.ShowCreatePostInDialog (Account.Acct, "direct")
+			Return
+		Case 2
+			verb = "mute"
+		Case 3
+			verb = "block"
+		Case 4
+			B4XPages.MainPage.Report.Show(Account, "")
+			Return
 		Case Else
 			Return
 	End Select
 	Wait For (VerbOrUnverb(Account, verb)) Complete (unused As Boolean)
 	If Account <> AccountHolder(0) Then Return
 	SetAccountTopText(bbtob, Account, notif, Mini, MetaChat)
+	
+	
 End Sub
 
 Public Sub FollowButtonClicked (btnFollow As B4XView, AccountHolder() As PLMAccount, Verb As String, Mini As Boolean) As ResumableSub
