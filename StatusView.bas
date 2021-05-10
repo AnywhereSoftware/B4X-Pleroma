@@ -640,6 +640,7 @@ End Sub
 Private Sub ShowMoreOptions
 	Dim options As List
 	options.Initialize
+	options.Add(tu.CreateMenuItem(0xF0C1, "Show thread"))
 	options.Add(tu.CreateMenuItem(0xF1E0, "Share"))
 	options.Add(tu.CreateMenuItem(0xF0C5, "Copy text"))
 	options.Add(tu.CreateMenuItem(0xF024, "Report"))
@@ -649,12 +650,14 @@ Private Sub ShowMoreOptions
 	Wait For (B4XPages.MainPage.ShowListDialog(options, False)) Complete (Result As String)
 	Select options.IndexOf(Result)
 		Case 0
-			SharePost
+			lblTime_Click
 		Case 1
-			CopyToClipboard
+			SharePost
 		Case 2
-			B4XPages.MainPage.Report.Show(mStatus.StatusAuthor, mStatus.id)
+			CopyToClipboard
 		Case 3
+			B4XPages.MainPage.Report.Show(mStatus.StatusAuthor, mStatus.id)
+		Case 4
 			DeleteStatus
 	End Select
 End Sub
