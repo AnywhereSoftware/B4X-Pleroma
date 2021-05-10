@@ -729,6 +729,10 @@ Private Sub CreatePanelForDialog As B4XView
 End Sub
 
 Public Sub ShowExternalLink (link As String)
+	If link.StartsWith("https://") = False And link.StartsWith("http://") = False Then
+		Log("Invalid link: " & link)
+		Return
+	End If
 	#if B4J
 	Dim fx As JFX
 	fx.ShowExternalDocument(link)

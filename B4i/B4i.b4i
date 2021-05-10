@@ -143,7 +143,7 @@ Version=7.2
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X for P &amp; M
-	#Version: 1.44.0
+	#Version: 1.45.0
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -166,7 +166,7 @@ Version=7.2
 	#Entitlement: <key>aps-environment</key><string>production</string>
 	#CertificateFile: ios_old_distribution.cer
 	#if Not(SIMULATOR)
-'	#ProvisionFile: pleroma_store.mobileprovision
+	#ProvisionFile: pleroma_store.mobileprovision
 	#End If
 	'This enables the system dark mode feature.
 	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->

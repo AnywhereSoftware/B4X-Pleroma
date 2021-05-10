@@ -142,13 +142,13 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=25
 NumberOfModules=38
-Version=10.67
+Version=10.7
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 15
+	#VersionCode: 17
 	'CHECK the build configuration!!!
-	#VersionName: 1.44
+	#VersionName: 1.46
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False
@@ -161,6 +161,7 @@ Version=10.67
 #BridgeLogger: true
 #AdditionalJar: com.google.firebase:firebase-crashlytics
 #AdditionalRes: ../icon
+#MultiDex: true
 Sub Process_Globals
 	Public ActionBarHomeClicked As Boolean
 	Private LastIntent As Intent

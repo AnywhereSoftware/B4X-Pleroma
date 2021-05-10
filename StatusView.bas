@@ -256,7 +256,7 @@ Public Sub EmojiClick (url As String)
 	j.Release
 	If s = mStatus Then
 		Wait For (tu.DownloadStatus(mStatus.id)) Complete (status As PLMStatus)
-		If status <> Null And s = mStatus Then
+		If status <> Null And status.IsInitialized And s = mStatus Then
 			mStatus.EmojiReactions = status.EmojiReactions
 			Dim h As Int = pnlBottom.Height
 			SetBottomPanel

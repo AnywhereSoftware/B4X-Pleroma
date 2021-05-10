@@ -244,7 +244,7 @@ Private Sub PostView1_NewPost (Status As PLMStatus)
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	If Success = False Then Return
 	Dim index As Int = feed.InsertItemAfter(ReplyId, Status, Status.id)
-	if index > CLV.Size Then Return
+	If index > CLV.Size Then Return
 	InsertNewItem(CreateListIndexFromFeedIndex(index, True))
 	CLV_ScrollChanged(CLV.sv.ScrollViewOffsetY)
 End Sub
@@ -260,7 +260,7 @@ Private Sub JumpToTarget
 End Sub
 
 Private Sub AreThereMoreItems As Boolean
-	If CLV.Size = EmptyListSize Then Return True
+	If CLV.Size <= EmptyListSize Then Return True
 	Dim last As PLMCLVItem
 	If ListGoesUp Then
 		last = CLV.GetValue(EmptyListSize)
@@ -355,6 +355,7 @@ Private Sub InsertNewItem (Index As ListIndex)
 	Dim pnl As B4XView = xui.CreatePanel("")
 	pnl.SetLayoutAnimated(0, 0, 0, CLV.AsView.Width, 20dip)
 	Dim ContentView As Object = GetContentView(Index, content)
+	If ContentView = Null Then Return
 	CallSub3(ContentView, "SetContent", content, Value)
 	Dim ContentBase As B4XView = CallSub(ContentView, "GetBase")
 	pnl.AddView(ContentBase , 0, 0, ContentBase.Width, ContentBase.Height)
@@ -738,6 +739,10 @@ Private Sub StatusView1_HeightChanged
 End Sub
 
 Private Sub ResizeItem (ItemIndex As ListIndex, NewSize As Int) As PLMCLVItem
+	If ItemIndex = Null Then
+		Log("ResizeItem - ItemIndex Null")
+		Return Null
+	End If
 	CLV.ResizeItem(ItemIndex.CLVIndex, NewSize)
 	RemoveClickRecognizer(CLV.GetPanel(ItemIndex.CLVIndex))
 	Dim i As PLMCLVItem = CLV.GetValue(ItemIndex.CLVIndex)
@@ -874,6 +879,10 @@ Private Sub StatusView1_StatusDeleted
 End Sub
 
 Private Sub RemoveItemFromList  (animated As Boolean, index As ListIndex)
+	If index = Null Then
+		Log("RemoveItemFromList - null index")
+		Return
+	End If
 	If animated = False Then CLV.AnimationDuration = 0
 	CLV.RemoveAt(index.CLVIndex)
 	CLV.AnimationDuration = Constants.CLVAnimationDuration

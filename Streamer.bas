@@ -64,9 +64,13 @@ Private Sub Connect
 	client.Initialize("client")	
 	Dim Link As String = B4XPages.MainPage.GetServer.URL
 	Link = Link.Replace("https://", "wss://").Replace("http://", "ws://")
-	client.Connect(Link & $"/api/v1/streaming?access_token=${User.AccessToken}&stream=user"$)
-	Connecting = True
-	ConnectingStartTime = DateTime.Now
+	Try
+		Connecting = True
+		ConnectingStartTime = DateTime.Now
+		client.Connect(Link & $"/api/v1/streaming?access_token=${User.AccessToken}&stream=user"$)
+	Catch
+		Log(LastException)
+	End Try
 End Sub
 
 Public Sub UserChanged

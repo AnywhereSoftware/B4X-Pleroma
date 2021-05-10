@@ -420,6 +420,7 @@ Private Sub ParseDirectMessagesList (s As String)
 				For Each acct As Map In rawaccounts
 					accounts.Add(tu.CreateAccount(acct))
 				Next
+				If accounts.Size = 0 Then Continue
 				Dim st As Map = conv.Get("last_status")
 				Dim status As PLMStatus = tu.ParseStatus(st)
 				status.StatusAuthor = accounts.Get(0)
