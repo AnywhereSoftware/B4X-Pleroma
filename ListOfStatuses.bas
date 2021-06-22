@@ -22,7 +22,7 @@ Sub Class_Globals
 	Private mEventName As String 'ignore
 	Private mCallBack As Object 'ignore
 	Public Stack As StackManager
-	Public btnBack As B4XView
+	Private btnBack As B4XView
 	Private AccountView1 As AccountView
 	Private LastScrollPosition As Int
 	Private StatusesViewsManager As StatusesListUsedManager
@@ -42,6 +42,7 @@ Sub Class_Globals
 	Public Chat As ChatManager
 	Private RefreshImplIndex As Int
 	Private LastRefreshTime As Long
+	Public TiedDrawer as DrawerManager
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)
@@ -151,6 +152,11 @@ End Sub
 
 Public Sub UpdateBackKey
 	btnBack.Visible = Stack.IsEmpty = False And B4XPages.MainPage.MadeWithLove1.mBase.Visible = False
+	If TiedDrawer.IsInitialized Then
+		If TiedDrawer.BackItemAdded <> Not(Stack.IsEmpty) Then
+			TiedDrawer.UpdateLeftDrawerList
+		End If
+	End If
 End Sub
 
 
@@ -165,7 +171,7 @@ Private Sub WaitForWaitingForItemsToBeFalse As ResumableSub
 End Sub
 
 
-Private Sub GoBack
+Public Sub GoBack
 	Wait For (WaitForWaitingForItemsToBeFalse) Complete (Success As Boolean)
 	If Success = False Then Return
 	Dim CurrentItem As PLMLink = feed.mLink
@@ -872,6 +878,7 @@ End Sub
 
 Private Sub StatusView1_StatusDeleted
 	Dim sv As StatusView = Sender
+	If sv = Null Or sv.IsInitialized = False Then Return
 	RemoveInsertedItems
 	RemoveItemFromList(True, GetUsedItemIndex(StatusesViewsManager, sv))
 	RemoveView(StatusesViewsManager, sv)

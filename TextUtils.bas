@@ -416,6 +416,7 @@ Public Sub AddRelationship (accounts As Map) As ResumableSub
 End Sub
 
 Public Sub GetRelationshipFromRelationshipObject (Account As PLMAccount, m As Map)
+	If Account.IsInitialized = False Or m.IsInitialized = False Then Return
 	Account.RelationshipAdded = True
 	Account.Following = m.GetDefault("following", False)
 	Account.FollowRequested = m.GetDefault("requested", False)

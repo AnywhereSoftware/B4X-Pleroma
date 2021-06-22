@@ -15,6 +15,7 @@ Sub Class_Globals
 	Private LinksManager As B4XLinksManager
 	Private mTheme As ThemeManager
 	Private lblSettings As B4XView
+	Public BackItemAdded As Boolean
 End Sub
 
 Public Sub Initialize (Drawer As B4XDrawer)
@@ -39,6 +40,10 @@ Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 	Select Value
 		Case "sign in"
 			mp.SignIn
+		Case "back"
+			mp.Statuses.GoBack
+		Case "send feedback"
+			SendFeedback
 		Case ""
 		Case Else
 			Dim Link As PLMLink = Value
@@ -46,7 +51,23 @@ Private Sub lstDrawer_ItemClick (Index As Int, Value As Object)
 	End Select
 End Sub
 
-
+Private Sub SendFeedback
+	Dim s As String = "mailto:support@basic4ppc.com?subject=B4X%20for%20Pleroma%20%26%20Mastodon%20-%20feedback"
+	#if B4J
+	Dim fx As JFX
+	fx.ShowExternalDocument(s)
+	#Else If B4A
+	Dim in As Intent
+	in.Initialize(in.ACTION_VIEW, s)
+	Try
+		StartActivity(in)
+	Catch
+		Log(LastException)
+	End Try
+	#Else If B4I
+	Main.App.OpenURL(s)
+	#End If
+End Sub
 
 #if B4J
 Sub lblDrawerClose_MouseClicked (EventData As MouseEvent)
@@ -65,6 +86,15 @@ Public Sub UpdateLeftDrawerList
 		UserItem.Color = mTheme.SecondBackground
 		lstDrawer.Add(UserItem, mp.TextUtils1.CreateUserLink(mp.User.id, mp.User.Acct, "statuses"))
 	End If
+	BackItemAdded = mp.Statuses.IsInitialized And mp.Statuses.Stack.IsEmpty = False
+	If BackItemAdded Then
+		AddDrawerItem(0xF177, "Back", Null)
+		lstDrawer.GetRawListItem(lstDrawer.Size - 1).Value = "back"
+	End If
+	AddDrawerItem(0xF0A1, "Send Feedback", Null)
+	lstDrawer.GetRawListItem(lstDrawer.Size - 1).Value = "send feedback"
+	Dim pnl As B4XView = lstDrawer.GetPanel(lstDrawer.Size - 1)
+	pnl.GetView(0).Width = pnl.Width
 	If weHaveAUser Then
 		AddDrawerItem(0xF015, "Home", LinksManager.LINK_HOME)
 		AddDrawerItem(0xF0F3, "Notifications", LinksManager.LINK_NOTIFICATIONS)

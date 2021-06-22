@@ -32,7 +32,7 @@ Sub Process_Globals
 	Public AppName As String = "B4X for P & M"
 	
 	Public Const StackMaximumNumberOfItems As Int = 6
-	Public Const Version As Float = 1.46
+	Public Const Version As Float = 1.49
 	Public Const TempImageFileName As String = "tempimage"
 	Public Const PushPublicKey As String = "BHDfTUyMS9YZ2HHSivY98uXUNcSfsTaDMFUlNBSFYxoZQSIcihVNOsOKIyaPPsbWNeTlCuelJnPvAZDIPPLTJoo="
 	Public Const EndPointBase As String = "https://b4x.com:51051/push/"

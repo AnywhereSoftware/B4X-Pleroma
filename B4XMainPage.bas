@@ -104,7 +104,6 @@ Public Sub Initialize
 	ImagesCache1.Initialize
 	ViewsCache1.Initialize
 	auth.Initialize(Me, "auth")
-	xui.SetDataFolder("B4X_Pleroma")
 	#if B4A
 	Provider.Initialize
 	#End If
@@ -171,6 +170,7 @@ no.RunMethod("addWillHide", Null)
 	#end if
 	B4AKeyboardActivityHeight = Root.Height
 	Statuses.Initialize(Me, "Statuses", pnlList)
+	Statuses.TiedDrawer = DrawerManager1
 	HamburgerIcons.Put(HamburgerState_Default, xui.LoadBitmapResize(File.DirAssets, "hamburger.png", 32dip, 32dip, True))
 	HamburgerIcons.Put(HamburgerState_Notification_Large, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif.png", 32dip, 32dip, True))
 	HamburgerIcons.Put(HamburgerState_Notification_Small, xui.LoadBitmapResize(File.DirAssets, "hamburger_notif_small.png", 32dip, 32dip, True))
@@ -588,13 +588,13 @@ Private Sub ShowThreadInDialog (Link As PLMLink)
 	If DialogListOfStatuses.IsInitialized = False Then
 		Dim DialogListOfStatuses As ListOfStatuses
 		DialogListOfStatuses.Initialize(Me, "Statuses", CreatePanelForDialog)
-	End If
+	End If 
 	DialogListOfStatuses.Refresh2(User, Link, False, False)
 	Wait For (ShowDialogWithoutButtons(DialogListOfStatuses.mBase, False)) Complete (Result As Int)
 	For Each v As B4XView In DialogListOfStatuses.mBase.GetAllViewsRecursive
 		v.Enabled = True
 	Next
-	DialogListOfStatuses.StopAndClear
+	DialogListOfStatuses.StopAndClear 
 End Sub
 
 Private Sub btnPlus_Click
@@ -733,22 +733,26 @@ Public Sub ShowExternalLink (link As String)
 		Log("Invalid link: " & link)
 		Return
 	End If
-	#if B4J
-	Dim fx As JFX
-	fx.ShowExternalDocument(link)
-	#else if B4A
-	Dim pi As PhoneIntents
-	StartActivity(pi.OpenBrowser(link))
-	#else if B4i
-	safari.Initialize("safari", link)
-	Dim no As NativeObject = safari
-	safari.TintColor = xui.Color_Red
-	no = no.GetField("safari")
+	Try
+		#if B4J
+		Dim fx As JFX
+		fx.ShowExternalDocument(link)
+		#else if B4A
+		Dim pi As PhoneIntents
+		StartActivity(pi.OpenBrowser(link))
+		#else if B4i
+		safari.Initialize("safari", link)
+		Dim no As NativeObject = safari
+		safari.TintColor = xui.Color_Red
+		no = no.GetField("safari")
 	
-	no.SetField("preferredBarTintColor", no.ColorToUIColor(Main.NavBarBarTintColor))
-	no.SetField("preferredControlTintColor", no.ColorToUIColor(Main.NavBarTintColor))
-	safari.Show(B4XPages.GetNativeParent(Me))
+		no.SetField("preferredBarTintColor", no.ColorToUIColor(Main.NavBarBarTintColor))
+		no.SetField("preferredControlTintColor", no.ColorToUIColor(Main.NavBarTintColor))
+		safari.Show(B4XPages.GetNativeParent(Me))
 	#end if
+	Catch
+		Log(LastException)
+	End Try
 End Sub
 
 

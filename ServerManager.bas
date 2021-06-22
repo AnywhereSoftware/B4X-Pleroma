@@ -9,7 +9,7 @@ Sub Class_Globals
 	Private TempServer As PLMServer
 	Private lstTemplate As B4XSearchTemplate
 	Private xui As XUI
-	Type PLMInstanceFeatures (URI As String, Title As String, Version As String, IsPleroma As Boolean, Features As B4XSet, StatusMaxLength as int)
+	Type PLMInstanceFeatures (URI As String, Title As String, Version As String, IsPleroma As Boolean, Features As B4XSet, StatusMaxLength As Int)
 	Private InstanceFeatures As Map '<string, PLMInstanceFeatures>
 	Private tu As TextUtils
 	Private mTheme As ThemeManager
@@ -67,7 +67,7 @@ Public Sub SaveToStore (store As KeyValueStore)
 End Sub
 
 Private Sub CreateServersList
-	For Each Ser As PLMServer In Array(CreatePLMServer("https://mas.to", "mas.to"), CreatePLMServer("https://pleroma.com", "pleroma.com"))
+	For Each Ser As PLMServer In Array(CreatePLMServer("https://mas.to", "mas.to"))
 		BaseServers.Put(Ser.Name, Ser)
 	Next
 End Sub
