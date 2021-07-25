@@ -65,10 +65,8 @@ Public Sub Create (Base As B4XView)
 	mBase.Tag = Me 'need to be set again as the previous layout will overwrite it.
 	BBListItem1.TextEngine = mTextEngine
 	#if B4J
-	Dim iv As ImageView = imgAvatar
-	iv.PickOnBounds = True
-	Dim jo As JavaObject = lblTime
-	jo.RunMethod("setFocusTraversable", Array(False)) 'prevent the "time" button from stealing the keyboard focus which causes the list to scroll unintentionally.
+	imgAvatar.As(ImageView).PickOnBounds = True
+	lblTime.As(JavaObject).RunMethod("setFocusTraversable", Array(False)) 'prevent the "time" button from stealing the keyboard focus which causes the list to scroll unintentionally.
 	#End If
 	bbTop.TextEngine = mTextEngine
 	BBBottom.TextEngine = mTextEngine
@@ -461,7 +459,7 @@ Private Sub CardAttachment (card As Map, h() As Int)
 	Dim parent As B4XView = CreateAttachmentPanel(stub, h, 100dip, 15dip, cv.ImageView1.Tag)
 	
 	parent.AddView(cv.base, 0, 0, parent.Width, parent.Height)
-	cv.SetCard(card, mCallBack, mEventName, mStatus.Attachments)
+	cv.SetCard(card, mCallBack, mEventName, mStatus.Attachments, SensitiveOverlay)
 	parent.Height = cv.base.Height
 	h(0) = h(0) - 100dip + cv.base.Height
 End Sub
@@ -510,6 +508,10 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	Dim playerview As B4XView = mViewsCache.GetVideoPlayer (Me, attachment)
 	Parent.AddView(playerview, 0, 0, Parent.Width, Parent.Height)
 	Parent.AddView(iv, 0, 0, 0, 0)
+	Dim lblFullScreen As Label
+	lblFullScreen.Initialize("lblFullScreen")
+	lblFullScreen.Tag = playerview
+	Parent.AddView(lblFullScreen, 0, 0, 0, 0)
 	#if B4A
 	Dim player As SimpleExoPlayer = playerview.Tag
 	player.Prepare(player.CreateUriSource(attachment.Url))
@@ -542,6 +544,7 @@ Private Sub ShowPlayButton (iv As B4XView)
 	Dim parent As B4XView = iv.Parent
 	iv.SetLayoutAnimated(0, parent.Width / 2 - 40dip, parent.Height / 2 - 30dip, 80dip, 60dip)
 	ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.PLAY, iv.Tag, ImagesCache1.RESIZE_NONE)
+	B4XPages.MainPage.ViewsCache1.PutLabelInVideoTopRightCorner(parent.GetView(0), parent.GetView(2), True)
 End Sub
 
 #if B4J
@@ -783,5 +786,18 @@ End Sub
 Public Sub GetBase As B4XView
 	Return mBase
 End Sub
+
+Private Sub lblFullScreen_Click
+	Dim Player As B4XView = Sender.As(B4XView).Tag
+	#if B4i
+	Player.Tag.As(NativeObject).GetField("controller").RunMethod("enterFullScreenAnimated:completionHandler:", Array(True, Null))
+	#Else if B4A
+	mViewsCache.FullScreenPlayer = Player
+	Player.Parent.GetView(1).Visible = False
+	StartActivity(FullScreen)
+	#End If
+End Sub
+
+
 
 

@@ -138,12 +138,12 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=23
 NumberOfModules=37
-Version=7.2
+Version=7.5
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X for P &amp; M
-	#Version: 1.49.0
+	#Version: 1.49.1
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -173,6 +173,7 @@ Version=7.2
 #End Region
 
 Sub Process_Globals
+	
 	Public App As Application
 	Public NavControl As NavigationController
 	Private reporter As NativeObject
@@ -378,7 +379,11 @@ End Sub
 @end
 @implementation UIWindow (DarkMode)
 - (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
-	if (self.class == NSClassFromString(@"UIWindow"))
-		[[b4i_main new].bi raiseEvent:nil event:@"traitcollection_changed" params:nil];
+	if (self.class == NSClassFromString(@"UIWindow")) {
+		if (self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle)
+			[[b4i_main new].bi raiseEvent:nil event:@"traitcollection_changed" params:nil];
+		else
+			NSLog(@"Ignoring traitCollection change");
+	}
 }
 #End If

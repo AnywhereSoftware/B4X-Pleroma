@@ -42,7 +42,7 @@ Sub Class_Globals
 	Public Chat As ChatManager
 	Private RefreshImplIndex As Int
 	Private LastRefreshTime As Long
-	Public TiedDrawer as DrawerManager
+	Public TiedDrawer As DrawerManager
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String, Root1 As B4XView)

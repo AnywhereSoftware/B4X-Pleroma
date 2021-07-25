@@ -30,7 +30,7 @@ Public Sub Initialize
 	B4XPages.MainPage.ViewsCache1.SetClipToOutline(base)
 End Sub
 
-Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attachments As List)
+Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attachments As List, SensitiveOverlay As Boolean)
 	mCallback = Callback
 	mEventName = EventName
 	pnlImageView.Color = 0
@@ -48,6 +48,7 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attach
 			End If
 		Next
 	End If
+	if SensitiveOverlay Then imageurl = ""
 	pnlImageView.Visible = imageurl <> ""
 	If pnlImageView.Visible Then
 		Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
