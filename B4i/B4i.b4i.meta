@@ -112,6 +112,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=ViewsCache,CreateVideoPlayer,126,0,StatusView,RemoveFromParent,739,0,StatusView,lblFullScreen_Click,784,6,Main,TraitCollection_Changed,104,0,ViewsCache,VideoPlayer1_Ready,251,0,Main,Application_Foreground,211,0,StatusView,VideoAttachment,506,6,StatusView,VideoReady,529,0,ViewsCache,Class_Globals,0,0,ViewsCache,PutLabelInVideoTopRightCorner,306,6
+NavigationStack=StatusView,ToggleVideo,585,0,ViewsCache,GetVideoPlayer,34,0,ViewsCache,PutLabelInVideoTopRightCorner,277,6,ViewsCache,SetCLVBackground,254,0,ViewsCache,VideoPlayer1_Ready,251,0,ViewsCache,CreateNotificationPanel,269,0,StatusView,lblFullScreen_Click,795,6,Main,Process_Globals,42,0,Main,SetTitleColor,179,0,Main,Application_Start,54,0
 SelectedBuild=0
 VisibleModules=11,3,35,29

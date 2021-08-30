@@ -517,7 +517,9 @@ Private Sub VideoAttachment (attachment As PLMMedia, h() As Int)
 	player.Prepare(player.CreateUriSource(attachment.Url))
 	#else if B4i
 	Dim player As VideoPlayer = playerview.Tag
+	player.ShowControls = False
 	player.LoadVideoUrl(attachment.Url)
+	
 	#end if
 End Sub
 
@@ -544,6 +546,9 @@ Private Sub ShowPlayButton (iv As B4XView)
 	Dim parent As B4XView = iv.Parent
 	iv.SetLayoutAnimated(0, parent.Width / 2 - 40dip, parent.Height / 2 - 30dip, 80dip, 60dip)
 	ImagesCache1.SetImage(B4XPages.MainPage.ImagesCache1.PLAY, iv.Tag, ImagesCache1.RESIZE_NONE)
+	#if B4i
+	If Main.App.OSVersion < 14 Then Return
+	#End If
 	B4XPages.MainPage.ViewsCache1.PutLabelInVideoTopRightCorner(parent.GetView(0), parent.GetView(2), True)
 End Sub
 
@@ -788,9 +793,13 @@ Public Sub GetBase As B4XView
 End Sub
 
 Private Sub lblFullScreen_Click
-	Dim Player As B4XView = Sender.As(B4XView).Tag
+	Dim Player As B4XView = Sender.As(B4XView).Tag 'ignore
 	#if B4i
-	Player.Tag.As(NativeObject).GetField("controller").RunMethod("enterFullScreenAnimated:completionHandler:", Array(True, Null))
+	Player.Tag.As(VideoPlayer).ShowControls = True
+	Dim parent As B4XView = Sender.As(B4XView).Parent
+	parent.GetView(1).Visible = False
+	parent.GetView(2).Visible = False
+	Player.Tag.As(VideoPlayer).Play
 	#Else if B4A
 	mViewsCache.FullScreenPlayer = Player
 	Player.Parent.GetView(1).Visible = False

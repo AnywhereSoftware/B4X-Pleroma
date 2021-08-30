@@ -12,7 +12,6 @@ Sub Class_Globals
 	Private SimpleExoPlayerView1 As SimpleExoPlayerView
 	#else if B4i
 	Private VideoPlayer1 As VideoPlayer
-	Private VideoDelegate As NativeObject
 	#end if
 	Private ImageViews As Map
 	Private CardViews As Map
@@ -32,9 +31,6 @@ Public Sub Initialize
 	VideosToStatusViews.Initialize
 	PollViews.Initialize
 	mTheme = B4XPages.MainPage.Theme
-	#if B4i
-	VideoDelegate = VideoDelegate.Initialize("MyPlayerDelegate").RunMethod("new", Null)
-	#end if
 End Sub
 
 Public Sub GetVideoPlayer (sv As StatusView, attachment As PLMMedia) As Object
@@ -140,7 +136,6 @@ Private Sub CreateVideoPlayer As Object
 	VideoPlayer1.ShowControls = False
 	Dim no As NativeObject = VideoPlayer1
 	no.GetField("controller").GetField("view").SetField("backgroundColor", no.ColorToUIColor(B4XPages.MainPage.Theme.Background))
-	VideoPlayer1.As(NativeObject).GetField("controller").SetField("delegate", VideoDelegate)
 	Return VideoPlayer1.BaseView
 #else if B4J
 	Return Null
@@ -283,62 +278,10 @@ Public Sub CreateNotificationPanel As B4XView
 End Sub
 
 Public Sub PutLabelInVideoTopRightCorner(PlayerView As B4XView, Label As B4XView, EnterFullScreen As Boolean)
-'	Dim PlayerRatio As Float = PlayerView.Width / PlayerView.Height
-	Dim VideoWidth, VideoHeight As Int
-	#if B4i
-	If Main.App.OSVersion < 14 Then Return
-	Dim PlayerItem As NativeObject = VideoPlayer1.As(NativeObject).GetField("controller").GetField("player").GetField("currentItem")
-	If PlayerItem.IsInitialized And PlayerItem.GetField("asset").IsInitialized Then
-		Dim tracks As List = PlayerItem.GetField("asset").RunMethod("tracksWithMediaType:", Array("vide"))
-		If tracks.Size > 0 Then
-			Dim rect() As Float = PlayerItem.ArrayFromSize(Me.As(NativeObject).RunMethod("getNaturalSizeFromTrack:", Array(tracks.Get(0))))
-			VideoWidth = rect(0)
-			VideoHeight = rect(1)
-		End If
-	End If
-	#else if B4A
-	Dim VideoFormat As JavaObject = PlayerView.Tag
-	VideoFormat = VideoFormat.GetFieldJO("player").RunMethod("getVideoFormat", Null)
-	VideoWidth = VideoFormat.GetField("width")
-	VideoHeight = VideoFormat.GetField("height")
-	#end if
-	If VideoWidth > 0 And VideoHeight > 0 Then
-'		Dim VideoRatio As Float = VideoWidth / VideoHeight
-'		Dim scale As Float = IIf(PlayerRatio > VideoRatio, PlayerView.Height / VideoHeight, PlayerView.Width / VideoWidth)
-		Dim LabelSize As Int = 40dip
-'		Label.SetLayoutAnimated(0, PlayerView.Left + PlayerView.Width / 2 + VideoWidth / 2 * scale - LabelSize, PlayerView.Top + PlayerView.Height / 2 - VideoHeight / 2 * scale, _
-'			LabelSize, LabelSize)
-		Label.SetLayoutAnimated(0, PlayerView.Left + PlayerView.Width - LabelSize, 0dip, LabelSize, LabelSize)
-		Label.Visible = True
-		Label.Font = xui.CreateMaterialIcons(36)
-		Label.Text = IIf(EnterFullScreen, Chr(0xE5D0), Chr(0xE5D1)).As(String)
-		Label.TextColor = mTheme.SecondTextColor
-	End If
+	Dim LabelSize As Int = 40dip
+	Label.SetLayoutAnimated(0, PlayerView.Left + PlayerView.Width - LabelSize, 0dip, LabelSize, LabelSize)
+	Label.Visible = True
+	Label.Font = xui.CreateMaterialIcons(IIf(xui.IsB4A, 36, 28))
+	Label.Text = IIf(xui.IsB4A, IIf(EnterFullScreen, Chr(0xE5D0), Chr(0xE5D1)).As(String), Chr(0xE5D4)).As(String)
+	Label.TextColor = mTheme.SecondTextColor
 End Sub
-
-#if OBJC
-- (CGSize) getNaturalSizeFromTrack:(AVAssetTrack*) track {
-  CGSize theNaturalSize = [track naturalSize];
-    theNaturalSize = CGSizeApplyAffineTransform(theNaturalSize, track.preferredTransform);
-    theNaturalSize.width = fabs(theNaturalSize.width);
-    theNaturalSize.height = fabs(theNaturalSize.height);
-	return theNaturalSize;
-}
-
-@end
-
-@interface MyPlayerDelegate:NSObject<AVPlayerViewControllerDelegate>
-@end
-@implementation MyPlayerDelegate
-- (void)playerViewController:(AVPlayerViewController *)playerViewController 
-willBeginFullScreenPresentationWithAnimationCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-	 NSLog(@"full screen");
-	 playerViewController.showsPlaybackControls = true;
-	 NSLog(@"%@", AVMediaTypeVideo);
-}
-- (void)playerViewController:(AVPlayerViewController *)playerViewController 
-willEndFullScreenPresentationWithAnimationCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-	NSLog(@"end full screen");
-	playerViewController.showsPlaybackControls = false;
-}
-#end if

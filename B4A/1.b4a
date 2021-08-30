@@ -149,9 +149,9 @@ Version=11
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 19
+	#VersionCode: 20
 	'CHECK the build configuration!!!
-	#VersionName: 1.49
+	#VersionName: 1.50
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False

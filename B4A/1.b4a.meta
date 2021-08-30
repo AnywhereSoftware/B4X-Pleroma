@@ -118,6 +118,6 @@ ModuleClosedNodes6=
 ModuleClosedNodes7=
 ModuleClosedNodes8=
 ModuleClosedNodes9=
-NavigationStack=FullScreen,Process_Globals,6,0,FullScreen,Globals,13,4,StatusView,ShowPlayButton,540,1,Visual Designer,fullscreen.bal,-100,2,StatusView,VideoAttachment,497,0,StatusView,AttachmentParent_Click,558,0,StatusView,lblFullScreen_Click,789,6,FullScreen,SwitchTargetPlayerView,30,6,FullScreen,Activity_Create,24,6,ViewsCache,PutLabelInVideoTopRightCorner,296,6
+NavigationStack=FullScreen,Process_Globals,6,0,FullScreen,Globals,13,4,StatusView,ShowPlayButton,540,1,Visual Designer,fullscreen.bal,-100,2,StatusView,VideoAttachment,497,0,StatusView,AttachmentParent_Click,558,0,FullScreen,SwitchTargetPlayerView,30,6,FullScreen,Activity_Create,24,6,StatusView,lblFullScreen_Click,790,6,ViewsCache,PutLabelInVideoTopRightCorner,281,6
 SelectedBuild=1
 VisibleModules=37,32,13
