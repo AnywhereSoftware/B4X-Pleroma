@@ -46,7 +46,7 @@ Public Sub SetContent(ChatMessage As PLMChatMessage, ListItem As PLMCLVItem)
 	IsUserMessage = mChatMessage.AccountId = B4XPages.MainPage.User.Id
 	BBListItem1.PrepareBeforeRuns
 	BBListItem1.mBase.Width = 0.7 * mBase.Width
-	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(ChatMessage.Content.RootHtmlNode, BBListItem1.ParseData, ChatMessage.Emojies)
+	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(ChatMessage.Content, BBListItem1.ParseData, ChatMessage.Emojies)
 	BBListItem1.SetRuns(runs)
 	
 	BBListItem1.UpdateVisibleRegion(0, 10000)

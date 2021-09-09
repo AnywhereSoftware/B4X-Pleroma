@@ -149,9 +149,9 @@ Version=11
 @EndOfDesignText@
 #Region  Project Attributes 
 	#ApplicationLabel: B4X Pleroma
-	#VersionCode: 20
+	#VersionCode: 21
 	'CHECK the build configuration!!!
-	#VersionName: 1.50
+	#VersionName: 1.51
 	'SupportedOrientations possible values: unspecified, landscape or portrait.
 	#SupportedOrientations: portrait
 	#CanInstallToExternalStorage: False
@@ -180,7 +180,6 @@ Sub Activity_Create(FirstTime As Boolean)
 	Dim pm As B4XPagesManager
 	pm.Initialize(Activity)
 End Sub
-
 
 Sub IME_HeightChanged (NewHeight As Int, OldHeight As Int)
 	B4XPages.GetManager.RaiseEvent(B4XPages.GetManager.GetTopPage, "IME_HeightChanged", Array(NewHeight, OldHeight))

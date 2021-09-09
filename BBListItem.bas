@@ -34,6 +34,7 @@ Sub Class_Globals
 	Public ClickHighlight As B4XView
 	Private PrevTouchX, PrevTouchY As Int
 	Private PrevTouchStart As Long
+	Public RTL As Boolean = True
 End Sub
 
 Public Sub Initialize (Callback As Object, EventName As String)
@@ -231,6 +232,8 @@ Private Sub Redraw
 	Style.ResizeHeightAutomatically = True
 	Style.WordWrap = WordWrap
 	Style.LineSpacingFactor = LineSpacingFactor
+	Style.RTL = RTL
+	mTextEngine.RTLAware = RTL
 	CleanExistingImageViews(False, UsedImageViews.Keys, 0, 0)
 	UsedImageViews.Clear
 	Paragraph = mTextEngine.PrepareForLazyDrawing(mRuns, Style, StubScrollView)

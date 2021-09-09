@@ -74,7 +74,7 @@ Public Sub SetContent(Account As PLMAccount, ListItem As PLMCLVItem)
 	consumer.PanelColor = xui.Color_Transparent
 	ImagesCache1.SetImage(Account.HeaderURL, ImageView1.Tag, ImagesCache1.RESIZE_FILL_NO_DISTORTIONS)
 	tu.SetAccountTopText(bbTop, mAccount, Null, False, Null)
-	Dim node As HtmlNode = mp.TextUtils1.HtmlParser.Parse(Account.Note)
+	Dim node As PLMContent = mp.TextUtils1.CreateContent(mAccount.Note, 0)
 	Dim clr As String = mTheme.ColorToHex(mTheme.DefaultText)
 	Dim bbcode As String = $"[color=${clr}]
 ${TableRow(WrapURL("statuses", "Statuses", clr), WrapURL("following", "Following", clr), WrapURL("followers", "Followers", clr))}
@@ -85,12 +85,13 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	BBListItem1.ParseData.Text = bbcode
 	Dim parser As BBCodeParser = BBListItem1.TextEngine.TagParser
 	Dim runs As List = parser.CreateRuns(parser.Parse(BBListItem1.ParseData), BBListItem1.ParseData)
+	
 	runs.AddAll(tu.HtmlConverter.ConvertHtmlToRuns(node, BBListItem1.ParseData, Account.Emojis))
 	For Each run As BCTextRun In runs
 		run.HorizontalAlignment = "center"
 	Next
 	BBListItem1.SetRuns(runs)
-	If node.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
+	If node.RootHtmlNode.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
 	mBase.Height = ImageView1.Parent.Height + BBListItem1.mBase.Height - 50dip
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	pnlLine.Top = mBase.Height - 2dip

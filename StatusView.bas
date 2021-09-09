@@ -161,8 +161,7 @@ End Sub
 Private Sub SetBBListContent
 	BBListItem1.ReleaseInlineImageViews
 	BBListItem1.PrepareBeforeRuns
-	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(mStatus.Content.RootHtmlNode, BBListItem1.ParseData, mStatus.Emojis)
-	
+	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(mStatus.Content, BBListItem1.ParseData, mStatus.Emojis)
 	BBListItem1.SetRuns(runs)
 End Sub
 

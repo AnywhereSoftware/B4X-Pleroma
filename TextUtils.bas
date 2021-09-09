@@ -14,16 +14,20 @@ Sub Class_Globals
 	Private JParser As JSONParser
 	Public Const MultipartBoundary As String = "---------------------------14623423412"
 	Private mTheme As ThemeManager
+	Private RTLLanguages As B4XSet
 End Sub
 
 Public Sub Initialize
 	TextEngine.Initialize (xui.CreatePanel(""))
 	TextEngine.WordBoundaries = "&*+-/<>=\ ,:{}" & TAB & CRLF & Chr(13)
 	TextEngine.TagParser.UrlColor = UrlColor
+	TextEngine.RTLAware = True
+	TextEngine.PreprocessArabic(Array As String(""), 0)
 	HtmlParser.Initialize
 	HtmlConverter.Initialize(TextEngine, HtmlParser)
 	NBSP = Chr(0x202F)
 	mTheme = B4XPages.MainPage.Theme
+	RTLLanguages = B4XCollections.CreateSet2(Array("he", "ar", "fa"))
 End Sub
 
 Public Sub ManageLink (Status As PLMStatus, Account As PLMAccount, URL As String, Text As String) As PLMLink
@@ -161,7 +165,7 @@ Public Sub ParseStatus (StatusMap As Map) As PLMStatus
 	End If
 	status.StatusAuthor = CreateAccount(StatusMap.Get("account"))
 	status.Emojis = GetEmojies(StatusMap, 32)
-	status.Content = CreateContent(StatusMap.Get("content"))
+	status.Content = CreateContent(StatusMap.Get("content"), IIf(RTLLanguages.Contains(StatusMap.GetDefault("language", "")), TextEngine.TextDirectionRTL, TextEngine.TextDirectionLTR))
 	status.Visibility = StatusMap.GetDefault("visibility", "")
 	status.URI = StatusMap.GetDefault("uri", "")
 	status.Url = StatusMap.GetDefault("url", "")
@@ -254,7 +258,7 @@ Public Sub ParseChatMessage (Message As Map) As PLMChatMessage
 	cm.ChatId = Message.Get("chat_id")
 	cm.Id = Message.Get("id")
 	cm.Unread = Message.GetDefault("unread", False)
-	cm.Content = CreateContent(Message.Get("content"))
+	cm.Content = CreateContent(Message.Get("content"), TextEngine.TextDirectionUnknown)
 	cm.Emojies = GetEmojies(Message, 32)
 	cm.CreateAt = ParseDate(Message.GetDefault("created_at", ""))
 	cm.AccountId = Message.GetDefault("account_id", "")
@@ -322,10 +326,11 @@ Public Sub CreateAccount (Account As Map) As PLMAccount
 End Sub
 
 
-Private Sub CreateContent (RawContent As String) As PLMContent
+Public Sub CreateContent (RawContent As String, TextDirection As Int) As PLMContent
 	Dim pc As PLMContent
 	pc.Initialize
 	pc.RootHtmlNode = HtmlParser.Parse(RawContent)
+	pc.TextDirection = TextDirection
 	Return pc
 End Sub
 
@@ -505,7 +510,7 @@ Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif 
 		End If
 		If MetaChat.LastMessage.IsInitialized And MetaChat.LastMessage.Content.IsInitialized Then
 		runs.Add(TextEngine.CreateRun(CRLF))
-			runs.AddAll(HtmlConverter.ConvertHtmlToRuns(MetaChat.LastMessage.Content.RootHtmlNode, bbTop.ParseData, MetaChat.LastMessage.Emojies))
+			runs.AddAll(HtmlConverter.ConvertHtmlToRuns(MetaChat.LastMessage.Content, bbTop.ParseData, MetaChat.LastMessage.Emojies))
 		End If
 	Else
 		Dim r As BCTextRun = CreateUrlRun("@", Account.Acct, bbTop.ParseData)

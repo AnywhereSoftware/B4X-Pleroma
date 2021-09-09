@@ -5,7 +5,7 @@ Type=Class
 Version=8.3
 @EndOfDesignText@
 Sub Class_Globals
-	Type PLMContent (RootHtmlNode As HtmlNode)
+	Type PLMContent (RootHtmlNode As HtmlNode, TextDirection As Int)
 	Type PLMAccount (Avatar As String, Id As String, Url As String, UserName As String, DisplayName As String, Acct As String, _
 		Note As String, FollowersCount As Int, FollowingCount As Int, StatusesCount As Int, HeaderURL As String, Emojis As List, _
 		FollowedBy As Boolean, Following As Boolean, RelationshipAdded As Boolean, FollowRequested As Boolean, Muted As Boolean, Blocked As Boolean)

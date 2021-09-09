@@ -19,12 +19,17 @@ Public Sub Initialize (TextEngine As BCTextEngine, HtmlParser As MiniHtmlParser)
 	mHtmlParser = HtmlParser
 End Sub
 
-Public Sub ConvertHtmlToRuns (Parent As HtmlNode, Data As BBCodeParseData, Emojis As List) As List
+Public Sub ConvertHtmlToRuns (Content As PLMContent, Data As BBCodeParseData, Emojis As List) As List
 	Runs.Initialize
 	mData = Data
 	Depth = 0
 	mEmojis = Emojis
-	ImplConvertHtmlToRuns(Parent, False)
+	ImplConvertHtmlToRuns(Content.RootHtmlNode, False)
+	If Content.TextDirection = mTextEngine.TextDirectionRTL Then
+		For Each run As BCTextRun In Runs
+			run.HorizontalAlignment = "right"
+		Next
+	End If
 	Return Runs
 End Sub
 
