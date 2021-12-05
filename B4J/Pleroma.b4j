@@ -138,7 +138,7 @@ Module9=|relative|..\CLVSelections
 NumberOfFiles=37
 NumberOfLibraries=23
 NumberOfModules=36
-Version=9.1
+Version=9.3
 @EndOfDesignText@
 #Region Project Attributes 
 	#MainFormWidth: 600

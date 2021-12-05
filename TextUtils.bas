@@ -525,7 +525,7 @@ Public Sub SetAccountTopText (bbTop As BBListItem, Account As PLMAccount, Notif 
 			run.TextColor = mTheme.DefaultText
 		Next
 	End If
-	bbTop.SetRuns(runs)
+	bbTop.SetRuns(runs, False)
 	bbTop.UpdateVisibleRegion(0, 300dip)
 	bbTop.ChangeVisibility(True)
 End Sub

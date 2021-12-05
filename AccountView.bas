@@ -90,7 +90,7 @@ ${TableRow(Account.StatusesCount, Account.FollowingCount, Account.FollowersCount
 	For Each run As BCTextRun In runs
 		run.HorizontalAlignment = "center"
 	Next
-	BBListItem1.SetRuns(runs)
+	BBListItem1.SetRuns(runs, node.TextDirection = tu.TextEngine.TextDirectionRTL)
 	If node.RootHtmlNode.Children.Size = 0 Then BBListItem1.mBase.Height = 51dip
 	mBase.Height = ImageView1.Parent.Height + BBListItem1.mBase.Height - 50dip
 	BBListItem1.UpdateVisibleRegion(0, 10000)

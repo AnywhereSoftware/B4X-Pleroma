@@ -92,6 +92,7 @@ Public Sub Initialize
 	ServerManager1.Initialize
 	HamburgerIcons.Initialize
 	store.Initialize(xui.DefaultFolder, "store.dat")
+	
 	StoreVersion = store.GetDefault("version", 0)
 	Log($"Store version:${NumberFormat2(StoreVersion, 0, 2, 2, False)}"$)
 	If StoreVersion < Constants.Version Then

@@ -48,7 +48,7 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attach
 			End If
 		Next
 	End If
-	if SensitiveOverlay Then imageurl = ""
+	If SensitiveOverlay Then imageurl = ""
 	pnlImageView.Visible = imageurl <> ""
 	If pnlImageView.Visible Then
 		Dim ic As ImagesCache = B4XPages.MainPage.ImagesCache1
@@ -68,7 +68,7 @@ Public Sub SetCard (card As Map, Callback As Object, EventName As String, Attach
 	runs.Add(r)
 	runs.Add(tu.CreateRun(card.Get("title") & CRLF, xui.CreateDefaultBoldFont(12)))
 	runs.Add(tu.CreateRun(card.Get("description"), xui.CreateDefaultFont(11)))
-	BBListItem1.SetRuns(runs)
+	BBListItem1.SetRuns(runs, False)
 	If pnlImageView.Visible = False Then
 		base.Height = BBListItem1.mBase.Height + 4dip
 	Else

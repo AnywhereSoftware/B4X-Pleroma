@@ -38,7 +38,7 @@ Public Sub SetContent(Content As Object, ListItem As PLMCLVItem)
 	For Each r As BCTextRun In runs
 		r.TextFont = fnt
 	Next
-	BBListItem1.SetRuns(runs)
+	BBListItem1.SetRuns(runs, False)
 	BBListItem1.UpdateVisibleRegion(0, 1000dip)
 End Sub
 

@@ -162,7 +162,7 @@ Private Sub SetBBListContent
 	BBListItem1.ReleaseInlineImageViews
 	BBListItem1.PrepareBeforeRuns
 	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(mStatus.Content, BBListItem1.ParseData, mStatus.Emojis)
-	BBListItem1.SetRuns(runs)
+	BBListItem1.SetRuns(runs, mStatus.Content.TextDirection = mTextEngine.TextDirectionRTL)
 End Sub
 
 Private Sub EmojiReactions (Runs As List)
@@ -335,7 +335,7 @@ Private Sub SetTopText
 			runs.Add(r)
 		End If
 	End If
-	bbTop.SetRuns(runs)
+	bbTop.SetRuns(runs, False)
 	bbTop.UpdateVisibleRegion(0, 300dip)
 End Sub
 
@@ -403,7 +403,7 @@ Private Sub SetBottomPanel
 	runs.Add(mTextEngine.CreateRun(tb))
 	runs.Add(CreateIconRun("~more", Chr(0xF141), False))
 	
-	BBBottom.SetRuns(runs)
+	BBBottom.SetRuns(runs, False)
 	BBBottom.UpdateVisibleRegion(0, 300dip)
 	pnlBottom.Height = 5dip + BBBottom.mBase.Height
 	pnlLine.Top = pnlBottom.Height - 1dip

@@ -47,7 +47,7 @@ Public Sub SetContent(ChatMessage As PLMChatMessage, ListItem As PLMCLVItem)
 	BBListItem1.PrepareBeforeRuns
 	BBListItem1.mBase.Width = 0.7 * mBase.Width
 	Dim runs As List = tu.HtmlConverter.ConvertHtmlToRuns(ChatMessage.Content, BBListItem1.ParseData, ChatMessage.Emojies)
-	BBListItem1.SetRuns(runs)
+	BBListItem1.SetRuns(runs, ChatMessage.Content.TextDirection = tu.TextEngine.TextDirectionRTL)
 	
 	BBListItem1.UpdateVisibleRegion(0, 10000)
 	Dim h As Int = BBListItem1.mBase.Height + 20dip

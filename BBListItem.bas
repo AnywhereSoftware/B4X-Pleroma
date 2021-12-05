@@ -133,7 +133,8 @@ Public Sub PrepareBeforeRuns
 	End If
 End Sub
 
-Public Sub SetRuns(Runs As List)
+Public Sub SetRuns(Runs As List, IsRTL As Boolean)
+	RTL = IsRTL
 	mRuns = Runs
 	Redraw
 End Sub
@@ -233,7 +234,6 @@ Private Sub Redraw
 	Style.WordWrap = WordWrap
 	Style.LineSpacingFactor = LineSpacingFactor
 	Style.RTL = RTL
-	mTextEngine.RTLAware = RTL
 	CleanExistingImageViews(False, UsedImageViews.Keys, 0, 0)
 	UsedImageViews.Clear
 	Paragraph = mTextEngine.PrepareForLazyDrawing(mRuns, Style, StubScrollView)
