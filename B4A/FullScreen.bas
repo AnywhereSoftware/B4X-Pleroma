@@ -36,7 +36,7 @@ Private Sub SwitchTargetPlayerView(FullScreenIsDestination As Boolean)
 	Dim jo As JavaObject
 	Dim player As Object = viewcache.FullScreenPlayer.Tag.As(JavaObject).GetField("player")
 	SimpleExoPlayerView1.Tag = viewcache.FullScreenPlayer.Tag
-	jo.InitializeStatic("com.google.android.exoplayer2.ui.PlayerView")
+	jo.InitializeStatic("androidx.media3.ui.PlayerView")
 	jo.RunMethod("switchTargetView", Array(player, IIf(FullScreenIsDestination, viewcache.FullScreenPlayer, SimpleExoPlayerView1), _
 		IIf(FullScreenIsDestination, SimpleExoPlayerView1,	viewcache.FullScreenPlayer)))
 End Sub

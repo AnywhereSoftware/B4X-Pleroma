@@ -76,74 +76,74 @@ FileGroup8=Default Group
 FileGroup9=Default Group
 Group=Default Group
 Library1=b4xdrawer
-Library10=ifirebasenotifications
-Library11=ihttputils2
-Library12=ijson
-Library13=imedia
-Library14=iphone
-Library15=iui8
-Library16=iui9
-Library17=iwebsocket
-Library18=keyvaluestore
-Library19=minihtmlparser
+Library10=ihttputils2
+Library11=ijson
+Library12=imedia
+Library13=iphone
+Library14=iui8
+Library15=iui9
+Library16=iwebsocket
+Library17=keyvaluestore
+Library18=minihtmlparser
+Library19=webp
 Library2=b4xgifview
-Library20=webp
-Library21=xui views
-Library22=zoomimageview
-Library23=igameview
+Library20=xui views
+Library21=zoomimageview
+Library22=igameview
 Library3=b4xpages
 Library4=b4xpreferencesdialog
 Library5=bctextengine
 Library6=bctoast
-Library7=bitmapsasync
-Library8=icore
-Library9=ifirebaseanalytics
+Library7=icore
+Library8=ifirebaseanalytics
+Library9=ifirebasenotifications
 Module1=|relative|..\AccountView
-Module10=|relative|..\Constants
-Module11=|relative|..\DrawerManager
-Module12=|relative|..\HtmlToRuns
-Module13=|relative|..\ImagesCache
-Module14=|relative|..\ListOfStatuses
-Module15=|relative|..\MediaChooser
-Module16=|relative|..\MiniAccountView
-Module17=|relative|..\OAuth
-Module18=|relative|..\PleromaFeed
-Module19=|relative|..\PLMSettings
+Module10=|relative|..\CLVSelections
+Module11=|relative|..\Constants
+Module12=|relative|..\DrawerManager
+Module13=|relative|..\HtmlToRuns
+Module14=|relative|..\ImagesCache
+Module15=|relative|..\ListOfStatuses
+Module16=|relative|..\MediaChooser
+Module17=|relative|..\MiniAccountView
+Module18=|relative|..\OAuth
+Module19=|relative|..\PleromaFeed
 Module2=|relative|..\B4XLinksManager
-Module20=|relative|..\PollView
-Module21=|relative|..\PostView
-Module22=|relative|..\Push
-Module23=|relative|..\ReactionsView
-Module24=|relative|..\ReportManager
-Module25=|relative|..\RequestsManager
-Module26=|relative|..\SearchManager
-Module27=|relative|..\ServerManager
-Module28=|relative|..\StackManager
-Module29=|relative|..\StatusView
+Module20=|relative|..\PLMSettings
+Module21=|relative|..\PollView
+Module22=|relative|..\PostView
+Module23=|relative|..\Push
+Module24=|relative|..\ReactionsView
+Module25=|relative|..\ReportManager
+Module26=|relative|..\RequestsManager
+Module27=|relative|..\SearchManager
+Module28=|relative|..\ServerManager
+Module29=|relative|..\StackManager
 Module3=|relative|..\B4XMainPage
-Module30=|relative|..\Streamer
-Module31=|relative|..\StubView
-Module32=|relative|..\TextUtils
-Module33=|relative|..\ThemeManager
-Module34=UserNotificationCenter
-Module35=|relative|..\ViewsCache
-Module36=|relative|..\WebViewDialog
-Module37=|relative|..\X2SoundPool
+Module30=|relative|..\StatusView
+Module31=|relative|..\Streamer
+Module32=|relative|..\StubView
+Module33=|relative|..\TextUtils
+Module34=|relative|..\ThemeManager
+Module35=UserNotificationCenter
+Module36=|relative|..\ViewsCache
+Module37=|relative|..\WebViewDialog
+Module38=|relative|..\X2SoundPool
 Module4=|relative|..\BBListItem
-Module5=|relative|..\CardView
-Module6=|relative|..\ChatManager
-Module7=|relative|..\ChatView
-Module8=|relative|..\CLVBackwards
-Module9=|relative|..\CLVSelections
+Module5=|relative|..\..\SimpleMediaManager\BitmapsAsync
+Module6=|relative|..\CardView
+Module7=|relative|..\ChatManager
+Module8=|relative|..\ChatView
+Module9=|relative|..\CLVBackwards
 NumberOfFiles=37
-NumberOfLibraries=23
-NumberOfModules=37
-Version=7.8
+NumberOfLibraries=22
+NumberOfModules=38
+Version=8.3
 @EndOfDesignText@
 'Code module
 #Region  Project Attributes 
 	#ApplicationLabel: B4X for P &amp; M
-	#Version: 1.53
+	#Version: 1.54
 	'Orientation possible values: Portrait, LandscapeLeft, LandscapeRight and PortraitUpsideDown
 	#iPhoneOrientations: Portrait
 	#iPadOrientations: Portrait
@@ -162,11 +162,10 @@ Version=7.8
 	#PlistExtra:<key>NSPhotoLibraryUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSCameraUsageDescription</key><string>Add images and videos as attachments.</string>
 	#PlistExtra:<key>NSMicrophoneUsageDescription</key><string>Add videos as attachments.</string>
-	#ProvisionFile: pleroma.mobileprovision
+'	#ProvisionFile: pleroma.mobileprovision
 	#Entitlement: <key>aps-environment</key><string>production</string>
-	#CertificateFile: ios_old_distribution.cer
 	#if Not(SIMULATOR)
- 	#ProvisionFile: pleroma_store.mobileprovision
+ 	#ProvisionFile: pleroma.mobileprovision
 	#End If
 	'This enables the system dark mode feature.
 	#PlistExtra: <!--<key>UIUserInterfaceStyle</key>-->

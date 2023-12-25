@@ -135,6 +135,7 @@ Private Sub Theme_Changed
 	If Theme.IsDark Then
 		B4XImageView1.Bitmap = xui.LoadBitmap(File.DirAssets, "tile-dark.png")
 	Else
+		
 		B4XImageView1.Bitmap = xui.LoadBitmap(File.DirAssets, "tile.png")
 	End If
 End Sub
